@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Footys Comparison Tool</title>
+  <style>
+    body { background: #0a0f0a; color: white; font-family: sans-serif; padding: 20px; }
+    .container { max-width: 600px; margin: auto; }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+    select, button { padding: 10px; background: #161f16; color: white; border: 1px solid #2d4a2d; cursor: pointer; }
+    .comparison-list { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .player-chip { background: #2d4a2d; padding: 5px 10px; border-radius: 4px; display: flex; align-items: center; gap: 5px; }
+    .player-chip button { background: none; border: none; color: #ff6b6b; padding: 0; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="controls">
+    <input type="file" id="inputCSV" accept=".csv">
+  </div>
+  
+  <div id="mainScreen" style="display:none;">
+    <select id="selectPosisi" onchange="resetComparison()">
+      <option value="striker">Striker</option>
+      <option value="winger">Winger</option>
+      <option value="midfielder">Midfielder</option>
+      <option value="defender">Defender</option>
+      <option value="goalkeeper">Goalkeeper</option>
+    </select>
+    
+    <select id="selectPemain"></select>
+    <button onclick="tambahPemain()">Tambah Pemain</button>
+
+    <div class="comparison-list" id="comparisonList"></div>
+
+    <div id="cardExport" style="background: #0f1a0f; padding: 20px; border-radius: 20px;">
+      <svg id="pizzaSVG" viewBox="0 0 500 500" width="100%"></svg>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ... (Gunakan STATS_MAP yang sama seperti sebelumnya) ...
+  const STATS_MAP = {
+      striker: [
+        { key: "Non-penalty goals per 90", label: "NP Goals" },
+        { key: "npxG per 90",              label: "npxG"      },
+        { key: "Goal conversion, %",       label: "Goal Conv" },
+        { key: "Touches in box per 90",    label: "Box Touch" },
+        { key: "Shot assists per 90",      label: "Shot Ast"  },
+        { key: "xA per 90",                label: "xA"        },
+        { key: "Progressive runs per 90",  label: "Prog Runs" },
+        { key: "Duels won, %",             label: "Duels Won" }
+      ],
+      // ... tambahkan map lainnya ...
+      winger: [], midfielder: [], defender: [], goalkeeper: [] // Lengkapi sesuai kebutuhan
+  };
+
+  let dataPemain = [];
+  let pemainTerpilih = [];
+  const warnas = ["#4ade80", "#60a5fa", "#f87171"];
+
+  function tambahPemain() {
+    const idx = document.getElementById("selectPemain").value;
+    const p = dataPemain[idx];
+    if (pemainTerpilih.length < 3 && !pemainTerpilih.find(x => x.Player === p.Player)) {
+      pemainTerpilih.push(p);
+      renderList();
+      updateChart();
+    }
+  }
+
+  function renderList() {
+    const div = document.getElementById("comparisonList");
+    div.innerHTML = "";
+    pemainTerpilih.forEach((p, i) => {
+      div.innerHTML += `<div class="player-chip" style="border-bottom: 3px solid ${warnas[i]}">${p.Player} <button onclick="hapusPemain(${i})">x</button></div>`;
+    });
+  }
+
+  function hapusPemain(i) {
+    pemainTerpilih.splice(i, 1);
+    renderList();
+    updateChart();
+  }
+
+  function updateChart() {
+    const stats = STATS_MAP[document.getElementById("selectPosisi").value];
+    const svg = document.getElementById("pizzaSVG");
+    svg.innerHTML = "";
+    
+    // Logic untuk menggambar grid/latar belakang (sama seperti kode Anda)
+    // ...
+    
+    // Logic untuk menggambar setiap pemain
+    pemainTerpilih.forEach((p, idx) => {
+      drawLayer(p, stats, warnas[idx], idx);
+    });
+  }
+
+  function drawLayer(p, stats, color, index) {
+    const cx = 250, cy = 250;
+    const rMax = 175, rMin = 45;
+    const n = stats.length;
+    const slice = (2 * Math.PI) / n;
+
+    stats.forEach((stat, i) => {
+      const val = parseFloat(p[stat.key]) || 0;
+      const r = rMin + (rMax - rMin) * Math.min(val, 1);
+      const startAngle = slice * i - Math.PI / 2;
+      const endAngle   = slice * (i + 1) - Math.PI / 2;
+
+      const x1 = cx + rMin * Math.cos(startAngle); const y1 = cy + rMin * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(startAngle);    const y2 = cy + r * Math.sin(startAngle);
+      const x3 = cx + r * Math.cos(endAngle);      const y3 = cy + r * Math.sin(endAngle);
+      const x4 = cx + rMin * Math.cos(endAngle);   const y4 = cy + rMin * Math.sin(endAngle);
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", ["M",x1,y1,"L",x2,y2,"A",r,r,0,0,1,x3,y3,"L",x4,y4,"A",rMin,rMin,0,0,0,x1,y1,"Z"].join(" "));
+      path.setAttribute("fill", color);
+      path.setAttribute("fill-opacity", "0.4"); // Kunci overlay ada di sini
+      path.setAttribute("stroke", color);
+      document.getElementById("pizzaSVG").appendChild(path);
+    });
+  }
+  
+  // Tambahkan fungsi parsing CSV dan setup event listener seperti sebelumnya
+</script>
+</body>
+</html>
