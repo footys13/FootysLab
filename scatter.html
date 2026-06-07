@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scatter Plot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 680px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+    .controls {
+      width: 100%;
+      max-width: 680px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-family: 'Barlow', sans-serif;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 680px;
+    }
+    .chart-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .svg-wrap {
+      position: relative;
+      width: 100%;
+    }
+    svg { width: 100%; display: block; }
+
+    .tooltip {
+  position: absolute;
+  background: #161f16;
+  border: 1px solid #2d4a2d;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+  min-width: 140px;
+}
+    .tooltip-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #4ade80;
+      text-transform: uppercase;
+    }
+    .tooltip-team {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .tooltip-stats {
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+    .watermark {
+      margin-top: 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .btn-upload {
+  background: #4ade80;
+  color: #0a0f0a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 16px;
+}
+    .btn-export {
+      margin-top: 20px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .loading {
+      color: #4ade80;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 40px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">THE FOOTYS · SCOUTING REPORT· 2025/26 · Scatter Plot</div>
+
+  <div id="uploadScreen" style="text-align:center; padding:40px;">
+  <p style="color:#4b5563; letter-spacing:1px; font-size:12px; text-transform:uppercase; margin-bottom:16px;">Upload CSV database</p>
+  <input type="file" id="inputCSV" accept=".csv" style="display:none">
+  <button class="btn-upload" onclick="document.getElementById('inputCSV').click()">
+    📂 Upload CSV
+  </button>
+</div>
+
+  <div id="mainWrap" style="display:none; width:100%; max-width:680px;">
+
+    <div class="controls">
+      <div class="control-group">
+        <div class="control-label" style="color:#4ade80">X Axis</div>
+        <select id="selectX" onchange="updateChart()"></select>
+      </div>
+      <div class="control-group">
+        <div class="control-label" style="color:#60a5fa">Y Axis</div>
+        <select id="selectY" onchange="updateChart()"></select>
+      </div>
+    </div>
+
+    <div class="card" id="cardExport">
+      <div class="chart-title" id="chartTitle">-</div>
+
+      <div class="svg-wrap" id="svgWrap">
+        <svg id="scatterSVG" viewBox="0 0 600 500"></svg>
+        <div class="tooltip" id="tooltip">
+          <div class="tooltip-name" id="ttName">-</div>
+          <div class="tooltip-team" id="ttTeam">-</div>
+          <div class="tooltip-stats" id="ttStats">-</div>
+        </div>
+      </div>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+  </div>
+
+  <button class="btn-export" id="btnExport" style="display:none" onclick="exportGambar()">💾 Save Image</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    // Kolom yang bisa dipilih untuk axis
+    const AXIS_OPTIONS = [
+      { key: "Non-penalty goals per 90", label: "NP Goals per 90"    },
+      { key: "npxG per 90",              label: "npxG per 90"         },
+      { key: "Goal conversion, %",       label: "Goal Conversion %"   },
+      { key: "Shot assists per 90",      label: "Shot Assists per 90" },
+      { key: "xA per 90",                label: "xA per 90"           },
+      { key: "Assists per 90",           label: "Assists per 90"      },
+      { key: "Progressive runs per 90",  label: "Progressive Runs"    },
+      { key: "Progressive passes per 90",label: "Progressive Passes"  },
+      { key: "Touches in box per 90",    label: "Touches in Box"      },
+      { key: "Passes per 90",            label: "Passes per 90"       },
+      { key: "Duels won, %",             label: "Duels Won %"         },
+      { key: "pAdj Tkl+Int per 90",      label: "Tkl+Int per 90"      },
+      { key: "Successful dribbles, %",   label: "Dribbles %"          },
+      { key: "Aerial duels won, %",      label: "Aerial Duels Won %"  },
+      { key: "Defensive duels won, %",   label: "Defensive Duels %"   }
+    ];
+
+    let dataPemain = [];
+
+    // Parse CSV
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    // Load CSV
+document.getElementById("inputCSV").onchange = function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onloadend = function(e) {
+    dataPemain = prosesCSV(e.target.result);
+
+    ["selectX", "selectY"].forEach(function(id, idx) {
+      const sel = document.getElementById(id);
+      AXIS_OPTIONS.forEach(function(opt) {
+        sel.appendChild(new Option(opt.label, opt.key));
+      });
+      sel.selectedIndex = idx;
+    });
+
+    document.getElementById("uploadScreen").style.display = "none";
+    document.getElementById("mainWrap").style.display = "block";
+    document.getElementById("btnExport").style.display = "block";
+    updateChart();
+  };
+  reader.readAsText(file);
+};
+
+    // Update chart
+    function updateChart() {
+      const keyX = document.getElementById("selectX").value;
+      const keyY = document.getElementById("selectY").value;
+      const labelX = AXIS_OPTIONS.find(function(o) { return o.key === keyX; }).label;
+      const labelY = AXIS_OPTIONS.find(function(o) { return o.key === keyY; }).label;
+
+      document.getElementById("chartTitle").textContent = labelX + "  ·  " + labelY;
+
+      gambarScatter(keyX, keyY, labelX, labelY);
+    }
+
+    // Gambar scatter
+    function gambarScatter(keyX, keyY, labelX, labelY) {
+      const svg = document.getElementById("scatterSVG");
+      svg.innerHTML = "";
+
+      const W = 600, H = 500;
+      const pad = { top: 20, right: 20, bottom: 50, left: 50 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      // Data valid saja
+      const valid = dataPemain.filter(function(p) {
+        return parseFloat(p[keyX]) > 0 || parseFloat(p[keyY]) > 0;
+      });
+
+      // Scale 0-1 → pixel
+      function scaleX(val) {
+        return pad.left + val * plotW;
+      }
+      function scaleY(val) {
+        return pad.top + (1 - val) * plotH;
+      }
+
+      // ── Grid lines ──
+      [0.25, 0.5, 0.75].forEach(function(pct) {
+        // Vertical
+        const vl = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        vl.setAttribute("x1", scaleX(pct)); vl.setAttribute("y1", pad.top);
+        vl.setAttribute("x2", scaleX(pct)); vl.setAttribute("y2", pad.top + plotH);
+        vl.setAttribute("stroke", pct === 0.5 ? "#2d4a2d" : "#1a2e1a");
+        vl.setAttribute("stroke-width", pct === 0.5 ? "1.5" : "1");
+        vl.setAttribute("stroke-dasharray", pct === 0.5 ? "4,4" : "2,4");
+        svg.appendChild(vl);
+
+        // Horizontal
+        const hl = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        hl.setAttribute("x1", pad.left);       hl.setAttribute("y1", scaleY(pct));
+        hl.setAttribute("x2", pad.left + plotW); hl.setAttribute("y2", scaleY(pct));
+        hl.setAttribute("stroke", pct === 0.5 ? "#2d4a2d" : "#1a2e1a");
+        hl.setAttribute("stroke-width", pct === 0.5 ? "1.5" : "1");
+        hl.setAttribute("stroke-dasharray", pct === 0.5 ? "4,4" : "2,4");
+        svg.appendChild(hl);
+
+        // Label axis
+        const xl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        xl.setAttribute("x", scaleX(pct));
+        xl.setAttribute("y", pad.top + plotH + 16);
+        xl.setAttribute("text-anchor", "middle");
+        xl.setAttribute("fill", "#4b5563");
+        xl.setAttribute("font-size", "10");
+        xl.textContent = Math.round(pct * 100);
+        svg.appendChild(xl);
+
+        const yl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        yl.setAttribute("x", pad.left - 8);
+        yl.setAttribute("y", scaleY(pct) + 4);
+        yl.setAttribute("text-anchor", "end");
+        yl.setAttribute("fill", "#4b5563");
+        yl.setAttribute("font-size", "10");
+        yl.textContent = Math.round(pct * 100);
+        svg.appendChild(yl);
+      });
+
+      // Border plot area
+      const border = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      border.setAttribute("x", pad.left);
+      border.setAttribute("y", pad.top);
+      border.setAttribute("width", plotW);
+      border.setAttribute("height", plotH);
+      border.setAttribute("fill", "none");
+      border.setAttribute("stroke", "#1a2e1a");
+      border.setAttribute("stroke-width", "1");
+      svg.appendChild(border);
+
+      // Label axis nama
+      const xAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      xAxisLabel.setAttribute("x", pad.left + plotW / 2);
+      xAxisLabel.setAttribute("y", H - 5);
+      xAxisLabel.setAttribute("text-anchor", "middle");
+      xAxisLabel.setAttribute("fill", "#4ade80");
+      xAxisLabel.setAttribute("font-size", "11");
+      xAxisLabel.setAttribute("font-weight", "700");
+      xAxisLabel.setAttribute("letter-spacing", "1");
+      xAxisLabel.textContent = labelX.toUpperCase();
+      svg.appendChild(xAxisLabel);
+
+      const yAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      yAxisLabel.setAttribute("x", 12);
+      yAxisLabel.setAttribute("y", pad.top + plotH / 2);
+      yAxisLabel.setAttribute("text-anchor", "middle");
+      yAxisLabel.setAttribute("fill", "#60a5fa");
+      yAxisLabel.setAttribute("font-size", "11");
+      yAxisLabel.setAttribute("font-weight", "700");
+      yAxisLabel.setAttribute("transform", "rotate(-90, 12, " + (pad.top + plotH / 2) + ")");
+      yAxisLabel.textContent = labelY.toUpperCase();
+      svg.appendChild(yAxisLabel);
+
+      // Kuadran label
+      const quadrants = [
+        { x: pad.left + 8,           y: pad.top + 14,        text: "Low X · High Y", color: "#1e3a5f" },
+        { x: pad.left + plotW - 8,   y: pad.top + 14,        text: "High X · High Y", color: "#166534", anchor: "end" },
+        { x: pad.left + 8,           y: pad.top + plotH - 8, text: "Low X · Low Y",  color: "#374151" },
+        { x: pad.left + plotW - 8,   y: pad.top + plotH - 8, text: "High X · Low Y", color: "#374151", anchor: "end" }
+      ];
+      quadrants.forEach(function(q) {
+        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        t.setAttribute("x", q.x);
+        t.setAttribute("y", q.y);
+        t.setAttribute("text-anchor", q.anchor || "start");
+        t.setAttribute("fill", q.color);
+        t.setAttribute("font-size", "9");
+        t.setAttribute("letter-spacing", "1");
+        t.textContent = q.text.toUpperCase();
+        svg.appendChild(t);
+      });
+
+      // ── Plot titik ──
+      valid.forEach(function(pemain) {
+        const valX = parseFloat(pemain[keyX]) || 0;
+        const valY = parseFloat(pemain[keyY]) || 0;
+        const cx = scaleX(valX);
+        const cy = scaleY(valY);
+
+        // Warna berdasarkan kuadran kanan atas
+        const warna = (valX > 0.5 && valY > 0.5) ? "#4ade80"
+                    : (valX > 0.5 || valY > 0.5)  ? "#86efac"
+                    : "#166534";
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx);
+        circle.setAttribute("cy", cy);
+        circle.setAttribute("r", "5");
+        circle.setAttribute("fill", warna);
+        circle.setAttribute("opacity", "0.85");
+        circle.setAttribute("stroke", "#0a0f0a");
+        circle.setAttribute("stroke-width", "1");
+        circle.style.cursor = "pointer";
+
+        // Tooltip on tap/click
+       circle.addEventListener("click", function(e) {
+  // Reset semua titik ke warna default
+  svg.querySelectorAll("circle").forEach(function(c) {
+    c.setAttribute("fill", "#4ade80");
+    c.setAttribute("r", "5");
+    c.setAttribute("opacity", "0.85");
+  });
+
+  // Highlight titik yang diklik
+  circle.setAttribute("fill", "#ffffff");
+  circle.setAttribute("r", "7");
+  circle.setAttribute("opacity", "1");
+
+  // Tentukan kuadran
+  let kuadran;
+  if (valX >= 0.5 && valY >= 0.5)      kuadran = "⬆ High " + labelX + " · High " + labelY;
+  else if (valX < 0.5 && valY >= 0.5)  kuadran = "↖ Low " + labelX + " · High " + labelY;
+  else if (valX >= 0.5 && valY < 0.5)  kuadran = "↘ High " + labelX + " · Low " + labelY;
+  else                                  kuadran = "⬇ Low " + labelX + " · Low " + labelY;
+
+  // Isi tooltip
+  const tt = document.getElementById("tooltip");
+  const wrap = document.getElementById("svgWrap");
+  const svgRect = svg.getBoundingClientRect();
+  const scaleRatio = svgRect.width / W;
+
+  let tx = cx * scaleRatio - 10;
+  let ty = cy * scaleRatio - 100;
+  if (tx + 160 > wrap.getBoundingClientRect().width) tx = tx - 150;
+  if (ty < 0) ty = cy * scaleRatio + 10;
+
+  document.getElementById("ttName").textContent = pemain["Player"];
+  document.getElementById("ttTeam").textContent = pemain["Team"] + " · " + (pemain["Position"] || pemain["Pos"] || "-");
+  document.getElementById("ttStats").innerHTML =
+    labelX + ": <b>" + Math.round(valX * 100) + "</b><br>" +
+    labelY + ": <b>" + Math.round(valY * 100) + "</b><br><br>" +
+    "<span style='color:#4ade80; font-size:10px;'>" + kuadran + "</span>";
+
+  tt.style.left = tx + "px";
+  tt.style.top  = ty + "px";
+  tt.style.display = "block";
+
+  e.stopPropagation();
+});
+
+        svg.appendChild(circle);
+        // Label nama kecil di atas titik
+const namaLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+namaLabel.setAttribute("x", cx);
+namaLabel.setAttribute("y", cy - 8);
+namaLabel.setAttribute("text-anchor", "middle");
+namaLabel.setAttribute("fill", "#6b7280");
+namaLabel.setAttribute("font-size", "7");
+namaLabel.setAttribute("font-family", "Barlow Condensed, sans-serif");
+namaLabel.setAttribute("font-weight", "600");
+namaLabel.setAttribute("letter-spacing", "0.5");
+// Ambil nama belakang saja biar tidak terlalu panjang
+const namaBelakang = pemain["Player"].split(" ").slice(-1)[0].toUpperCase();
+namaLabel.textContent = namaBelakang;
+svg.appendChild(namaLabel);
+      });
+
+      // Tutup tooltip kalau klik di luar
+      document.getElementById("svgWrap").addEventListener("click", function() {
+        document.getElementById("tooltip").style.display = "none";
+      });
+    }
+
+    // Export
+    function exportGambar() {
+      document.getElementById("tooltip").style.display = "none";
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "scatter-plot.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross League Pizza</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 620px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .controls-wrap {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .controls-posisi select {
+      width: 100%;
+    }
+    .controls-players {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .player-control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: 'Barlow', sans-serif;
+    }
+    .select-liga {
+      border-color: #1e3a5f;
+      background: #0d1520;
+      font-size: 11px;
+    }
+    .select-liga-2 {
+      border-color: #3b1f5f;
+      background: #150d20;
+      font-size: 11px;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 620px;
+    }
+    .card-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .league-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .ll-1 { color: #4ade80; }
+    .ll-2 { color: #60a5fa; }
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .p1-name { color: #4ade80; }
+    .p2-name { color: #60a5fa; }
+    .player-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+    .position-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .badge-p1 { background: #4ade80; color: #0a0f0a; }
+    .badge-p2 { background: #60a5fa; color: #0a0f0a; }
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .note {
+      text-align: center;
+      font-size: 10px;
+      color: #4b5563;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .watermark {
+      margin-top: 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .btn-export {
+      margin-top: 20px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .loading {
+      color: #4ade80;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">Cross League · Pizza Comparison · Raw Stats</div>
+
+  <div id="loadingMsg" class="loading">Loading databases...</div>
+
+  <div id="mainWrap" style="display:none; width:100%; max-width:620px;">
+
+    <div class="controls-wrap">
+
+      <!-- Pilih posisi -->
+      <div class="controls-posisi">
+        <div class="section-label">Position</div>
+        <select id="selectPosisi" onchange="gantiPosisi()">
+          <option value="striker">Striker / CF</option>
+          <option value="midfielder">Midfielder / CM</option>
+          <option value="defender">Defender / CB</option>
+        </select>
+      </div>
+
+      <!-- Pilih pemain -->
+      <div class="controls-players">
+        <div class="player-control">
+          <div class="section-label" style="color:#4ade80">Player 1</div>
+          <select id="selectLiga1" class="select-liga" onchange="isiDropdownPemain('select1', 'selectLiga1')"></select>
+          <select id="select1" onchange="updateChart()"></select>
+        </div>
+        <div class="player-control">
+          <div class="section-label" style="color:#60a5fa">Player 2</div>
+          <select id="selectLiga2" class="select-liga-2" onchange="isiDropdownPemain('select2', 'selectLiga2')"></select>
+          <select id="select2" onchange="updateChart()"></select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" id="cardExport">
+
+      <div class="card-header">
+        <div>
+          <div class="league-label ll-1" id="ligaLabel1">-</div>
+          <div class="player-name p1-name" id="name1">-</div>
+          <div class="player-meta">Club: <span id="team1">-</span></div>
+          <div class="player-meta">Age: <span id="age1">-</span></div>
+          <div class="position-badge badge-p1" id="pos1">-</div>
+        </div>
+        <div>
+          <div class="league-label ll-2" id="ligaLabel2">-</div>
+          <div class="player-name p2-name" id="name2">-</div>
+          <div class="player-meta">Club: <span id="team2">-</span></div>
+          <div class="player-meta">Age: <span id="age2">-</span></div>
+          <div class="position-badge badge-p2" id="pos2">-</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4ade80"></div>
+          <span id="legend1">Player 1</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#60a5fa"></div>
+          <span id="legend2">Player 2</span>
+        </div>
+      </div>
+
+      <div class="note">RAW STATS PER 90 · CROSS LEAGUE COMPARISON</div>
+
+      <svg id="pizzaSVG" viewBox="0 0 500 500" width="100%" height="100%"></svg>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+  </div>
+
+  <button class="btn-export" id="btnExport" style="display:none" onclick="exportGambar()">💾 Save Image</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    // ── STATS PER POSISI (nama kolom dari CSV) ──
+    const STATS_MAP = {
+  striker: [
+    { key: "Goals",            label: "Goals",     max: 1.5  },
+    { key: "Shots on Target",  label: "SoT",       max: 2.0  },
+    { key: "Big Chances Missed", label: "BCM",     max: 1.0  },
+    { key: "Key Passes",       label: "Key Pass",  max: 2.0  },
+    { key: "Assists",          label: "Assists",   max: 0.8  },
+    { key: "Duels Won",        label: "Duels Won", max: 10.0 },
+    { key: "Crosses",          label: "Crosses",   max: 3.0  },
+    { key: "Long Balls",       label: "Long Balls",max: 4.0  }
+  ],
+  midfielder: [
+    { key: "Passes",           label: "Passes",    max: 60.0 },
+    { key: "Acc. Passes",      label: "Acc Pass",  max: 50.0 },
+    { key: "Key Passes",       label: "Key Pass",  max: 2.5  },
+    { key: "Assists",          label: "Assists",   max: 0.8  },
+    { key: "Duels Won",        label: "Duels Won", max: 10.0 },
+    { key: "Long Balls",       label: "Long Balls",max: 4.0  },
+    { key: "Crosses",          label: "Crosses",   max: 3.0  },
+    { key: "Aerial Duels Won", label: "Aerial Won",max: 3.0  }
+  ],
+  defender: [
+    { key: "Duels Won",        label: "Duels Won", max: 12.0 },
+    { key: "Aerial Duels Won", label: "Aerial Won",max: 5.0  },
+    { key: "Acc. Long Balls",  label: "Long Ball", max: 4.0  },
+    { key: "Long Balls",       label: "Long Balls",max: 6.0  },
+    { key: "Passes",           label: "Passes",    max: 40.0 },
+    { key: "Acc. Passes",      label: "Acc Pass",  max: 35.0 },
+    { key: "Crosses",          label: "Crosses",   max: 3.0  },
+    { key: "Aerial Duels Lost",label: "Aerial Lost",max: 4.0 }
+  ]
+};
+
+    // ── DATABASE PER LIGA ──
+    const DATABASES = {
+      "Thai League (Striker)":    { file: "melvyn1.csv",  liga: "Thai League"  },
+      "Thai League (Midfielder)": { file: "notsuda1.csv", liga: "Thai League"  },
+      "Liga Indonesia":           { file: "juan1.csv",    liga: "Liga Indonesia" }
+    };
+
+    let loadedData = {};
+    let statsAktif = STATS_MAP["striker"];
+
+    // ── PARSE CSV ──
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks, ligaNama) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        p["_liga"] = ligaNama;
+        data.push(p);
+      }
+      return data;
+    }
+
+    // ── LOAD SEMUA CSV ──
+    function loadCSV(namaDB) {
+      const db = DATABASES[namaDB];
+      return fetch(db.file)
+        .then(function(r) {
+          return new Promise(function(resolve) {
+            r.text().then(function(teks) {
+              loadedData[namaDB] = prosesCSV(teks, db.liga);
+              resolve();
+            });
+          });
+        });
+    }
+
+    // Load semua database
+    const promises = Object.keys(DATABASES).map(loadCSV);
+    Promise.all(promises).then(function() {
+      document.getElementById("loadingMsg").style.display = "none";
+      document.getElementById("mainWrap").style.display = "block";
+      document.getElementById("btnExport").style.display = "block";
+      isiDropdownLiga();
+      isiDropdownPemain("select1", "selectLiga1");
+      isiDropdownPemain("select2", "selectLiga2");
+      updateChart();
+    });
+
+    // ── ISI DROPDOWN LIGA ──
+    function isiDropdownLiga() {
+      ["selectLiga1", "selectLiga2"].forEach(function(id, idx) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = "";
+        Object.keys(DATABASES).forEach(function(nama) {
+          sel.appendChild(new Option(nama, nama));
+        });
+        if (idx === 1) sel.selectedIndex = 2; // default p2 ke Liga Indonesia
+      });
+    }
+
+    // ── ISI DROPDOWN PEMAIN ──
+    function isiDropdownPemain(selectId, ligaSelectId) {
+      const ligaNama = document.getElementById(ligaSelectId).value;
+      const data = loadedData[ligaNama] || [];
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = "";
+      data.forEach(function(p, i) {
+        sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+      });
+      updateChart();
+    }
+
+    // ── GANTI POSISI ──
+    function gantiPosisi() {
+      statsAktif = STATS_MAP[document.getElementById("selectPosisi").value];
+      updateChart();
+    }
+
+    // ── UPDATE CHART ──
+    function updateChart() {
+      const liga1 = document.getElementById("selectLiga1").value;
+      const liga2 = document.getElementById("selectLiga2").value;
+      const p1 = loadedData[liga1]?.[document.getElementById("select1").value];
+      const p2 = loadedData[liga2]?.[document.getElementById("select2").value];
+      if (!p1 || !p2) return;
+
+      document.getElementById("ligaLabel1").textContent = DATABASES[liga1].liga;
+      document.getElementById("ligaLabel2").textContent = DATABASES[liga2].liga;
+      document.getElementById("name1").textContent = p1["Player"];
+      document.getElementById("team1").textContent = p1["Team"];
+      document.getElementById("age1").textContent  = p1["Age"] || "-";
+      document.getElementById("pos1").textContent  = p1["Pos"]  || "-";
+      document.getElementById("name2").textContent = p2["Player"];
+      document.getElementById("team2").textContent = p2["Team"];
+      document.getElementById("age2").textContent  = p2["Age"] || "-";
+      document.getElementById("pos2").textContent  = p2["Pos"]  || "-";
+      document.getElementById("legend1").textContent = p1["Player"];
+      document.getElementById("legend2").textContent = p2["Player"];
+
+      gambarPizza(p1, p2, statsAktif);
+    }
+
+    // ── GAMBAR PIZZA ──
+    function gambarPizza(p1, p2, stats) {
+      const svg = document.getElementById("pizzaSVG");
+      svg.innerHTML = "";
+
+      const cx = 250, cy = 250;
+      const rMax = 175, rMin = 45;
+      const n = stats.length;
+      const slice = (2 * Math.PI) / n;
+
+      // Lingkaran latar
+      [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function(pct) {
+        const r = rMin + (rMax - rMin) * pct;
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx);
+        circle.setAttribute("cy", cy);
+        circle.setAttribute("r", r);
+        circle.setAttribute("fill", "none");
+        circle.setAttribute("stroke", "#1a2e1a");
+        circle.setAttribute("stroke-width", "1");
+        svg.appendChild(circle);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", cx + 4);
+        label.setAttribute("y", cy - r + 12);
+        label.setAttribute("fill", "#374151");
+        label.setAttribute("font-size", "9");
+        label.textContent = Math.round(pct * 100) + "%";
+        svg.appendChild(label);
+      });
+
+      // Garis pembagi
+      for (let i = 0; i < n; i++) {
+        const angle = slice * i - Math.PI / 2;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+        line.setAttribute("x2", cx + rMax * Math.cos(angle));
+        line.setAttribute("y2", cy + rMax * Math.sin(angle));
+        line.setAttribute("stroke", "#0a0f0a");
+        line.setAttribute("stroke-width", "1.5");
+        svg.appendChild(line);
+      }
+
+      // Slice — p1 dulu, p2 di atas
+      [
+        { pemain: p1, warna1: "#4ade80", warna2: "#166534", opacity: "0.9" },
+        { pemain: p2, warna1: "#60a5fa", warna2: "#1e3a5f", opacity: "0.7" }
+      ].forEach(function(item) {
+        for (let i = 0; i < n; i++) {
+          const stat = stats[i];
+          const raw = parseFloat(item.pemain[stat.key]) || 0;
+          const val = Math.min(raw / stat.max, 1); // normalize ke 0-1
+          const r = rMin + (rMax - rMin) * val;
+
+          const startAngle = slice * i - Math.PI / 2;
+          const endAngle   = slice * (i + 1) - Math.PI / 2;
+
+          const x1 = cx + rMin * Math.cos(startAngle);
+          const y1 = cy + rMin * Math.sin(startAngle);
+          const x2 = cx + r   * Math.cos(startAngle);
+          const y2 = cy + r   * Math.sin(startAngle);
+          const x3 = cx + r   * Math.cos(endAngle);
+          const y3 = cy + r   * Math.sin(endAngle);
+          const x4 = cx + rMin * Math.cos(endAngle);
+          const y4 = cy + rMin * Math.sin(endAngle);
+
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("d", [
+            "M", x1, y1, "L", x2, y2,
+            "A", r, r, 0, 0, 1, x3, y3,
+            "L", x4, y4,
+            "A", rMin, rMin, 0, 0, 0, x1, y1, "Z"
+          ].join(" "));
+          path.setAttribute("fill", val >= 0.5 ? item.warna1 : item.warna2);
+          path.setAttribute("opacity", item.opacity);
+          path.setAttribute("stroke", "#0a0f0a");
+          path.setAttribute("stroke-width", "1.5");
+          svg.appendChild(path);
+        }
+      });
+
+      // Label + angka
+      for (let i = 0; i < n; i++) {
+        const stat = stats[i];
+        const labelAngle = slice * i + slice / 2 - Math.PI / 2;
+        const lx = cx + (rMax + 30) * Math.cos(labelAngle);
+        const ly = cy + (rMax + 30) * Math.sin(labelAngle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", lx);
+        text.setAttribute("y", ly);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("fill", "#9ca3af");
+        text.setAttribute("font-size", "11");
+        text.setAttribute("font-weight", "600");
+        text.textContent = stat.label;
+        svg.appendChild(text);
+
+        // Angka raw p1
+        const raw1 = parseFloat(p1[stat.key]) || 0;
+        const val1 = Math.min(raw1 / stat.max, 1);
+        if (val1 > 0.1) {
+          const r1 = rMin + (rMax - rMin) * val1;
+          const nx = cx + (rMin + (r1 - rMin) * 0.5) * Math.cos(labelAngle);
+          const ny = cy + (rMin + (r1 - rMin) * 0.5) * Math.sin(labelAngle);
+          const num = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          num.setAttribute("x", nx);
+          num.setAttribute("y", ny - 6);
+          num.setAttribute("text-anchor", "middle");
+          num.setAttribute("fill", "#0a0f0a");
+          num.setAttribute("font-size", "10");
+          num.setAttribute("font-weight", "800");
+          num.textContent = raw1.toFixed(2);
+          svg.appendChild(num);
+        }
+
+        // Angka raw p2
+        const raw2 = parseFloat(p2[stat.key]) || 0;
+        const val2 = Math.min(raw2 / stat.max, 1);
+        if (val2 > 0.1) {
+          const r2 = rMin + (rMax - rMin) * val2;
+          const nx = cx + (rMin + (r2 - rMin) * 0.5) * Math.cos(labelAngle);
+          const ny = cy + (rMin + (r2 - rMin) * 0.5) * Math.sin(labelAngle);
+          const num = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          num.setAttribute("x", nx);
+          num.setAttribute("y", ny + 6);
+          num.setAttribute("text-anchor", "middle");
+          num.setAttribute("fill", "#0a0f0a");
+          num.setAttribute("font-size", "10");
+          num.setAttribute("font-weight", "800");
+          num.textContent = raw2.toFixed(2);
+          svg.appendChild(num);
+        }
+      }
+    }
+
+    // ── EXPORT ──
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "pizza-crossleague.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Comparison</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+    }
+    .topbar {
+      border-left: 3px solid #4ade80;
+      padding: 16px 24px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      padding: 24px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    #mainScreen { display: none; padding-bottom: 48px; }
+    .select-bar {
+      background: #0f1a0f;
+      padding: 16px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    select {
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+      flex: 1;
+      min-width: 200px;
+    }
+    .btn-compare {
+      background: #4ade80;
+      color: #0a0f0a;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    
+    .btn-upload {
+  background: #4ade80;
+  color: #0a0f0a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 16px;
+}
+
+
+    .btn-export {
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: #1a2e1a;
+    }
+    @media (max-width: 700px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+    .player-card { background: #0a0f0a; padding: 24px; }
+    .card-league {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .card-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 0.95;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(4, auto);
+      gap: 16px 24px;
+      border-top: 1px solid #1a2e1a;
+      padding-top: 14px;
+    }
+    .meta-label {
+      font-size: 9px;
+      color: #4b5563;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .meta-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+    .scout-rating-box {
+      background: #4ade80;
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+    .scout-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #0a0f0a;
+      text-transform: uppercase;
+    }
+    .scout-score {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #0a0f0a;
+      line-height: 1;
+    }
+    .scout-score span { font-size: 16px; opacity: 0.6; }
+    .chart-wrap { height: 240px; margin: 20px 0; }
+    .stats-title {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #6b7280;
+      width: 90px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .bar-bg {
+      flex: 1;
+      background: #161f16;
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      width: 0%;
+      transition: width 1s ease;
+    }
+    .s1 { background: #4ade80; }
+    .s2 { background: #86efac; }
+    .s3 { background: #bbf7d0; }
+    .s4 { background: #34d399; }
+    .s5 { background: #6ee7b7; }
+    .s6 { background: #a7f3d0; }
+    .stat-percentile {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #4ade80;
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    
+    .watermark {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color:#ffffff;;
+  text-transform: uppercase;
+  margin-top: 16px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">THE FOOTYS · 2025/26 · SCOUTING REPORT</div>
+<div id="uploadScreen">
+  <div class="upload-box">
+    <p>Upload CSV database</p>
+    <input type="file" id="inputCSV" accept=".csv" style="display:none">
+    <button class="btn-upload" onclick="document.getElementById('inputCSV').click()">
+      📂 Upload CSV
+    </button>
+  </div>
+</div>
+
+  <div id="mainScreen">
+    <div class="select-bar">
+      <select id="select1"></select>
+      <select id="select2"></select>
+      <button class="btn-compare" onclick="tampilkanPerbandingan()">Compare →</button>
+      <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+const STATS = [
+  { key: "Defensive duels won, %",           label: "Def Duels", cls: "s1" },
+  { key: "Aerial duels won, %",              label: "Aerial",    cls: "s2" },
+  { key: "pAdj Tkl+Int per 90",              label: "Tkl+Int",   cls: "s3" },
+  { key: "Successful defensive actions per 90", label: "Def Act", cls: "s4" },
+  { key: "Accurate long passes, %",          label: "Long Pass", cls: "s5" },
+  { key: "Progressive passes per 90",        label: "Prog Pass", cls: "s6" }
+];
+
+    let dataPemain = [];
+
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    function isiDropdown(data) {
+      ["select1", "select2"].forEach(function(id) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = "";
+        data.forEach(function(p, i) {
+          sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+        });
+      });
+      document.getElementById("select2").selectedIndex = 1;
+    }
+
+    function hitungRating(pemain) {
+      let total = 0, count = 0;
+      STATS.forEach(function(s) {
+        const val = parseFloat(pemain[s.key]);
+        if (!isNaN(val)) { total += val; count++; }
+      });
+      return count > 0 ? ((total / count) * 10).toFixed(1) : "N/A";
+    }
+
+    function tampilkanPerbandingan() {
+      const p1 = dataPemain[document.getElementById("select1").value];
+      const p2 = dataPemain[document.getElementById("select2").value];
+      document.getElementById("cardsGrid").innerHTML = "";
+      Object.keys(Chart.instances).forEach(function(k) {
+        Chart.instances[k].destroy();
+      });
+      buatKartu(p1, "chart1", "#4ade80");
+      buatKartu(p2, "chart2", "#86efac");
+    }
+
+    function buatKartu(pemain, chartId, warna) {
+      const grid = document.getElementById("cardsGrid");
+      const rating = hitungRating(pemain);
+
+      let statsHTML = "";
+      STATS.forEach(function(stat) {
+        const val = parseFloat(pemain[stat.key]) || 0;
+        const pct = Math.round(val * 100);
+        statsHTML += `
+          <div class="stat-row">
+            <span class="stat-label">${stat.label}</span>
+            <div class="bar-bg">
+              <div class="bar-fill ${stat.cls}" id="bar-${chartId}-${stat.cls}"></div>
+            </div>
+            <span class="stat-percentile">${pct}</span>
+          </div>
+        `;
+      });
+
+      const namaParts = pemain["Player"].split(" ");
+      const namaHTML = namaParts.length >= 2
+        ? namaParts.slice(0, -1).join(" ") + "<br>" + namaParts.slice(-1)
+        : pemain["Player"];
+
+      const kartu = document.createElement("div");
+      kartu.className = "player-card";
+      kartu.innerHTML = `
+        <div class="card-league">Thai League 1 · 2025/26 · Scouting Report</div>
+        <div class="card-name">${namaHTML}</div>
+        <div class="card-meta">
+          <div><div class="meta-label">Club</div><div class="meta-value">${pemain["Team"]}</div></div>
+          <div><div class="meta-label">Position</div><div class="meta-value">${pemain["Position"]}</div></div>
+          <div><div class="meta-label">Age</div><div class="meta-value">${pemain["Age"]}</div></div>
+          <div><div class="meta-label">League</div><div class="meta-value">${pemain["League"] || "-"}</div></div>
+        </div>
+        <div class="scout-rating-box">
+          <span class="scout-label">Scout Rating</span>
+          <span class="scout-score">${rating}<span> /10</span></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="${chartId}"></canvas>
+        </div>
+        <div class="stats-title">Percentile Ranking</div>
+        ${statsHTML}
+        <div style="text-align:center; width:100%; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:4px; color:#ffffff;; text-transform:uppercase; margin-top:16px;">THE FOOTYS</div>
+        `;
+
+      grid.appendChild(kartu);
+
+      setTimeout(function() {
+        STATS.forEach(function(stat) {
+          const val = parseFloat(pemain[stat.key]) || 0;
+          const bar = document.getElementById("bar-" + chartId + "-" + stat.cls);
+          if (bar) bar.style.width = Math.round(val * 100) + "%";
+        });
+      }, 100);
+
+      new Chart(document.getElementById(chartId), {
+        type: "radar",
+        data: {
+          labels: STATS.map(function(s) { return s.label; }),
+          datasets: [{
+            label: pemain["Player"],
+            data: STATS.map(function(s) {
+              return Math.round((parseFloat(pemain[s.key]) || 0) * 100);
+            }),
+            backgroundColor: warna + "22",
+            borderColor: warna,
+            borderWidth: 2,
+            pointBackgroundColor: warna,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          scales: {
+            r: {
+              min: 0, max: 100,
+              ticks: { display: false },
+              grid: { color: "rgba(255,255,255,0.06)" },
+              pointLabels: { color: "#6b7280", font: { size: 9 } },
+              angleLines: { color: "rgba(255,255,255,0.06)" }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function exportGambar() {
+      const grid = document.getElementById("cardsGrid");
+      html2canvas(grid, {
+        backgroundColor: "#0a0f0a",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "scouting-report.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+    document.getElementById("inputCSV").onchange = function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onloadend = function(e) {
+    dataPemain = prosesCSV(e.target.result);
+    isiDropdown(dataPemain);
+    document.getElementById("uploadScreen").style.display = "none";
+    document.getElementById("mainScreen").style.display = "block";
+    tampilkanPerbandingan();
+  };
+  reader.readAsText(file);
+};
+
+  </script>
+</body>
+</html>
