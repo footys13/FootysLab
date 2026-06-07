@@ -79,10 +79,6 @@
       margin: 0 auto 1px;
     }
 
-    .tools-grid-3 {
-      grid-template-columns: 1fr 1fr 1fr;
-    }
-
     .tool-card {
       background: #0a0f0a;
       padding: 24px;
@@ -93,6 +89,7 @@
       transition: background 0.2s;
       position: relative;
       overflow: hidden;
+      min-height: 200px;
     }
 
     .tool-card:hover {
@@ -189,7 +186,6 @@
     @media (max-width: 500px) {
       .hero-title { font-size: 52px; }
       .tools-grid { grid-template-columns: 1fr; }
-      .tools-grid-3 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -203,9 +199,11 @@
     <div class="hero-divider"></div>
   </div>
 
-  <!-- SCOUTING REPORTS (3 card → pakai grid 3 kolom) -->
+  <!-- SCOUTING REPORTS (4 card = 2x2 grid, RAPI!) -->
   <div class="section-label">Scouting Reports</div>
-  <div class="tools-grid tools-grid-3">
+  <div class="tools-grid">
+
+    <!-- Baris 1 -->
     <a href="striker.html" class="tool-card scouting">
       <div class="tool-icon">⚽</div>
       <div class="tool-type">Scouting Report</div>
@@ -213,6 +211,7 @@
       <div class="tool-desc">Goals, xG, conversion rate, progressive runs & more.</div>
       <div class="tool-arrow">↗</div>
     </a>
+
     <a href="midfielder.html" class="tool-card scouting">
       <div class="tool-icon">🎯</div>
       <div class="tool-type">Scouting Report</div>
@@ -220,6 +219,8 @@
       <div class="tool-desc">Passes, xA, progressive passes, tackles & more.</div>
       <div class="tool-arrow">↗</div>
     </a>
+
+    <!-- Baris 2 -->
     <a href="defender.html" class="tool-card scouting">
       <div class="tool-icon">🛡️</div>
       <div class="tool-type">Scouting Report</div>
@@ -227,37 +228,7 @@
       <div class="tool-desc">Duels, aerial, tackles, interceptions & more.</div>
       <div class="tool-arrow">↗</div>
     </a>
-  </div>
 
-  <!-- PIZZA CHARTS (3 card → pakai grid 3 kolom) -->
-  <div class="section-label" style="margin-top:1px;">Pizza Charts</div>
-  <div class="tools-grid tools-grid-3">
-    <a href="pizza.html" class="tool-card pizza">
-      <div class="tool-icon">🍕</div>
-      <div class="tool-type">Pizza Chart</div>
-      <div class="tool-name">Single Player</div>
-      <div class="tool-desc">Visualize one player's percentile stats in a pizza chart.</div>
-      <div class="tool-arrow">↗</div>
-    </a>
-    <a href="pizza-compare.html" class="tool-card pizza">
-      <div class="tool-icon">🍕🍕</div>
-      <div class="tool-type">Pizza Chart</div>
-      <div class="tool-name">Comparison</div>
-      <div class="tool-desc">Overlay two players in one chart. See who dominates.</div>
-      <div class="tool-arrow">↗</div>
-    </a>
-    <a href="pizza-crossleague.html" class="tool-card pizza">
-      <div class="tool-icon">🌍</div>
-      <div class="tool-type">Pizza Chart</div>
-      <div class="tool-name">Cross League</div>
-      <div class="tool-desc">Compare players from different leagues using raw stats.</div>
-      <div class="tool-arrow">↗</div>
-    </a>
-  </div>
-
-  <!-- ANALYSIS (1 card → pakai grid 1 kolom, atau tambahin card) -->
-  <div class="section-label" style="margin-top:1px;">Analysis</div>
-  <div class="tools-grid">
     <a href="scatter.html" class="tool-card scatter">
       <div class="tool-icon">📊</div>
       <div class="tool-type">Analysis</div>
@@ -265,7 +236,37 @@
       <div class="tool-desc">Plot all players on two axes. Find outliers and clusters.</div>
       <div class="tool-arrow">↗</div>
     </a>
-    
+
+  </div>
+
+  <!-- PIZZA CHARTS (3 card = 3 kolom, RAPI!) -->
+  <div class="section-label" style="margin-top:1px;">Pizza Charts</div>
+  <div class="tools-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+
+    <a href="pizza.html" class="tool-card pizza">
+      <div class="tool-icon">🍕</div>
+      <div class="tool-type">Pizza Chart</div>
+      <div class="tool-name">Single Player</div>
+      <div class="tool-desc">Visualize one player's percentile stats in a pizza chart.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="pizza-compare.html" class="tool-card pizza">
+      <div class="tool-icon">🍕🍕</div>
+      <div class="tool-type">Pizza Chart</div>
+      <div class="tool-name">Comparison</div>
+      <div class="tool-desc">Overlay two players in one chart. See who dominates.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="pizza-crossleague.html" class="tool-card pizza">
+      <div class="tool-icon">🌍</div>
+      <div class="tool-type">Pizza Chart</div>
+      <div class="tool-name">Cross League</div>
+      <div class="tool-desc">Compare players from different leagues using raw stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
   </div>
 
   <!-- FOOTER -->
