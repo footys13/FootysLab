@@ -2,39 +2,517 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Footys Comparison Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Comparison</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { background: #0a0f0a; color: white; font-family: sans-serif; padding: 20px; }
-    .container { max-width: 600px; margin: auto; }
-    .controls { display: flex; gap: 10px; margin-bottom: 20px; }
-    select, button { padding: 10px; background: #161f16; color: white; border: 1px solid #2d4a2d; cursor: pointer; }
-    .comparison-list { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .player-chip { background: #2d4a2d; padding: 5px 10px; border-radius: 4px; display: flex; align-items: center; gap: 5px; }
-    .player-chip button { background: none; border: none; color: #ff6b6b; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 620px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 620px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .btn-upload {
+      background: #4ade80;
+      color: #0a0f0a;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 620px;
+    }
+    .controls-posisi {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+    }
+    .card-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .league-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .ll-1 { color: #4ade80; }
+    .ll-2 { color: #60a5fa; }
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .p1-name { color: #4ade80; }
+    .p2-name { color: #60a5fa; }
+    .player-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+    .position-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .badge-p1 { background: #4ade80; color: #0a0f0a; }
+    .badge-p2 { background: #60a5fa; color: #0a0f0a; }
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .note {
+      text-align: center;
+      font-size: 10px;
+      color: #4b5563;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .watermark {
+      margin-top: 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .btn-export {
+      margin-top: 20px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="controls">
-    <input type="file" id="inputCSV" accept=".csv">
+  <div class="topbar">THE FOOTYS · PIZZA COMPARISON</div>
+
+  <div id="uploadScreen">
+    <div class="upload-box">
+      <p>Upload CSV database</p>
+      <input type="file" id="inputCSV" accept=".csv">
+    </div>
   </div>
-  
-  <div id="mainScreen" style="display:none;">
-    <select id="selectPosisi" onchange="resetComparison()">
-      <option value="striker">Striker</option>
-      <option value="winger">Winger</option>
-      <option value="midfielder">Midfielder</option>
-      <option value="defender">Defender</option>
-      <option value="goalkeeper">Goalkeeper</option>
-    </select>
-    
-    <select id="selectPemain"></select>
-    <button onclick="tambahPemain()">Tambah Pemain</button>
 
-    <div class="comparison-list" id="comparisonList"></div>
+  <div id="mainScreen">
+    <div class="controls-posisi">
+      <select id="selectPosisi" onchange="gantiPosisi()">
+        <option value="striker">Striker / CF</option>
+        <option value="winger">Winger / LW / RW</option>
+        <option value="midfielder">Midfielder / CM</option>
+        <option value="defender">Defender / CB</option>
+        <option value="goalkeeper">Goalkeeper / GK</option>
+      </select>
+    </div>
 
-    <div id="cardExport" style="background: #0f1a0f; padding: 20px; border-radius: 20px;">
+    <div class="controls">
+      <select id="select1" onchange="updateChart()"></select>
+      <select id="select2" onchange="updateChart()"></select>
+    </div>
+
+    <div class="card" id="cardExport">
+      <div class="card-header">
+        <div>
+          <div class="league-label ll-1">Player 1</div>
+          <div class="player-name p1-name" id="name1">-</div>
+          <div class="player-meta">Club: <span id="team1">-</span></div>
+          <div class="player-meta">Age: <span id="age1">-</span></div>
+          <div class="position-badge badge-p1" id="pos1">-</div>
+        </div>
+        <div>
+          <div class="league-label ll-2">Player 2</div>
+          <div class="player-name p2-name" id="name2">-</div>
+          <div class="player-meta">Club: <span id="team2">-</span></div>
+          <div class="player-meta">Age: <span id="age2">-</span></div>
+          <div class="position-badge badge-p2" id="pos2">-</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4ade80"></div>
+          <span id="legend1">Player 1</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#60a5fa"></div>
+          <span id="legend2">Player 2</span>
+        </div>
+      </div>
+
+      <svg id="pizzaSVG" viewBox="0 0 500 500" width="100%" height="100%"></svg>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+    <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    const STATS_MAP = {
+      striker: [
+        { key: "Non-penalty goals per 90", label: "NP Goals" },
+        { key: "npxG per 90",              label: "npxG"      },
+        { key: "Goal conversion, %",       label: "Goal Conv" },
+        { key: "Touches in box per 90",    label: "Box Touch" },
+        { key: "Shot assists per 90",      label: "Shot Ast"  },
+        { key: "xA per 90",                label: "xA"        },
+        { key: "Progressive runs per 90",  label: "Prog Runs" },
+        { key: "Duels won, %",             label: "Duels Won" }
+      ],
+      winger: [
+        { key: "Progressive runs per 90",  label: "Prog Runs" },
+        { key: "Shot assists per 90",      label: "Shot Ast"  },
+        { key: "xA per 90",                label: "xA"        },
+        { key: "Successful dribbles, %",   label: "Dribbles"  },
+        { key: "Touches in box per 90",    label: "Box Touch" },
+        { key: "Duels won, %",             label: "Duels Won" },
+        { key: "Non-penalty goals per 90", label: "NP Goals"  },
+        { key: "npxG per 90",              label: "npxG"      }
+      ],
+      midfielder: [
+        { key: "Passes per 90",             label: "Passes"    },
+        { key: "Progressive passes per 90", label: "Prog Pass" },
+        { key: "xA per 90",                 label: "xA"        },
+        { key: "Shot assists per 90",       label: "Shot Ast"  },
+        { key: "pAdj Tkl+Int per 90",       label: "Tkl+Int"   },
+        { key: "Duels won, %",              label: "Duels Won" },
+        { key: "Progressive runs per 90",   label: "Prog Runs" },
+        { key: "Assists per 90",            label: "Assists"   }
+      ],
+      defender: [
+        { key: "Defensive duels won, %",              label: "Def Duels" },
+        { key: "Aerial duels won, %",                 label: "Aerial"    },
+        { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int"   },
+        { key: "Successful defensive actions per 90", label: "Def Act"   },
+        { key: "Accurate long passes, %",             label: "Long Pass" },
+        { key: "Progressive passes per 90",           label: "Prog Pass" },
+        { key: "Duels won, %",                        label: "Duels Won" },
+        { key: "Fouls per 90",                        label: "Fouls"     }
+      ],
+      goalkeeper: [
+        { key: "Save rate, %",            label: "Save Rate" },
+        { key: "Prevented goals per 90",  label: "Prevented" },
+        { key: "Conceded goals per 90",   label: "Conceded"  },
+        { key: "Shots against per 90",    label: "Shots Ag"  },
+        { key: "Exits per 90",            label: "Exits"     },
+        { key: "Aerial duels won, %",     label: "Aerial"    },
+        { key: "Accurate long passes, %", label: "Long Pass" },
+        { key: "Duels won, %",            label: "Duels Won" }
+      ]
+    };
+
+    let dataPemain = [];
+    let statsAktif = STATS_MAP["striker"];
+
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    document.getElementById("inputCSV").onchange = function() {
+      const file = this.files[0];
+      if (!file) return;
+      fetch(URL.createObjectURL(file))
+        .then(function(r) {
+          r.text().then(function(teks) {
+            dataPemain = prosesCSV(teks);
+            isiDropdown();
+            document.getElementById("uploadScreen").style.display = "none";
+            document.getElementById("mainScreen").style.display = "block";
+            updateChart();
+          });
+        });
+    };
+
+    function isiDropdown() {
+      ["select1", "select2"].forEach(function(id) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = "";
+        dataPemain.forEach(function(p, i) {
+          sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+        });
+      });
+      document.getElementById("select2").selectedIndex = 1;
+    }
+
+    function gantiPosisi() {
+      statsAktif = STATS_MAP[document.getElementById("selectPosisi").value];
+      updateChart();
+    }
+
+    function updateChart() {
+      const p1 = dataPemain[document.getElementById("select1").value];
+      const p2 = dataPemain[document.getElementById("select2").value];
+      if (!p1 || !p2) return;
+
+      document.getElementById("name1").textContent = p1["Player"];
+      document.getElementById("team1").textContent = p1["Team"];
+      document.getElementById("age1").textContent  = p1["Age"];
+      document.getElementById("pos1").textContent  = p1["Position"];
+      document.getElementById("name2").textContent = p2["Player"];
+      document.getElementById("team2").textContent = p2["Team"];
+      document.getElementById("age2").textContent  = p2["Age"];
+      document.getElementById("pos2").textContent  = p2["Position"];
+      document.getElementById("legend1").textContent = p1["Player"];
+      document.getElementById("legend2").textContent = p2["Player"];
+
+      gambarPizza(p1, p2, statsAktif);
+    }
+
+    function gambarPizza(p1, p2, stats) {
+      const svg = document.getElementById("pizzaSVG");
+      svg.innerHTML = "";
+      const cx = 250, cy = 250;
+      const rMax = 175, rMin = 45;
+      const n = stats.length;
+      const slice = (2 * Math.PI) / n;
+
+      [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function(pct) {
+        const r = rMin + (rMax - rMin) * pct;
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
+        circle.setAttribute("r", r); circle.setAttribute("fill", "none");
+        circle.setAttribute("stroke", "#1a2e1a"); circle.setAttribute("stroke-width", "1");
+        svg.appendChild(circle);
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", cx + 4); label.setAttribute("y", cy - r + 12);
+        label.setAttribute("fill", "#374151"); label.setAttribute("font-size", "9");
+        label.textContent = Math.round(pct * 100);
+        svg.appendChild(label);
+      });
+
+      for (let i = 0; i < n; i++) {
+        const angle = slice * i - Math.PI / 2;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+        line.setAttribute("x2", cx + rMax * Math.cos(angle));
+        line.setAttribute("y2", cy + rMax * Math.sin(angle));
+        line.setAttribute("stroke", "#0a0f0a"); line.setAttribute("stroke-width", "1.5");
+        svg.appendChild(line);
+      }
+
+      [
+        { pemain: p1, warna1: "#4ade80", warna2: "#166534", opacity: "0.9" },
+        { pemain: p2, warna1: "#60a5fa", warna2: "#1e3a5f", opacity: "0.7" }
+      ].forEach(function(item) {
+        for (let i = 0; i < n; i++) {
+          const stat = stats[i];
+          const val = parseFloat(item.pemain[stat.key]) || 0;
+          const r = rMin + (rMax - rMin) * val;
+          const startAngle = slice * i - Math.PI / 2;
+          const endAngle   = slice * (i + 1) - Math.PI / 2;
+          const x1 = cx + rMin * Math.cos(startAngle); const y1 = cy + rMin * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(startAngle);    const y2 = cy + r * Math.sin(startAngle);
+          const x3 = cx + r * Math.cos(endAngle);      const y3 = cy + r * Math.sin(endAngle);
+          const x4 = cx + rMin * Math.cos(endAngle);   const y4 = cy + rMin * Math.sin(endAngle);
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("d", ["M",x1,y1,"L",x2,y2,"A",r,r,0,0,1,x3,y3,"L",x4,y4,"A",rMin,rMin,0,0,0,x1,y1,"Z"].join(" "));
+          path.setAttribute("fill", val >= 0.5 ? item.warna1 : item.warna2);
+          path.setAttribute("opacity", item.opacity);
+          path.setAttribute("stroke", "#0a0f0a"); path.setAttribute("stroke-width", "1.5");
+          svg.appendChild(path);
+        }
+      });
+
+      for (let i = 0; i < n; i++) {
+        const stat = stats[i];
+        const labelAngle = slice * i + slice / 2 - Math.PI / 2;
+        const lx = cx + (rMax + 30) * Math.cos(labelAngle);
+        const ly = cy + (rMax + 30) * Math.sin(labelAngle);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", lx); text.setAttribute("y", ly);
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("fill", "#9ca3af"); text.setAttribute("font-size", "11");
+        text.setAttribute("font-weight", "600"); text.textContent = stat.label;
+        svg.appendChild(text);
+
+        const val1 = parseFloat(p1[stat.key]) || 0;
+        const val2 = parseFloat(p2[stat.key]) || 0;
+
+        if (val1 > 0.1) {
+          const r1 = rMin + (rMax - rMin) * val1;
+          const nx = cx + (rMin + (r1 - rMin) * 0.5) * Math.cos(labelAngle);
+          const ny = cy + (rMin + (r1 - rMin) * 0.5) * Math.sin(labelAngle);
+          const num = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          num.setAttribute("x", nx); num.setAttribute("y", ny - 6);
+          num.setAttribute("text-anchor", "middle"); num.setAttribute("fill", "#0a0f0a");
+          num.setAttribute("font-size", "10"); num.setAttribute("font-weight", "800");
+          num.textContent = Math.round(val1 * 100);
+          svg.appendChild(num);
+        }
+
+        if (val2 > 0.1) {
+          const r2 = rMin + (rMax - rMin) * val2;
+          const nx = cx + (rMin + (r2 - rMin) * 0.5) * Math.cos(labelAngle);
+          const ny = cy + (rMin + (r2 - rMin) * 0.5) * Math.sin(labelAngle);
+          const num = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          num.setAttribute("x", nx); num.setAttribute("y", ny + 6);
+          num.setAttribute("text-anchor", "middle"); num.setAttribute("fill", "#0a0f0a");
+          num.setAttribute("font-size", "10"); num.setAttribute("font-weight", "800");
+          num.textContent = Math.round(val2 * 100);
+          svg.appendChild(num);
+        }
+      }
+    }
+
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "pizza-comparison.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>    <div id="cardExport" style="background: #0f1a0f; padding: 20px; border-radius: 20px;">
       <svg id="pizzaSVG" viewBox="0 0 500 500" width="100%"></svg>
     </div>
   </div>
