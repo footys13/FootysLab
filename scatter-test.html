@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE FOOTYS · Universal CSV Scatterplot</title>
+    <title>THE FOOTYS · Scatterplot | Fixed Player Names</title>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -42,7 +42,7 @@
             text-align: center;
             background: #0b130b;
         }
-        .upload-box button, .demo-btn {
+        .upload-box button {
             background: #1e2a1e;
             border: 1px solid #4ade80;
             color: #4ade80;
@@ -54,7 +54,7 @@
             margin: 8px 6px;
             font-family: 'Barlow', sans-serif;
         }
-        .upload-box button:hover, .demo-btn:hover {
+        .upload-box button:hover {
             background: #4ade80;
             color: #0a0f0a;
         }
@@ -137,10 +137,10 @@
         }
         .player-name {
             font-family: 'Barlow Condensed', sans-serif;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 900;
             text-transform: uppercase;
-            line-height: 1;
+            line-height: 1.2;
             margin-bottom: 6px;
         }
         .p1-name { color: #4ade80; }
@@ -227,15 +227,15 @@
     </style>
 </head>
 <body>
-<div class="topbar">⚽ THE FOOTYS · UNIVERSAL CSV SCATTERPLOT | ANY CSV, ANY STATS</div>
+<div class="topbar">⚽ THE FOOTYS · SCATTERPLOT | UPLOAD CSV → SELECT PLAYERS → COMPARE</div>
 
 <div id="uploadScreen">
     <div class="upload-box">
-        <p>📁 UPLOAD ANY CSV FILE</p>
+        <p>📁 UPLOAD YOUR CSV FILE</p>
         <input type="file" id="csvUpload" accept=".csv" style="display: none;">
         <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
-        <button id="demoBtn" class="demo-btn">⭐ LOAD DEMO</button>
-        <div class="file-info">CSV must have a column with player names. Any numeric columns work for X/Y axes.</div>
+        <button id="demoBtn" style="background:#2a3e2a;">⭐ LOAD DEMO</button>
+        <div class="file-info">Your CSV: First column = row index, Second column = Player Name, then Age, League, Position, Team, then stats.</div>
         <div id="uploadStatus" class="status-msg"></div>
     </div>
 </div>
@@ -244,11 +244,11 @@
     <div class="controls-panel">
         <div class="axis-dual">
             <div class="axis-selector">
-                <label>📊 X-AXIS</label>
+                <label>📊 X-AXIS STAT</label>
                 <select id="xAxisSelect"></select>
             </div>
             <div class="axis-selector">
-                <label>📈 Y-AXIS</label>
+                <label>📈 Y-AXIS STAT</label>
                 <select id="yAxisSelect"></select>
             </div>
         </div>
@@ -296,116 +296,86 @@
     let currentX = "", currentY = "";
     let numericCols = [];
 
-    // Smart CSV parser - finds Player column automatically
+    // CSV parser - specifically for your format: index,Player,Age,League,Position,Team,stats...
     function parseCSV(csvText) {
         const lines = csvText.trim().split(/\r?\n/);
         if (lines.length < 2) throw new Error("Not enough rows");
         
-        let headers = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"/, '').replace(/"$/, ''));
+        // Get headers from first row
+        let headers = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, ''));
         
-        // Remove empty first column if exists (row numbers)
-        if (headers[0] === "" || headers[0] === " ") {
-            headers = headers.slice(1);
-        }
+        // Find columns by position (your specific format)
+        // Column 0 = row index (ignore)
+        // Column 1 = Player Name
+        // Column 2 = Age
+        // Column 3 = League
+        // Column 4 = Position
+        // Column 5 = Team
+        // Column 6+ = stats
         
-        // Find Player column - look for column that contains player names (not numeric)
-        let playerColIdx = -1;
-        let playerColName = "";
+        const playerNameCol = 1;  // Second column has player names
+        const positionCol = 4;    // Fifth column has position
+        const leagueCol = 3;      // Fourth column has league
         
-        // First try exact match
-        for (let i = 0; i < headers.length; i++) {
-            if (headers[i].toLowerCase() === "player") {
-                playerColIdx = i;
-                playerColName = headers[i];
-                break;
+        // Get numeric column names (from column 6 onward)
+        const numericColNames = [];
+        for (let i = 6; i < headers.length; i++) {
+            if (headers[i] && headers[i] !== "") {
+                numericColNames.push(headers[i]);
             }
         }
         
-        // If not found, try case-insensitive or first text column
-        if (playerColIdx === -1) {
-            for (let i = 0; i < headers.length; i++) {
-                const lower = headers[i].toLowerCase();
-                if (lower.includes("player") || lower.includes("name")) {
-                    playerColIdx = i;
-                    playerColName = headers[i];
-                    break;
-                }
-            }
-        }
-        
-        // Still not found? Look at sample rows to find a column with text names
-        if (playerColIdx === -1) {
-            const sampleRow = lines[1].split(",");
-            for (let i = 0; i < headers.length; i++) {
-                const val = sampleRow[i]?.trim();
-                if (val && isNaN(parseFloat(val))) {
-                    playerColIdx = i;
-                    playerColName = headers[i];
-                    break;
-                }
-            }
-        }
-        
-        if (playerColIdx === -1) throw new Error("Could not find a column with player names");
-        
-        // Find Position column (optional)
-        let posColIdx = -1;
-        for (let i = 0; i < headers.length; i++) {
-            if (headers[i].toLowerCase().includes("position")) {
-                posColIdx = i;
-                break;
-            }
-        }
-        
-        // Parse all rows
         const players = [];
-        const numericCandidates = [];
         
         for (let i = 1; i < lines.length; i++) {
-            let values = lines[i].split(",");
-            if (values[0] === "" && values.length > headers.length) values = values.slice(1);
-            if (values.length < headers.length) continue;
+            const values = lines[i].split(",");
+            if (values.length < 7) continue;
             
-            const playerName = values[playerColIdx]?.trim();
+            let playerName = values[playerNameCol]?.trim();
             if (!playerName || playerName === "") continue;
             
-            const player = { Player: playerName };
-            if (posColIdx !== -1 && values[posColIdx]) {
-                player.Position = values[posColIdx].trim();
-            } else {
-                player.Position = "Player";
-            }
+            // Clean player name (remove any extra quotes)
+            playerName = playerName.replace(/^"/, '').replace(/"$/, '');
             
-            for (let j = 0; j < headers.length; j++) {
-                if (j === playerColIdx) continue;
-                if (posColIdx !== -1 && j === posColIdx) continue;
+            const position = values[positionCol]?.trim().replace(/^"/, '').replace(/"$/, '') || "Player";
+            const league = values[leagueCol]?.trim().replace(/^"/, '').replace(/"$/, '') || "";
+            
+            const player = { 
+                Player: playerName,
+                Position: position,
+                League: league
+            };
+            
+            // Parse numeric stats (starting from column 6)
+            for (let j = 6; j < Math.min(values.length, headers.length); j++) {
+                const header = headers[j];
+                if (!header) continue;
                 const val = parseFloat(values[j]);
                 if (!isNaN(val)) {
-                    player[headers[j]] = val;
-                    if (!numericCandidates.includes(headers[j])) numericCandidates.push(headers[j]);
+                    player[header] = val;
                 }
             }
+            
             players.push(player);
         }
         
         if (players.length === 0) throw new Error("No valid players found");
         
-        return { players, numericCols: numericCandidates };
+        return { players, numericCols: numericColNames };
     }
 
     // Demo dataset
     function getDemoData() {
         return {
             players: [
-                { Player: "Muhammad Hannan", Position: "AMF", "npxG per 90": 0.89, "Goal conversion %": 0.80, "Progressive passes per 90": 6.2, "Progressive runs per 90": 4.7 },
-                { Player: "Arkhan Fikri", Position: "LCMF", "npxG per 90": 0.59, "Goal conversion %": 0.69, "Progressive passes per 90": 5.1, "Progressive runs per 90": 3.4 },
-                { Player: "J. Villa", Position: "AMF", "npxG per 90": 0.90, "Goal conversion %": 0.93, "Progressive passes per 90": 8.1, "Progressive runs per 90": 5.8 },
-                { Player: "T. Yachida", Position: "AMF", "npxG per 90": 0.81, "Goal conversion %": 0.75, "Progressive passes per 90": 7.8, "Progressive runs per 90": 3.9 },
-                { Player: "T. Haye", Position: "AMF", "npxG per 90": 0.75, "Goal conversion %": 0.64, "Progressive passes per 90": 6.7, "Progressive runs per 90": 5.3 },
-                { Player: "Tyronne", Position: "AMF", "npxG per 90": 0.97, "Goal conversion %": 0.86, "Progressive passes per 90": 8.5, "Progressive runs per 90": 5.0 },
-                { Player: "Pablo Ganet", Position: "LCMF", "npxG per 90": 0.80, "Goal conversion %": 0.67, "Progressive passes per 90": 5.9, "Progressive runs per 90": 4.2 }
+                { Player: "Hokky Caraka", Position: "RAMF", "Non-penalty goals per 90": 0.46, "Goal conversion %": 0.50, "Progressive passes per 90": 0.28, "Progressive runs per 90": 0.52 },
+                { Player: "Gali Freitas", Position: "RAMF", "Non-penalty goals per 90": 0.68, "Goal conversion %": 0.56, "Progressive passes per 90": 0.68, "Progressive runs per 90": 0.91 },
+                { Player: "R. Saepul", Position: "RW", "Non-penalty goals per 90": 0.19, "Goal conversion %": 0.62, "Progressive passes per 90": 0.31, "Progressive runs per 90": 0.21 },
+                { Player: "Muhammad Hannan", Position: "AMF", "Non-penalty goals per 90": 0.62, "Goal conversion %": 0.55, "Progressive passes per 90": 0.58, "Progressive runs per 90": 0.52 },
+                { Player: "F. Nimo Olepue", Position: "RW", "Non-penalty goals per 90": 0.12, "Goal conversion %": 0.29, "Progressive passes per 90": 0.62, "Progressive runs per 90": 0.79 },
+                { Player: "Rahmat Arjuna", Position: "LW", "Non-penalty goals per 90": 0.04, "Goal conversion %": 0.04, "Progressive passes per 90": 0.44, "Progressive runs per 90": 0.98 }
             ],
-            numericCols: ["npxG per 90", "Goal conversion %", "Progressive passes per 90", "Progressive runs per 90"]
+            numericCols: ["Non-penalty goals per 90", "Goal conversion %", "Progressive passes per 90", "Progressive runs per 90"]
         };
     }
 
@@ -415,7 +385,10 @@
         if (!currentData.length || !currentX || !currentY) return;
         
         const plotData = currentData.filter(p => p[currentX] !== undefined && p[currentY] !== undefined);
-        if (plotData.length === 0) return;
+        if (plotData.length === 0) {
+            svg.append("text").attr("x", 360).attr("y", 260).attr("text-anchor", "middle").style("fill", "#9ca3af").text("No data for selected axes");
+            return;
+        }
         
         const width = 720, height = 520;
         const margin = { top: 28, right: 32, bottom: 48, left: 62 };
@@ -433,41 +406,82 @@
         const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, innerW]);
         const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerH, 0]);
         
-        chart.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).ticks(7)).style("color", "#b0c4b0");
-        chart.append("g").call(d3.axisLeft(yScale).ticks(7)).style("color", "#b0c4b0");
+        // Grids
+        chart.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).tickSize(-innerH).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chart.append("g").call(d3.axisLeft(yScale).tickSize(-innerW).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chart.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
+        chart.append("g").call(d3.axisLeft(yScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
         
-        chart.append("text").attr("x", innerW/2).attr("y", innerH + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").text(currentX);
-        chart.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").text(currentY);
+        // Labels
+        chart.append("text").attr("x", innerW/2).attr("y", innerH + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentX.toUpperCase());
+        chart.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentY.toUpperCase());
         
         const tooltip = d3.select("body").append("div").attr("class", "tooltip-div").style("opacity", 0);
         
         plotData.forEach(p => {
             let color = "#6c757d";
-            if (selectedP1 && p.Player === selectedP1.Player) color = "#4ade80";
-            else if (selectedP2 && p.Player === selectedP2.Player) color = "#f87171";
+            let strokeWidth = 1.2;
+            if (selectedP1 && p.Player === selectedP1.Player) {
+                color = "#4ade80";
+                strokeWidth = 2.5;
+            } else if (selectedP2 && p.Player === selectedP2.Player) {
+                color = "#f87171";
+                strokeWidth = 2.5;
+            }
             
             chart.append("circle")
                 .attr("cx", xScale(p[currentX]))
                 .attr("cy", yScale(p[currentY]))
                 .attr("r", 7)
                 .attr("fill", color)
-                .attr("stroke", "#1a2e1a")
-                .attr("stroke-width", 1.5)
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", strokeWidth)
+                .attr("opacity", 0.85)
                 .on("mouseover", function(e) {
-                    tooltip.style("opacity", 1).html(`<strong>${p.Player}</strong><br/>📌 ${p.Position}<br/>${currentX}: ${p[currentX]?.toFixed(2) || "?"}<br/>${currentY}: ${p[currentY]?.toFixed(2) || "?"}`)
+                    tooltip.style("opacity", 1).html(`<strong>${p.Player}</strong><br/>📌 ${p.Position}<br/>${currentX}: ${p[currentX]?.toFixed(3) || "?"}<br/>${currentY}: ${p[currentY]?.toFixed(3) || "?"}`)
                         .style("left", (e.pageX + 12) + "px").style("top", (e.pageY - 28) + "px");
                 })
                 .on("mouseout", () => tooltip.style("opacity", 0));
         });
+        
+        // Add player name labels for selected players
+        if (selectedP1) {
+            const p1 = selectedP1;
+            if (p1[currentX] !== undefined && p1[currentY] !== undefined) {
+                chart.append("text")
+                    .attr("x", xScale(p1[currentX]) + 10)
+                    .attr("y", yScale(p1[currentY]) - 5)
+                    .text(p1.Player.split(" ")[0])
+                    .attr("font-size", "9px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "#4ade80")
+                    .attr("stroke", "#0a0f0a")
+                    .attr("stroke-width", "0.5");
+            }
+        }
+        if (selectedP2) {
+            const p2 = selectedP2;
+            if (p2[currentX] !== undefined && p2[currentY] !== undefined) {
+                chart.append("text")
+                    .attr("x", xScale(p2[currentX]) + 10)
+                    .attr("y", yScale(p2[currentY]) - 5)
+                    .text(p2.Player.split(" ")[0])
+                    .attr("font-size", "9px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "#f87171")
+                    .attr("stroke", "#0a0f0a")
+                    .attr("stroke-width", "0.5");
+            }
+        }
     }
     
     function updateUI() {
         if (!selectedP1 && !selectedP2) return;
         document.getElementById("p1Name").innerText = selectedP1?.Player || "—";
-        document.getElementById("p1Meta").innerHTML = `${currentX}: <span>${selectedP1?.[currentX]?.toFixed(2) || "?"}</span> &nbsp;| ${currentY}: <span>${selectedP1?.[currentY]?.toFixed(2) || "?"}</span>`;
+        document.getElementById("p1Meta").innerHTML = `${currentX}: <span>${selectedP1?.[currentX]?.toFixed(3) || "?"}</span> &nbsp;| ${currentY}: <span>${selectedP1?.[currentY]?.toFixed(3) || "?"}</span>`;
         document.getElementById("p1Pos").innerText = selectedP1?.Position || "—";
         document.getElementById("p2Name").innerText = selectedP2?.Player || "—";
-        document.getElementById("p2Meta").innerHTML = `${currentX}: <span>${selectedP2?.[currentX]?.toFixed(2) || "?"}</span> &nbsp;| ${currentY}: <span>${selectedP2?.[currentY]?.toFixed(2) || "?"}</span>`;
+        document.getElementById("p2Meta").innerHTML = `${currentX}: <span>${selectedP2?.[currentX]?.toFixed(3) || "?"}</span> &nbsp;| ${currentY}: <span>${selectedP2?.[currentY]?.toFixed(3) || "?"}</span>`;
         document.getElementById("p2Pos").innerText = selectedP2?.Position || "—";
         renderScatter();
     }
@@ -565,7 +579,7 @@
     document.getElementById("player1Select").onchange = (e) => {
         const newP1 = currentData.find(p => p.Player === e.target.value);
         if (newP1 && selectedP2 && newP1.Player === selectedP2.Player) {
-            alert("Different players required");
+            alert("Please select two different players");
             document.getElementById("player1Select").value = selectedP1.Player;
             return;
         }
@@ -575,7 +589,7 @@
     document.getElementById("player2Select").onchange = (e) => {
         const newP2 = currentData.find(p => p.Player === e.target.value);
         if (newP2 && selectedP1 && newP2.Player === selectedP1.Player) {
-            alert("Different players required");
+            alert("Please select two different players");
             document.getElementById("player2Select").value = selectedP2.Player;
             return;
         }
