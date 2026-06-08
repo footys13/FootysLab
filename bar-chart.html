@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Percentile Bar Chart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 620px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 620px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 620px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+    }
+
+    /* Header pemain */
+    .player-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .player-header .name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: white;
+      margin-bottom: 4px;
+    }
+    .player-header .info {
+      font-size: 11px;
+      color: #6b7280;
+      letter-spacing: 1px;
+    }
+    .player-header .info span { color: #9ca3af; }
+
+    /* Section label */
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin: 16px 0 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+
+    /* Bar rows */
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+    .bar-stat-label {
+      font-size: 11px;
+      color: #9ca3af;
+      width: 160px;
+      flex-shrink: 0;
+      text-align: right;
+      letter-spacing: 0.3px;
+    }
+    .bar-track {
+      flex: 1;
+      background: #161f16;
+      border-radius: 4px;
+      height: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.8s ease;
+    }
+    .bar-high { background: #1d4ed8; }
+    .bar-mid  { background: #92400e; }
+    .bar-low  { background: #92400e; }
+    .bar-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #e5e7eb;
+      width: 32px;
+      flex-shrink: 0;
+      text-align: left;
+    }
+
+    /* X axis */
+    .x-axis {
+      display: flex;
+      margin-top: 12px;
+      padding-left: 168px;
+    }
+    .x-axis-track {
+      flex: 1;
+      position: relative;
+      height: 20px;
+    }
+    .x-tick {
+      position: absolute;
+      font-size: 9px;
+      color: #4b5563;
+      transform: translateX(-50%);
+    }
+    .x-label {
+      text-align: center;
+      font-size: 10px;
+      color: #4b5563;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      padding-left: 168px;
+    }
+
+    .watermark {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #1a2e1a;
+    }
+    .btn-export {
+      margin-top: 16px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">THE FOOTYS · PERCENTILE BAR CHART</div>
+
+  <div id="uploadScreen">
+    <div class="upload-box">
+      <p>Upload CSV database</p>
+      <input type="file" id="inputCSV" accept=".csv">
+    </div>
+  </div>
+
+  <div id="mainScreen">
+    <select id="selectPemain" onchange="updateChart()"></select>
+
+    <div class="card" id="cardExport">
+
+      <div class="player-header">
+        <div class="name" id="playerName">-</div>
+        <div class="info">
+          <span id="playerTeam">-</span> &nbsp;|&nbsp;
+          <span id="playerPos">-</span> &nbsp;|&nbsp;
+          Age <span id="playerAge">-</span> &nbsp;|&nbsp;
+          Per 90 Percentiles
+        </div>
+      </div>
+
+      <div id="barsContainer"></div>
+
+      <div class="x-axis">
+        <div class="x-axis-track">
+          <span class="x-tick" style="left:0%">0</span>
+          <span class="x-tick" style="left:20%">20</span>
+          <span class="x-tick" style="left:40%">40</span>
+          <span class="x-tick" style="left:60%">60</span>
+          <span class="x-tick" style="left:80%">80</span>
+          <span class="x-tick" style="left:100%">100</span>
+        </div>
+      </div>
+      <div class="x-label">Percentile</div>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+    <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    const SECTIONS = [
+      {
+        label: "Attacking",
+        stats: [
+          { key: "Non-penalty goals per 90", label: "Non-penalty goals" },
+          { key: "npxG per 90",              label: "npxG"              },
+          { key: "Goal conversion, %",        label: "Goal conversion %" },
+          { key: "Touches in box per 90",    label: "Touches in box"    }
+        ]
+      },
+      {
+        label: "Creativity",
+        stats: [
+          { key: "Shot assists per 90",      label: "Shot assists"      },
+          { key: "xA per 90",                label: "xA"                },
+          { key: "Assists per 90",           label: "Assists"           },
+          { key: "Second assists per 90",    label: "Second assists"    },
+          { key: "Third assists per 90",     label: "Third assists"     },
+          { key: "Accurate crosses, %",      label: "Accurate crosses %" },
+          { key: "Crosses per 90",           label: "Crosses"           }
+        ]
+      },
+      {
+        label: "Possession",
+        stats: [
+          { key: "Passes per 90",                      label: "Passes"              },
+          { key: "Accurate short / medium passes, %",  label: "Short/med pass acc %" },
+          { key: "Successful dribbles, %",             label: "Successful dribbles %" },
+          { key: "Accurate long passes, %",            label: "Long pass acc %"      }
+        ]
+      },
+      {
+        label: "Progression",
+        stats: [
+          { key: "Progressive passes per 90", label: "Progressive passes" },
+          { key: "Progressive runs per 90",   label: "Progressive runs"   },
+          { key: "1st, 2nd, 3rd assists",     label: "1st/2nd/3rd assists"}
+        ]
+      },
+      {
+        label: "Defending",
+        stats: [
+          { key: "Duels won, %",                        label: "Duels won %"          },
+          { key: "Defensive duels won, %",              label: "Defensive duels won %" },
+          { key: "Aerial duels won, %",                 label: "Aerial duels won %"    },
+          { key: "pAdj Tkl+Int per 90",                 label: "pAdj Tkl+Int"          },
+          { key: "Successful defensive actions per 90", label: "Def. actions"          },
+          { key: "PAdj Sliding tackles",                label: "PAdj sliding tackles"  },
+          { key: "PAdj Interceptions",                  label: "PAdj interceptions"    },
+          { key: "Fouls per 90",                        label: "Fouls"                 }
+        ]
+      }
+    ];
+
+    let dataPemain = [];
+
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    document.getElementById("inputCSV").onchange = function() {
+      const file = this.files[0];
+      if (!file) return;
+      fetch(URL.createObjectURL(file))
+        .then(function(r) {
+          r.text().then(function(teks) {
+            dataPemain = prosesCSV(teks);
+            const sel = document.getElementById("selectPemain");
+            sel.innerHTML = "";
+            dataPemain.forEach(function(p, i) {
+              sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+            });
+            document.getElementById("uploadScreen").style.display = "none";
+            document.getElementById("mainScreen").style.display = "block";
+            updateChart();
+          });
+        });
+    };
+
+    function updateChart() {
+      const i = document.getElementById("selectPemain").value;
+      const p = dataPemain[i];
+      if (!p) return;
+
+      document.getElementById("playerName").textContent = p["Player"];
+      document.getElementById("playerTeam").textContent = p["Team"];
+      document.getElementById("playerPos").textContent  = p["Position"];
+      document.getElementById("playerAge").textContent  = p["Age"];
+
+      const container = document.getElementById("barsContainer");
+      container.innerHTML = "";
+
+      SECTIONS.forEach(function(section) {
+        // Section label
+        const label = document.createElement("div");
+        label.className = "section-label";
+        label.textContent = section.label;
+        container.appendChild(label);
+
+        // Bars
+        section.stats.forEach(function(stat) {
+          const val = parseFloat(p[stat.key]) || 0;
+          const pct = Math.round(val * 100);
+          const isHigh = pct >= 50;
+
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          row.innerHTML = `
+            <span class="bar-stat-label">${stat.label}</span>
+            <div class="bar-track">
+              <div class="bar-fill ${isHigh ? 'bar-high' : 'bar-mid'}"
+                   id="bar_${stat.key.replace(/[^a-zA-Z0-9]/g, '_')}"
+                   style="width:0%"></div>
+            </div>
+            <span class="bar-val">${pct}</span>
+          `;
+          container.appendChild(row);
+        });
+      });
+
+      // Animasi bars
+      setTimeout(function() {
+        SECTIONS.forEach(function(section) {
+          section.stats.forEach(function(stat) {
+            const val = parseFloat(p[stat.key]) || 0;
+            const pct = Math.round(val * 100);
+            const bar = document.getElementById("bar_" + stat.key.replace(/[^a-zA-Z0-9]/g, '_'));
+            if (bar) bar.style.width = pct + "%";
+          });
+        });
+      }, 100);
+    }
+
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "percentile-bar.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>
