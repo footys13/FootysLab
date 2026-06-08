@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ScoutHub · Progressive Passes vs Runs | Central Midfielders</title>
+    <!-- Google Fonts & D3 library -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0f0a;
+            color: white;
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+        .topbar {
+            width: 100%;
+            max-width: 780px;
+            border-left: 3px solid #4ade80;
+            padding: 12px 20px;
+            background: #0f1a0f;
+            letter-spacing: 2px;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+        #uploadScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            width: 100%;
+            max-width: 780px;
+        }
+        .upload-box {
+            border: 2px dashed #1f2d1f;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+            background: #0b130b;
+        }
+        .upload-box p {
+            color: #4b5563;
+            letter-spacing: 1px;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .upload-box button, .demo-btn {
+            background: #1e2a1e;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 8px 6px;
+            transition: all 0.2s;
+            font-family: 'Barlow', sans-serif;
+        }
+        .upload-box button:hover, .demo-btn:hover {
+            background: #4ade80;
+            color: #0a0f0a;
+            border-color: #4ade80;
+        }
+        #mainScreen {
+            display: none;
+            width: 100%;
+            max-width: 780px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        select {
+            width: 100%;
+            background: #161f16;
+            color: white;
+            border: 1px solid #2d4a2d;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-family: 'Barlow', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .card {
+            background: #0f1a0f;
+            border-radius: 24px;
+            padding: 24px 20px 20px 20px;
+            width: 100%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        .card-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a2e1a;
+        }
+        .player-card {
+            background: #0c140c;
+            border-radius: 18px;
+            padding: 12px 14px;
+        }
+        .player-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .p1-name { color: #4ade80; }
+        .p2-name { color: #f87171; }
+        .player-meta {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .player-meta span { color: #e5e7eb; font-weight: 600; }
+        .position-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+        .badge-p1 { background: #4ade80; color: #0a0f0a; }
+        .badge-p2 { background: #f87171; color: #0a0f0a; }
+        .legend-players {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .legend-cats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .legend-cat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .legend-cat-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6b7280;
+        }
+        .bubble-sample {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .bubble-mini {
+            background: #b0b3b8;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .viz-container {
+            position: relative;
+            width: 100%;
+            margin: 8px 0 8px 0;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+            background: #0c130c;
+            border-radius: 20px;
+            width: 100%;
+            height: auto;
+            font-family: 'Barlow', sans-serif;
+        }
+        .tooltip-div {
+            position: absolute;
+            background: #1a261a;
+            border-left: 3px solid #4ade80;
+            color: #f0f3f0;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            white-space: nowrap;
+        }
+        .watermark {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-transform: uppercase;
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .btn-export {
+            margin-top: 20px;
+            background: #161f16;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-export:hover {
+            background: #1e331e;
+            border-color: #86efac;
+            color: #bbf7d0;
+        }
+        .axis-label {
+            fill: #9ca3af;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .note {
+            font-size: 9px;
+            text-align: center;
+            color: #4b5563;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="topbar" id="infoBar">⚽ PROGRESSIVE METRICS · CENTRAL MIDFIELDERS · TOP 5 LEAGUES 25/26</div>
+
+<!-- UPLOAD SCREEN (initial) -->
+<div id="uploadScreen">
+    <div class="upload-box">
+        <p>📁 UPLOAD CSV OR USE DEMO DATA</p>
+        <input type="file" id="csvUpload" accept=".csv" style="display: none;">
+        <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
+        <button id="demoDataBtn" class="demo-btn">⚡ LOAD DEMO (SCOUT PACK)</button>
+        <div style="margin-top: 20px; font-size: 10px; color:#3a4a3a;">CSV format: Player,ProgressivePasses,ProgressiveRuns,Minutes,Position</div>
+    </div>
+</div>
+
+<!-- MAIN DASHBOARD (scatterplot + comparison) -->
+<div id="mainScreen">
+    <div class="controls">
+        <select id="player1Select"></select>
+        <select id="player2Select"></select>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <div class="player-card">
+                <div class="player-name p1-name" id="p1Name">—</div>
+                <div class="player-meta" id="p1Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
+                <div class="position-badge badge-p1" id="p1Pos">CM</div>
+            </div>
+            <div class="player-card">
+                <div class="player-name p2-name" id="p2Name">—</div>
+                <div class="player-meta" id="p2Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
+                <div class="position-badge badge-p2" id="p2Pos">CM</div>
+            </div>
+        </div>
+
+        <div class="legend-players">
+            <div class="legend-item"><div class="legend-dot" style="background: #4ade80; border:1px solid white;"></div> PLAYER 1 (GREEN)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #f87171; border:1px solid white;"></div> PLAYER 2 (RED)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #6c757d; border:1px solid #2d3e2d;"></div> OTHER MIDFIELDERS</div>
+        </div>
+        <div class="legend-cats">
+            <div class="legend-cat"><span class="legend-cat-dot" style="background:#9ca3af; width:8px; height:8px;"></span> Bubble size = Minutes played</div>
+            <div class="legend-cat"><span style="display:inline-block; width:12px; height:12px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> 900 min</div>
+            <div class="legend-cat"><span style="display:inline-block; width:18px; height:18px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> 2000+ min</div>
+        </div>
+
+        <div class="viz-container">
+            <svg id="scatterplot" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="note">🔵 Bubble radius = minutes played (scaled) • Axes: Progressive passes (total) vs Progressive runs (total) • Min 900'</div>
+        <button class="btn-export" id="exportChartBtn">📸 EXPORT AS PNG</button>
+        <div class="watermark">SCOUT · DATA VIZ | PROGRESSIVE IMPACT</div>
+    </div>
+</div>
+
+<script>
+    // ---------------------------------- DATA STRUCTURE ----------------------------------
+    let currentDataset = [];        // array of objects
+    let selectedP1 = null, selectedP2 = null;
+    let currentTooltip = null;
+
+    // ---- Default demo dataset (Top5 leagues, min 900min, central mids) ----
+    const DEFAULT_MIDS = [
+        { Player: "L. Bergvall", ProgressivePasses: 78, ProgressiveRuns: 48, Minutes: 1840, Position: "CM" },
+        { Player: "P. Sarj", ProgressivePasses: 62, ProgressiveRuns: 57, Minutes: 1670, Position: "CM" },
+        { Player: "A. Gray", ProgressivePasses: 91, ProgressiveRuns: 35, Minutes: 2020, Position: "CM/DM" },
+        { Player: "C. Gallagher", ProgressivePasses: 98, ProgressiveRuns: 39, Minutes: 2190, Position: "CM" },
+        { Player: "R. Bentancur", ProgressivePasses: 68, ProgressiveRuns: 30, Minutes: 1480, Position: "CM" },
+        { Player: "João Palhinha", ProgressivePasses: 118, ProgressiveRuns: 16, Minutes: 2350, Position: "DM" },
+        { Player: "Rodri", ProgressivePasses: 134, ProgressiveRuns: 22, Minutes: 2550, Position: "DM" },
+        { Player: "F. Valverde", ProgressivePasses: 105, ProgressiveRuns: 52, Minutes: 2410, Position: "CM" },
+        { Player: "E. Camavinga", ProgressivePasses: 81, ProgressiveRuns: 44, Minutes: 1730, Position: "CM" },
+        { Player: "Bruno Guimarães", ProgressivePasses: 102, ProgressiveRuns: 31, Minutes: 2280, Position: "CM" },
+        { Player: "Tchouaméni", ProgressivePasses: 73, ProgressiveRuns: 25, Minutes: 1980, Position: "DM" },
+        { Player: "K. Mainoo", ProgressivePasses: 69, ProgressiveRuns: 38, Minutes: 1570, Position: "CM" },
+        { Player: "Vitinha", ProgressivePasses: 95, ProgressiveRuns: 29, Minutes: 2120, Position: "CM" },
+        { Player: "F. Ruiz", ProgressivePasses: 87, ProgressiveRuns: 21, Minutes: 1900, Position: "CM" },
+        { Player: "A. Rabiot", ProgressivePasses: 74, ProgressiveRuns: 26, Minutes: 1820, Position: "CM" },
+        { Player: "M. Ødegaard", ProgressivePasses: 112, ProgressiveRuns: 27, Minutes: 2310, Position: "AM/CM" },
+        { Player: "N. Barella", ProgressivePasses: 92, ProgressiveRuns: 41, Minutes: 2220, Position: "CM" },
+        { Player: "Pedri", ProgressivePasses: 108, ProgressiveRuns: 33, Minutes: 2060, Position: "CM" },
+        { Player: "F. Kessié", ProgressivePasses: 63, ProgressiveRuns: 20, Minutes: 1320, Position: "CM" },
+        { Player: "J. Maddison", ProgressivePasses: 86, ProgressiveRuns: 32, Minutes: 1780, Position: "CM" }
+    ];
+
+    // highlight labels for specific players (image reference)
+    const HIGHLIGHT_LABELS = new Set(["L. Bergvall", "P. Sarj", "A. Gray", "C. Gallagher", "R. Bentancur", "João Palhinha"]);
+
+    // ---------- Helper: radius scale based on minutes (range 5px to 17px) ----------
+    function getRadius(minutes, allMinsArray) {
+        const minMin = Math.min(...allMinsArray, 900);
+        const maxMin = Math.max(...allMinsArray, 2800);
+        const t = (minutes - minMin) / (maxMin - minMin);
+        const r = 5 + t * 13;   // 5..18
+        return Math.min(18, Math.max(4.5, r));
+    }
+
+    // draw / update scatterplot with current dataset & selected players
+    function renderScatter(data, p1, p2) {
+        const svg = d3.select("#scatterplot");
+        svg.selectAll("*").remove();
+        if (!data.length) return;
+
+        const width = 720, height = 520;
+        const margin = { top: 28, right: 32, bottom: 48, left: 62 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        const chartGroup = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+        // extents
+        const maxPasses = d3.max(data, d => d.ProgressivePasses) + 8;
+        const minPasses = d3.min(data, d => d.ProgressivePasses) - 5;
+        const maxRuns = d3.max(data, d => d.ProgressiveRuns) + 6;
+        const minRuns = d3.min(data, d => d.ProgressiveRuns) - 4;
+        
+        const xScale = d3.scaleLinear()
+            .domain([Math.max(0, minPasses), maxPasses])
+            .range([0, innerWidth]);
+        const yScale = d3.scaleLinear()
+            .domain([Math.max(0, minRuns), maxRuns])
+            .range([innerHeight, 0]);
+        
+        const allMinutes = data.map(d => d.Minutes);
+        const radiusScale = (mins) => getRadius(mins, allMinutes);
+        
+        // ----- axes with grid -----
+        chartGroup.append("g")
+            .attr("class", "grid")
+            .attr("transform", `translate(0,${innerHeight})`)
+            .call(d3.axisBottom(xScale).tickSize(-innerHeight).ticks(8))
+            .style("color", "#2a3e2a")
+            .style("font-size", "9px");
+        chartGroup.append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(yScale).tickSize(-innerWidth).ticks(8))
+            .style("color", "#2a3e2a")
+            .style("font-size", "9px");
+        
+        // main axes lines
+        chartGroup.append("g")
+            .attr("transform", `translate(0,${innerHeight})`)
+            .call(d3.axisBottom(xScale).tickSize(5).ticks(7))
+            .style("color", "#b0c4b0")
+            .style("font-weight", "500");
+        chartGroup.append("g")
+            .call(d3.axisLeft(yScale).tickSize(5).ticks(7))
+            .style("color", "#b0c4b0");
+        
+        // axis labels
+        chartGroup.append("text")
+            .attr("x", innerWidth/2)
+            .attr("y", innerHeight + 38)
+            .attr("text-anchor", "middle")
+            .style("fill", "#9ca3af")
+            .style("font-size", "11px")
+            .style("font-weight", "600")
+            .style("letter-spacing", "1px")
+            .text("PROGRESSIVE PASSES (completed)");
+        chartGroup.append("text")
+            .attr("x", -38)
+            .attr("y", 12)
+            .attr("text-anchor", "middle")
+            .attr("transform", "rotate(-90)")
+            .style("fill", "#9ca3af")
+            .style("font-size", "11px")
+            .style("font-weight", "600")
+            .style("letter-spacing", "1px")
+            .text("PROGRESSIVE RUNS");
+        
+        // ---- BUBBLES ----
+        const tooltipDiv = d3.select("body").append("div")
+            .attr("class", "tooltip-div")
+            .style("opacity", 0)
+            .style("position", "absolute");
+        
+        data.forEach(player => {
+            const cx = xScale(player.ProgressivePasses);
+            const cy = yScale(player.ProgressiveRuns);
+            const rad = radiusScale(player.Minutes);
+            let fillColor = "#6c757d";
+            let strokeWidth = 1.2;
+            let strokeColor = "#2d422d";
+            if (p1 && player.Player === p1.Player) {
+                fillColor = "#4ade80";
+                strokeWidth = 2.5;
+                strokeColor = "#ffffff";
+            } else if (p2 && player.Player === p2.Player) {
+                fillColor = "#f87171";
+                strokeWidth = 2.5;
+                strokeColor = "#ffffff";
+            } else {
+                fillColor = "#4b5563";
+                strokeColor = "#1f2a1f";
+            }
+            
+            chartGroup.append("circle")
+                .attr("cx", cx)
+                .attr("cy", cy)
+                .attr("r", rad)
+                .attr("fill", fillColor)
+                .attr("stroke", strokeColor)
+                .attr("stroke-width", strokeWidth)
+                .attr("opacity", 0.85)
+                .attr("cursor", "pointer")
+                .on("mouseover", function(event) {
+                    tooltipDiv.style("opacity", 1)
+                        .html(`<strong>${player.Player}</strong><br/>🎯 Prog passes: ${player.ProgressivePasses}<br/>🏃 Prog runs: ${player.ProgressiveRuns}<br/>⏱️ Minutes: ${player.Minutes}<br/>📌 ${player.Position}`)
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltipDiv.style("opacity", 0);
+                });
+        });
+        
+        // ---- LABELS for reference players (based on image: Bergvall, Sarj, Gray, Gallagher, Bentancur, Palhinha)
+        data.forEach(player => {
+            if (HIGHLIGHT_LABELS.has(player.Player)) {
+                const cx = xScale(player.ProgressivePasses);
+                const cy = yScale(player.ProgressiveRuns);
+                const rad = radiusScale(player.Minutes);
+                let labelColor = "#e2e8f0";
+                if (p1 && player.Player === p1.Player) labelColor = "#bef264";
+                else if (p2 && player.Player === p2.Player) labelColor = "#fca5a5";
+                else labelColor = "#cbd5e1";
+                chartGroup.append("text")
+                    .attr("x", cx + rad + 5)
+                    .attr("y", cy - 3)
+                    .text(player.Player)
+                    .attr("font-size", "9px")
+                    .attr("font-weight", "700")
+                    .attr("fill", labelColor)
+                    .attr("stroke", "#0f1a0f")
+                    .attr("stroke-width", "0.4")
+                    .style("paint-order", "stroke")
+                    .style("letter-spacing", "0.3px");
+            }
+        });
+        
+        // optional small subtitle inside viz
+        chartGroup.append("text")
+            .attr("x", 6)
+            .attr("y", -6)
+            .attr("fill", "#6b8f6b")
+            .style("font-size", "8px")
+            .style("font-weight", "bold")
+            .text("⚡ bubble ∝ minutes");
+        
+        // remove old tooltip reference after each render
+        window.currentTooltipClean = function() { tooltipDiv.remove(); };
+        // assign cleanup if needed later
+    }
+    
+    // Update comparison cards based on selected players
+    function updateCompareCards(p1, p2) {
+        if (p1) {
+            document.getElementById("p1Name").innerText = p1.Player;
+            document.getElementById("p1Meta").innerHTML = `Prog passes: <span>${p1.ProgressivePasses}</span> &nbsp;| Runs: <span>${p1.ProgressiveRuns}</span> &nbsp;| Mins: <span>${p1.Minutes}</span>`;
+            document.getElementById("p1Pos").innerText = p1.Position || "CM";
+        } else {
+            document.getElementById("p1Name").innerText = "—";
+            document.getElementById("p1Meta").innerHTML = `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+            document.getElementById("p1Pos").innerText = "CM";
+        }
+        if (p2) {
+            document.getElementById("p2Name").innerText = p2.Player;
+            document.getElementById("p2Meta").innerHTML = `Prog passes: <span>${p2.ProgressivePasses}</span> &nbsp;| Runs: <span>${p2.ProgressiveRuns}</span> &nbsp;| Mins: <span>${p2.Minutes}</span>`;
+            document.getElementById("p2Pos").innerText = p2.Position || "CM";
+        } else {
+            document.getElementById("p2Name").innerText = "—";
+            document.getElementById("p2Meta").innerHTML = `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+            document.getElementById("p2Pos").innerText = "CM";
+        }
+    }
+    
+    // populate select dropdowns from currentDataset and set default selected
+    function populateSelectors(data, keepSelection = false) {
+        const p1Select = document.getElementById("player1Select");
+        const p2Select = document.getElementById("player2Select");
+        const prevP1 = selectedP1 ? selectedP1.Player : null;
+        const prevP2 = selectedP2 ? selectedP2.Player : null;
+        p1Select.innerHTML = "";
+        p2Select.innerHTML = "";
+        data.forEach(player => {
+            const opt1 = document.createElement("option");
+            opt1.value = player.Player;
+            opt1.textContent = `${player.Player} (${player.ProgressivePasses} P, ${player.ProgressiveRuns} R)`;
+            const opt2 = opt1.cloneNode(true);
+            p1Select.appendChild(opt1);
+            p2Select.appendChild(opt2);
+        });
+        if (data.length) {
+            if (keepSelection && prevP1 && data.some(p => p.Player === prevP1)) {
+                p1Select.value = prevP1;
+            } else {
+                p1Select.value = data[0].Player;
+            }
+            if (keepSelection && prevP2 && data.some(p => p.Player === prevP2) && prevP2 !== p1Select.value) {
+                p2Select.value = prevP2;
+            } else {
+                let idx2 = data.length > 1 ? 1 : 0;
+                if (data[idx2].Player === p1Select.value && data.length > 2) idx2 = 2;
+                p2Select.value = data[idx2].Player;
+            }
+            // update selected objects
+            selectedP1 = data.find(p => p.Player === p1Select.value);
+            selectedP2 = data.find(p => p.Player === p2Select.value);
+            updateCompareCards(selectedP1, selectedP2);
+            renderScatter(data, selectedP1, selectedP2);
+        }
+    }
+    
+    function fullRefresh() {
+        if (!currentDataset.length) return;
+        populateSelectors(currentDataset, true);
+    }
+    
+    // csv parser
+    function loadFromCSV(csvText) {
+        const lines = csvText.trim().split(/\r?\n/);
+        const headers = lines[0].split(",").map(h => h.trim());
+        const dataRows = [];
+        for (let i=1; i<lines.length; i++) {
+            const vals = lines[i].split(",");
+            if (vals.length < 5) continue;
+            const obj = {};
+            headers.forEach((h, idx) => {
+                let val = vals[idx] ? vals[idx].trim() : "";
+                if (h === "ProgressivePasses" || h === "ProgressiveRuns" || h === "Minutes") {
+                    obj[h] = parseFloat(val);
+                } else {
+                    obj[h] = val;
+                }
+            });
+            if (obj.Player && !isNaN(obj.ProgressivePasses) && !isNaN(obj.ProgressiveRuns) && obj.Minutes >= 900) {
+                obj.Position = obj.Position || "CM";
+                dataRows.push(obj);
+            }
+        }
+        if (dataRows.length === 0) throw new Error("No valid players (min 900 mins)");
+        return dataRows;
+    }
+    
+    function setDataset(newData) {
+        currentDataset = newData;
+        selectedP1 = null; selectedP2 = null;
+        populateSelectors(currentDataset, false);
+    }
+    
+    // initialize demo data
+    function initDemo() {
+        setDataset([...DEFAULT_MIDS]);
+        document.getElementById("uploadScreen").style.display = "none";
+        document.getElementById("mainScreen").style.display = "block";
+    }
+    
+    // CSV upload handler
+    document.getElementById("triggerUploadBtn").addEventListener("click", () => {
+        document.getElementById("csvUpload").click();
+    });
+    document.getElementById("csvUpload").addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = loadFromCSV(e.target.result);
+                setDataset(parsed);
+                document.getElementById("uploadScreen").style.display = "none";
+                document.getElementById("mainScreen").style.display = "block";
+            } catch(err) {
+                alert("CSV error: " + err.message + "\nUse headers: Player,ProgressivePasses,ProgressiveRuns,Minutes,Position");
+            }
+        };
+        reader.readAsText(file);
+    });
+    document.getElementById("demoDataBtn").addEventListener("click", () => {
+        initDemo();
+    });
+    
+    // selector listeners
+    document.getElementById("player1Select").addEventListener("change", (e) => {
+        if (!currentDataset.length) return;
+        const newP1 = currentDataset.find(p => p.Player === e.target.value);
+        if (newP1 && selectedP2 && newP1.Player === selectedP2.Player) {
+            alert("Player 1 and Player 2 must be different");
+            document.getElementById("player1Select").value = selectedP1.Player;
+            return;
+        }
+        selectedP1 = newP1;
+        updateCompareCards(selectedP1, selectedP2);
+        renderScatter(currentDataset, selectedP1, selectedP2);
+    });
+    document.getElementById("player2Select").addEventListener("change", (e) => {
+        if (!currentDataset.length) return;
+        const newP2 = currentDataset.find(p => p.Player === e.target.value);
+        if (newP2 && selectedP1 && newP2.Player === selectedP1.Player) {
+            alert("Player 2 must be different from Player 1");
+            document.getElementById("player2Select").value = selectedP2.Player;
+            return;
+        }
+        selectedP2 = newP2;
+        updateCompareCards(selectedP1, selectedP2);
+        renderScatter(currentDataset, selectedP1, selectedP2);
+    });
+    
+    // Export PNG (using html2canvas on card)
+    document.getElementById("exportChartBtn").addEventListener("click", () => {
+        const element = document.querySelector(".card");
+        html2canvas(element, { scale: 2, backgroundColor: "#0f1a0f", logging: false }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'scatterplot_progressive.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }).catch(err => alert("Export error: " + err));
+    });
+    
+    // optional start: show upload screen initially
+    document.getElementById("mainScreen").style.display = "none";
+    document.getElementById("uploadScreen").style.display = "flex";
+</script>
+</body>
+</html>
