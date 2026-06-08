@@ -419,42 +419,33 @@
         circle.setAttribute("stroke-width", "1.5");
         svg.appendChild(circle);
 
-        // Nama pakai nama belakang biar tidak terlalu panjang
-        const nama = item.pemain["Player"];
-        const namaLabel = nama.split(" ").slice(-1)[0];
-
-        // Cek posisi — kalau dekat tepi kanan, label ke kiri
-        const labelOffset = cx > pad.left + plotW * 0.75 ? -(namaLabel.length * 8 + 16) : 14;
-        const namaX = cx + labelOffset;
+        // Label nama
+        const namaX = cx + 14;
         const namaY = cy - 4;
+        const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        const nama = item.pemain["Player"];
+        bg.setAttribute("x", namaX - 2); bg.setAttribute("y", namaY - 10);
+        bg.setAttribute("width", nama.length * 6 + 8); bg.setAttribute("height", 14);
+        bg.setAttribute("fill", "#0f1a0f"); bg.setAttribute("rx", "3");
+        svg.appendChild(bg);
 
-        // Background label
-            const bgW = namaLabel.length * 8 + 12;
-            const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            bg.setAttribute("x", namaX - 4); bg.setAttribute("y", namaY - 13);
-            bg.setAttribute("width", bgW); bg.setAttribute("height", 28);
-            bg.setAttribute("fill", "#0a0f0a"); bg.setAttribute("rx", "4");
-            bg.setAttribute("opacity", "0.85");
-            svg.appendChild(bg);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", namaX); text.setAttribute("y", namaY);
+        text.setAttribute("fill", item.warna);
+        text.setAttribute("font-size", "11");
+        text.setAttribute("font-weight", "700");
+        text.setAttribute("font-family", "Barlow Condensed, sans-serif");
+        text.textContent = nama;
+        svg.appendChild(text);
 
-        // Nama pemain
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", namaX); text.setAttribute("y", namaY);
-            text.setAttribute("fill", item.warna);
-            text.setAttribute("font-size", "13");
-            text.setAttribute("font-weight", "800");
-            text.setAttribute("font-family", "Barlow Condensed, sans-serif");
-            text.textContent = namaLabel;
-            svg.appendChild(text);
-
-        // Stats
-            const stats = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            stats.setAttribute("x", namaX); stats.setAttribute("y", namaY + 12);
-            stats.setAttribute("fill", "#9ca3af");
-            stats.setAttribute("font-size", "10");
-            stats.setAttribute("font-family", "Barlow, sans-serif");
-            stats.textContent = "x:" + Math.round(valX * 100) + " y:" + Math.round(valY * 100);
-            svg.appendChild(stats);
+        // Stats di bawah nama
+        const stats = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        stats.setAttribute("x", namaX); stats.setAttribute("y", namaY + 12);
+        stats.setAttribute("fill", "#6b7280");
+        stats.setAttribute("font-size", "9");
+        stats.textContent = Math.round(valX * 100) + " · " + Math.round(valY * 100);
+        svg.appendChild(stats);
+      });
     }
 
     function exportGambar() {
