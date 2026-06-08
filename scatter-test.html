@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>THE FOOTYS · Scatter Builder | Player Names Fixed</title>
+    <!-- Google Fonts & D3 -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0f0a;
+            color: white;
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+        .topbar {
+            width: 100%;
+            max-width: 880px;
+            border-left: 3px solid #4ade80;
+            padding: 12px 20px;
+            background: #0f1a0f;
+            letter-spacing: 2px;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+        #uploadScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            width: 100%;
+            max-width: 880px;
+        }
+        .upload-box {
+            border: 2px dashed #1f2d1f;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            background: #0b130b;
+        }
+        .upload-box p {
+            color: #4b5563;
+            letter-spacing: 1px;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .upload-box button {
+            background: #1e2a1e;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 8px 6px;
+            transition: all 0.2s;
+            font-family: 'Barlow', sans-serif;
+        }
+        .upload-box button:hover {
+            background: #4ade80;
+            color: #0a0f0a;
+            border-color: #4ade80;
+        }
+        #mainScreen {
+            display: none;
+            width: 100%;
+            max-width: 880px;
+        }
+        .controls-panel {
+            background: #0f1a0f;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .category-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .cat-btn {
+            background: #161f16;
+            border: 1px solid #2d4a2d;
+            color: #9ca3af;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cat-btn.active {
+            background: #4ade80;
+            color: #0a0f0a;
+            border-color: #4ade80;
+        }
+        .axis-dual {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .axis-selector {
+            flex: 1;
+            min-width: 180px;
+        }
+        .axis-selector label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #9ca3af;
+            display: block;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        select, .compare-btn {
+            width: 100%;
+            background: #161f16;
+            color: white;
+            border: 1px solid #2d4a2d;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'Barlow', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .compare-btn {
+            background: #1e331e;
+            border-color: #4ade80;
+            color: #4ade80;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            padding: 10px;
+        }
+        .compare-btn:hover {
+            background: #4ade80;
+            color: #0a0f0a;
+        }
+        .player-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: #0f1a0f;
+            border-radius: 24px;
+            padding: 24px 20px 20px 20px;
+            width: 100%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        .card-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a2e1a;
+        }
+        .player-card {
+            background: #0c140c;
+            border-radius: 18px;
+            padding: 12px 14px;
+        }
+        .player-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .p1-name { color: #4ade80; }
+        .p2-name { color: #f87171; }
+        .player-meta {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .player-meta span { color: #e5e7eb; font-weight: 600; }
+        .position-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+        .badge-p1 { background: #4ade80; color: #0a0f0a; }
+        .badge-p2 { background: #f87171; color: #0a0f0a; }
+        .legend-players {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .viz-container {
+            position: relative;
+            width: 100%;
+            margin: 8px 0 8px 0;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+            background: #0c130c;
+            border-radius: 20px;
+            width: 100%;
+            height: auto;
+            font-family: 'Barlow', sans-serif;
+        }
+        .tooltip-div {
+            position: absolute;
+            background: #1a261a;
+            border-left: 3px solid #4ade80;
+            color: #f0f3f0;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            white-space: nowrap;
+        }
+        .btn-export {
+            margin-top: 20px;
+            background: #161f16;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-export:hover {
+            background: #1e331e;
+            border-color: #86efac;
+            color: #bbf7d0;
+        }
+        .note {
+            font-size: 9px;
+            text-align: center;
+            color: #4b5563;
+            margin-top: 12px;
+        }
+        .watermark-global {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #2c4a2c;
+            text-transform: uppercase;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .watermark-brand {
+            color: #4ade80;
+            opacity: 0.9;
+            letter-spacing: 4px;
+        }
+        .file-info {
+            font-size: 9px;
+            color: #4b5563;
+            margin-top: 12px;
+            text-align: center;
+        }
+        .status-msg {
+            color: #86efac;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">⚽ THE FOOTYS · SCATTER BUILDER | UPLOAD CSV → SELECT PLAYERS → COMPARE</div>
+
+<div id="uploadScreen">
+    <div class="upload-box">
+        <p>📁 UPLOAD YOUR CSV FILE</p>
+        <input type="file" id="csvUpload" accept=".csv" style="display: none;">
+        <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
+        <div class="file-info">CSV must contain a "Player" column and numeric stats. Position column optional.<br>Example: your FORWARDISL2526.csv or MIDISL2526.csv work perfectly.</div>
+        <div id="uploadStatus" class="status-msg"></div>
+        <button id="demoBtn" style="margin-top: 16px; background:#2a3e2a;">⭐ LOAD DEMO (MIDFIELDERS)</button>
+    </div>
+</div>
+
+<div id="mainScreen">
+    <div class="controls-panel">
+        <div class="category-row">
+            <div class="cat-btn" data-cat="attack">⚔️ ATTACK</div>
+            <div class="cat-btn" data-cat="possession">🔄 POSSESSION</div>
+            <div class="cat-btn" data-cat="defend">🛡️ DEFEND</div>
+            <div class="cat-btn" data-cat="progression">📈 PROGRESSION</div>
+            <div class="cat-btn" data-cat="custom">🎛️ ALL STATS</div>
+        </div>
+        <div class="axis-dual">
+            <div class="axis-selector">
+                <label>📊 X-AXIS STAT</label>
+                <select id="xAxisSelect"></select>
+            </div>
+            <div class="axis-selector">
+                <label>📈 Y-AXIS STAT</label>
+                <select id="yAxisSelect"></select>
+            </div>
+        </div>
+    </div>
+
+    <div class="player-compare">
+        <select id="player1Select"></select>
+        <select id="player2Select"></select>
+    </div>
+
+    <button id="compareBtn" class="compare-btn">🔍 COMPARE PLAYERS</button>
+
+    <div class="card" id="chartCard" style="margin-top: 20px;">
+        <div class="card-header">
+            <div class="player-card">
+                <div class="player-name p1-name" id="p1Name">—</div>
+                <div class="player-meta" id="p1Meta">—</div>
+                <div class="position-badge badge-p1" id="p1Pos">—</div>
+            </div>
+            <div class="player-card">
+                <div class="player-name p2-name" id="p2Name">—</div>
+                <div class="player-meta" id="p2Meta">—</div>
+                <div class="position-badge badge-p2" id="p2Pos">—</div>
+            </div>
+        </div>
+
+        <div class="legend-players">
+            <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> PLAYER 1 (GREEN)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #f87171;"></div> PLAYER 2 (RED)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #6c757d;"></div> OTHER PLAYERS</div>
+        </div>
+
+        <div class="viz-container">
+            <svg id="scatterplot" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="note">💡 Hover any bubble for details • Use category filters to find relevant stats • Click COMPARE to refresh chart</div>
+        <button class="btn-export" id="exportChartBtn">📸 SAVE AS PNG</button>
+        <div class="watermark-global">THE <span class="watermark-brand">FOOTYS</span> • ANALYTICS</div>
+    </div>
+</div>
+
+<script>
+    // ----------------------------- GLOBALS ---------------------------------
+    let currentDataset = [];        // array of player objects
+    let selectedP1 = null, selectedP2 = null;
+    let currentXField = "", currentYField = "";
+    let allNumericFields = [];
+    let currentCategory = "progression";
+    let categoryFieldMap = {};
+
+    // Helper: Build keyword-based category mapping
+    function buildCategoryMap(fields) {
+        const map = { attack: [], possession: [], defend: [], progression: [] };
+        const attackKeys = ["goal", "shot", "npxg", "xg", "non-penalty goals", "shots per 90", "goal conversion", "touches in box", "expected goals", "g/90", "npxg/90", "key passes", "shots", "npxg per shot", "goal conversion %"];
+        const possessionKeys = ["pass", "possession", "accurate passes", "passes per 90", "short passes", "medium passes", "long passes", "pass completion", "pass accuracy", "passes completed", "smart passes", "crosses", "ball possession", "accurate passes %", "received passes"];
+        const defendKeys = ["tackle", "interception", "duel", "defensive", "pAdj", "tkl+int", "sliding tackles", "blocks", "clearance", "fouls", "cards", "defensive actions", "aerial duels won", "recoveries", "defensive duels won %"];
+        const progressKeys = ["progressive passes", "progressive runs", "carries", "carry", "progressive carries", "final third passes", "passes into box", "accelerations", "dribbles", "progressive", "progressive runs per 90"];
+        
+        for (let f of fields) {
+            const low = f.toLowerCase();
+            let assigned = false;
+            for (let k of attackKeys) if (low.includes(k)) { map.attack.push(f); assigned = true; break; }
+            if (!assigned) for (let k of possessionKeys) if (low.includes(k)) { map.possession.push(f); assigned = true; break; }
+            if (!assigned) for (let k of defendKeys) if (low.includes(k)) { map.defend.push(f); assigned = true; break; }
+            if (!assigned) for (let k of progressKeys) if (low.includes(k)) { map.progression.push(f); assigned = true; break; }
+        }
+        // fallback: ensure each category has at least something
+        if (map.attack.length === 0) map.attack = fields.slice(0, Math.min(3, fields.length));
+        if (map.possession.length === 0) map.possession = fields.slice(0, Math.min(3, fields.length));
+        if (map.defend.length === 0) map.defend = fields.slice(0, Math.min(3, fields.length));
+        if (map.progression.length === 0) map.progression = fields.slice(0, Math.min(3, fields.length));
+        return map;
+    }
+
+    // Robust CSV parser that properly extracts Player names even with index column
+    function parseCSVtoPlayers(csvText) {
+        const lines = csvText.trim().split(/\r?\n/);
+        if (lines.length < 2) throw new Error("Not enough rows");
+        
+        // Parse headers: handle BOM, extra spaces, and possible empty first column
+        let rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"/, '').replace(/"$/, ''));
+        
+        // If first header is empty (common in your CSVs due to row index), remove it
+        if (rawHeaders[0] === "" || rawHeaders[0] === "Player" && rawHeaders[1] && (rawHeaders[1].toLowerCase().includes("age") || rawHeaders[1].toLowerCase().includes("league"))) {
+            rawHeaders = rawHeaders.slice(1);
+        }
+        
+        const headers = rawHeaders;
+        // Find Player column (case insensitive)
+        const playerIdx = headers.findIndex(h => h.toLowerCase() === "player");
+        if (playerIdx === -1) throw new Error("CSV must have a 'Player' column");
+        
+        const positionIdx = headers.findIndex(h => h.toLowerCase() === "position");
+        
+        // Identify numeric columns (all except Player and Position)
+        const potentialNumeric = [];
+        for (let i = 0; i < headers.length; i++) {
+            if (i === playerIdx) continue;
+            if (positionIdx !== -1 && i === positionIdx) continue;
+            potentialNumeric.push(headers[i]);
+        }
+        
+        const players = [];
+        for (let i = 1; i < lines.length; i++) {
+            let values = lines[i].split(",");
+            // Remove empty first element if row starts with comma (index column)
+            if (values[0] === "" && values.length > headers.length) values = values.slice(1);
+            if (values.length < headers.length) continue;
+            
+            const playerName = values[playerIdx]?.trim();
+            if (!playerName || playerName === "") continue;
+            
+            const playerObj = { Player: playerName };
+            if (positionIdx !== -1 && values[positionIdx]) playerObj.Position = values[positionIdx].trim();
+            else playerObj.Position = "MID/FWD";
+            
+            let hasValid = false;
+            for (let j = 0; j < potentialNumeric.length; j++) {
+                const col = potentialNumeric[j];
+                const colIdx = headers.findIndex(h => h === col);
+                let rawVal = values[colIdx]?.trim();
+                let num = parseFloat(rawVal);
+                if (!isNaN(num)) {
+                    playerObj[col] = num;
+                    hasValid = true;
+                } else {
+                    playerObj[col] = null;
+                }
+            }
+            if (hasValid) players.push(playerObj);
+        }
+        if (players.length === 0) throw new Error("No valid numeric data found");
+        
+        // Collect numeric fields that have actual values
+        const numericFieldsSet = new Set();
+        players.forEach(p => {
+            potentialNumeric.forEach(f => {
+                if (p[f] !== null && typeof p[f] === 'number') numericFieldsSet.add(f);
+            });
+        });
+        const numericFields = Array.from(numericFieldsSet).sort();
+        return { players, numericFields };
+    }
+
+    // Demo dataset (real player names)
+    function getDemoDataset() {
+        return [
+            { Player: "T. Firmansyah", Position: "LCMF", "Progressive passes per 90": 4.2, "Progressive runs per 90": 1.8, "Non-penalty goals per 90": 0.13, "Goal conversion %": 0.12, "npxG per 90": 0.08, "Touches in box per 90": 0.11, "Tackles per 90": 2.1, "Passes per 90": 45.3, "Accurate passes %": 88.2, "Interceptions per 90": 1.4 },
+            { Player: "Arkhan Fikri", Position: "LCMF", "Progressive passes per 90": 5.1, "Progressive runs per 90": 3.4, "Non-penalty goals per 90": 0.60, "Goal conversion %": 0.69, "npxG per 90": 0.59, "Touches in box per 90": 0.52, "Tackles per 90": 1.8, "Passes per 90": 52.1, "Accurate passes %": 86.5, "Interceptions per 90": 1.2 },
+            { Player: "Zanadin Fariz", Position: "LCMF", "Progressive passes per 90": 3.9, "Progressive runs per 90": 4.0, "Non-penalty goals per 90": 0.34, "Goal conversion %": 0.36, "npxG per 90": 0.30, "Touches in box per 90": 0.38, "Tackles per 90": 2.3, "Passes per 90": 48.7, "Accurate passes %": 84.9, "Interceptions per 90": 1.5 },
+            { Player: "Muhammad Hannan", Position: "AMF", "Progressive passes per 90": 6.2, "Progressive runs per 90": 4.7, "Non-penalty goals per 90": 0.93, "Goal conversion %": 0.80, "npxG per 90": 0.89, "Touches in box per 90": 0.93, "Tackles per 90": 1.2, "Passes per 90": 67.4, "Accurate passes %": 90.1, "Interceptions per 90": 0.8 },
+            { Player: "T. Yachida", Position: "AMF", "Progressive passes per 90": 7.8, "Progressive runs per 90": 3.9, "Non-penalty goals per 90": 0.97, "Goal conversion %": 0.75, "npxG per 90": 0.81, "Touches in box per 90": 1.0, "Tackles per 90": 0.9, "Passes per 90": 58.2, "Accurate passes %": 88.7, "Interceptions per 90": 0.5 },
+            { Player: "J. Villa", Position: "AMF", "Progressive passes per 90": 8.1, "Progressive runs per 90": 5.8, "Non-penalty goals per 90": 1.0, "Goal conversion %": 0.93, "npxG per 90": 0.90, "Touches in box per 90": 0.84, "Tackles per 90": 1.5, "Passes per 90": 72.3, "Accurate passes %": 91.2, "Interceptions per 90": 0.7 },
+            { Player: "T. Haye", Position: "AMF", "Progressive passes per 90": 6.7, "Progressive runs per 90": 5.3, "Non-penalty goals per 90": 0.54, "Goal conversion %": 0.64, "npxG per 90": 0.75, "Touches in box per 90": 0.72, "Tackles per 90": 1.4, "Passes per 90": 63.5, "Accurate passes %": 89.4, "Interceptions per 90": 1.1 },
+            { Player: "Pablo Ganet", Position: "LCMF", "Progressive passes per 90": 5.9, "Progressive runs per 90": 4.2, "Non-penalty goals per 90": 0.81, "Goal conversion %": 0.67, "npxG per 90": 0.80, "Touches in box per 90": 0.56, "Tackles per 90": 2.0, "Passes per 90": 59.0, "Accurate passes %": 87.3, "Interceptions per 90": 1.3 },
+            { Player: "Tyronne", Position: "AMF", "Progressive passes per 90": 8.5, "Progressive runs per 90": 5.0, "Non-penalty goals per 90": 0.95, "Goal conversion %": 0.86, "npxG per 90": 0.97, "Touches in box per 90": 0.90, "Tackles per 90": 0.8, "Passes per 90": 71.2, "Accurate passes %": 92.3, "Interceptions per 90": 0.4 }
+        ];
+    }
+
+    // RENDER SCATTERPLOT
+    function renderScatter() {
+        const svg = d3.select("#scatterplot");
+        svg.selectAll("*").remove();
+        if (!currentDataset.length || !currentXField || !currentYField) return;
+        const plotData = currentDataset.filter(p => p[currentXField] !== null && p[currentYField] !== null && !isNaN(p[currentXField]) && !isNaN(p[currentYField]));
+        if (plotData.length === 0) {
+            svg.append("text").attr("x", 360).attr("y", 260).attr("text-anchor", "middle").style("fill", "#9ca3af").text("No data for selected axes");
+            return;
+        }
+        
+        const width = 720, height = 520;
+        const margin = { top: 28, right: 32, bottom: 48, left: 62 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+        const chartGroup = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        
+        const xExt = d3.extent(plotData, d => d[currentXField]);
+        const yExt = d3.extent(plotData, d => d[currentYField]);
+        const xMin = Math.max(0, xExt[0] - (xExt[1]-xExt[0])*0.05);
+        const xMax = xExt[1] + (xExt[1]-xExt[0])*0.05;
+        const yMin = Math.max(0, yExt[0] - (yExt[1]-yExt[0])*0.05);
+        const yMax = yExt[1] + (yExt[1]-yExt[0])*0.05;
+        
+        const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
+        const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
+        
+        chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(-innerHeight).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(-innerWidth).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
+        chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
+        
+        chartGroup.append("text").attr("x", innerWidth/2).attr("y", innerHeight + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentXField.toUpperCase());
+        chartGroup.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentYField.toUpperCase());
+        
+        const tooltipDiv = d3.select("body").append("div").attr("class", "tooltip-div").style("opacity", 0);
+        plotData.forEach(player => {
+            const cx = xScale(player[currentXField]);
+            const cy = yScale(player[currentYField]);
+            let fillColor = "#4b5563", strokeColor = "#2d422d", strokeWidth = 1.2;
+            if (selectedP1 && player.Player === selectedP1.Player) { fillColor = "#4ade80"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
+            else if (selectedP2 && player.Player === selectedP2.Player) { fillColor = "#f87171"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
+            chartGroup.append("circle")
+                .attr("cx", cx).attr("cy", cy).attr("r", 7).attr("fill", fillColor).attr("stroke", strokeColor).attr("stroke-width", strokeWidth).attr("opacity", 0.85)
+                .on("mouseover", function(event) {
+                    tooltipDiv.style("opacity", 1).html(`<strong>${player.Player}</strong><br/>📌 ${player.Position}<br/>${currentXField}: ${player[currentXField].toFixed(2)}<br/>${currentYField}: ${player[currentYField].toFixed(2)}`)
+                        .style("left", (event.pageX + 12) + "px").style("top", (event.pageY - 28) + "px");
+                }).on("mouseout", () => tooltipDiv.style("opacity", 0));
+        });
+        window._ttClean = () => tooltipDiv.remove();
+    }
+    
+    function updatePlayerCards() {
+        if (!selectedP1 && !selectedP2) return;
+        document.getElementById("p1Name").innerText = selectedP1 ? selectedP1.Player : "—";
+        document.getElementById("p1Meta").innerHTML = selectedP1 ? `${currentXField}: <span>${selectedP1[currentXField]?.toFixed(2) || "?"}</span> &nbsp;| ${currentYField}: <span>${selectedP1[currentYField]?.toFixed(2) || "?"}</span>` : "—";
+        document.getElementById("p1Pos").innerText = selectedP1 ? selectedP1.Position : "—";
+        document.getElementById("p2Name").innerText = selectedP2 ? selectedP2.Player : "—";
+        document.getElementById("p2Meta").innerHTML = selectedP2 ? `${currentXField}: <span>${selectedP2[currentXField]?.toFixed(2) || "?"}</span> &nbsp;| ${currentYField}: <span>${selectedP2[currentYField]?.toFixed(2) || "?"}</span>` : "—";
+        document.getElementById("p2Pos").innerText = selectedP2 ? selectedP2.Position : "—";
+    }
+    
+    function refreshAxisDropdowns() {
+        const xSel = document.getElementById("xAxisSelect");
+        const ySel = document.getElementById("yAxisSelect");
+        let fieldsForCategory = (currentCategory === "custom") ? allNumericFields : (categoryFieldMap[currentCategory] || allNumericFields);
+        fieldsForCategory = fieldsForCategory.filter(f => f && currentDataset.length > 0 && currentDataset[0][f] !== undefined);
+        if (fieldsForCategory.length === 0) fieldsForCategory = allNumericFields;
+        xSel.innerHTML = ""; ySel.innerHTML = "";
+        fieldsForCategory.forEach(f => {
+            const optX = document.createElement("option"); optX.value = f; optX.textContent = f;
+            const optY = optX.cloneNode(true);
+            xSel.appendChild(optX); ySel.appendChild(optY);
+        });
+        if (!fieldsForCategory.includes(currentXField)) currentXField = fieldsForCategory[0];
+        if (!fieldsForCategory.includes(currentYField)) currentYField = fieldsForCategory[Math.min(1, fieldsForCategory.length-1)];
+        xSel.value = currentXField; ySel.value = currentYField;
+    }
+    
+    function populatePlayerSelectors() {
+        const p1Sel = document.getElementById("player1Select");
+        const p2Sel = document.getElementById("player2Select");
+        p1Sel.innerHTML = ""; p2Sel.innerHTML = "";
+        currentDataset.forEach(p => {
+            const opt1 = document.createElement("option"); opt1.value = p.Player; opt1.textContent = `${p.Player} (${p.Position})`;
+            const opt2 = opt1.cloneNode(true);
+            p1Sel.appendChild(opt1); p2Sel.appendChild(opt2);
+        });
+        if (currentDataset.length) {
+            p1Sel.value = currentDataset[0].Player;
+            let idx2 = currentDataset.length > 1 ? 1 : 0;
+            if (idx2 === 0 && currentDataset.length > 2) idx2 = 2;
+            p2Sel.value = currentDataset[idx2].Player;
+            selectedP1 = currentDataset.find(p => p.Player === p1Sel.value);
+            selectedP2 = currentDataset.find(p => p.Player === p2Sel.value);
+            updatePlayerCards();
+        }
+    }
+    
+    function onCompare() {
+        const p1Name = document.getElementById("player1Select").value;
+        const p2Name = document.getElementById("player2Select").value;
+        const xField = document.getElementById("xAxisSelect").value;
+        const yField = document.getElementById("yAxisSelect").value;
+        if (!p1Name || !p2Name || !xField || !yField) return;
+        if (p1Name === p2Name) { alert("Please choose two different players"); return; }
+        selectedP1 = currentDataset.find(p => p.Player === p1Name);
+        selectedP2 = currentDataset.find(p => p.Player === p2Name);
+        currentXField = xField;
+        currentYField = yField;
+        updatePlayerCards();
+        renderScatter();
+    }
+    
+    function setDataset(players, numericFields) {
+        currentDataset = players;
+        allNumericFields = numericFields;
+        categoryFieldMap = buildCategoryMap(allNumericFields);
+        currentCategory = "progression";
+        document.querySelectorAll(".cat-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.cat-btn[data-cat="progression"]`).classList.add("active");
+        refreshAxisDropdowns();
+        populatePlayerSelectors();
+        onCompare(); // initial chart
+        document.getElementById("uploadScreen").style.display = "none";
+        document.getElementById("mainScreen").style.display = "block";
+    }
+    
+    function loadFromCSV(csvText) {
+        try {
+            const { players, numericFields } = parseCSVtoPlayers(csvText);
+            setDataset(players, numericFields);
+            document.getElementById("uploadStatus").innerText = "✅ Loaded " + players.length + " players";
+        } catch(err) {
+            document.getElementById("uploadStatus").innerText = "❌ Error: " + err.message;
+            alert("CSV error: " + err.message);
+        }
+    }
+    
+    // Event Listeners
+    document.getElementById("triggerUploadBtn").addEventListener("click", () => document.getElementById("csvUpload").click());
+    document.getElementById("csvUpload").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => loadFromCSV(ev.target.result);
+        reader.readAsText(file);
+    });
+    document.getElementById("compareBtn").addEventListener("click", onCompare);
+    document.getElementById("exportChartBtn").addEventListener("click", () => {
+        const el = document.querySelector(".card");
+        html2canvas(el, { scale: 2, backgroundColor: "#0f1a0f" }).then(canvas => {
+            const link = document.createElement("a"); link.download = "footys_scatter.png"; link.href = canvas.toDataURL(); link.click();
+        }).catch(() => alert("Export failed"));
+    });
+    document.getElementById("demoBtn").addEventListener("click", () => {
+        const demo = getDemoDataset();
+        const fields = Object.keys(demo[0]).filter(k => k !== "Player" && k !== "Position");
+        setDataset(demo, fields);
+    });
+    document.querySelectorAll(".cat-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const cat = btn.getAttribute("data-cat");
+            if (!cat) return;
+            currentCategory = cat;
+            document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            refreshAxisDropdowns();
+        });
+    });
+</script>
+</body>
+</html>
