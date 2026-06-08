@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>THE FOOTYS · Progressive Passes vs Runs | Scatter Hub</title>
+    <!-- Google Fonts & D3 -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0f0a;
+            color: white;
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+        .topbar {
+            width: 100%;
+            max-width: 780px;
+            border-left: 3px solid #4ade80;
+            padding: 12px 20px;
+            background: #0f1a0f;
+            letter-spacing: 2px;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+        #uploadScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            width: 100%;
+            max-width: 780px;
+        }
+        .upload-box {
+            border: 2px dashed #1f2d1f;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+            background: #0b130b;
+        }
+        .upload-box p {
+            color: #4b5563;
+            letter-spacing: 1px;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .upload-box button, .demo-btn {
+            background: #1e2a1e;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 8px 6px;
+            transition: all 0.2s;
+            font-family: 'Barlow', sans-serif;
+        }
+        .upload-box button:hover, .demo-btn:hover {
+            background: #4ade80;
+            color: #0a0f0a;
+            border-color: #4ade80;
+        }
+        #mainScreen {
+            display: none;
+            width: 100%;
+            max-width: 780px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        select {
+            width: 100%;
+            background: #161f16;
+            color: white;
+            border: 1px solid #2d4a2d;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-family: 'Barlow', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .card {
+            background: #0f1a0f;
+            border-radius: 24px;
+            padding: 24px 20px 20px 20px;
+            width: 100%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        .card-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a2e1a;
+        }
+        .player-card {
+            background: #0c140c;
+            border-radius: 18px;
+            padding: 12px 14px;
+        }
+        .player-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .p1-name { color: #4ade80; }
+        .p2-name { color: #f87171; }
+        .player-meta {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .player-meta span { color: #e5e7eb; font-weight: 600; }
+        .position-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+        .badge-p1 { background: #4ade80; color: #0a0f0a; }
+        .badge-p2 { background: #f87171; color: #0a0f0a; }
+        .legend-players {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .legend-cats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .legend-cat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .legend-cat-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6b7280;
+        }
+        .watermark-global {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #2c4a2c;
+            text-transform: uppercase;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .watermark-brand {
+            color: #4ade80;
+            opacity: 0.9;
+            letter-spacing: 4px;
+        }
+        .viz-container {
+            position: relative;
+            width: 100%;
+            margin: 8px 0 8px 0;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+            background: #0c130c;
+            border-radius: 20px;
+            width: 100%;
+            height: auto;
+            font-family: 'Barlow', sans-serif;
+        }
+        .tooltip-div {
+            position: absolute;
+            background: #1a261a;
+            border-left: 3px solid #4ade80;
+            color: #f0f3f0;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            white-space: nowrap;
+        }
+        .btn-export {
+            margin-top: 20px;
+            background: #161f16;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-export:hover {
+            background: #1e331e;
+            border-color: #86efac;
+            color: #bbf7d0;
+        }
+        .axis-label {
+            fill: #9ca3af;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .note {
+            font-size: 9px;
+            text-align: center;
+            color: #4b5563;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="topbar" id="infoBar">⚽ THE FOOTYS · PROGRESSIVE METRICS | CENTRAL MIDFIELDERS · ISL 25/26</div>
+
+<!-- UPLOAD SCREEN -->
+<div id="uploadScreen">
+    <div class="upload-box">
+        <p>📁 UPLOAD CSV (MIDFIELDERS / FORWARDS)</p>
+        <input type="file" id="csvUpload" accept=".csv" style="display: none;">
+        <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
+        <button id="demoMidBtn" class="demo-btn">⭐ DEMO: CENTRAL MIDS (ISL)</button>
+        <button id="demoForwardBtn" class="demo-btn">⚡ DEMO: FORWARDS (ISL)</button>
+        <div style="margin-top: 20px; font-size: 10px; color:#3a4a3a;">Expects columns: Player, Progressive passes per 90, Progressive runs per 90, Minutes (optional), Position</div>
+    </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="mainScreen">
+    <div class="controls">
+        <select id="player1Select"></select>
+        <select id="player2Select"></select>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <div class="player-card">
+                <div class="player-name p1-name" id="p1Name">—</div>
+                <div class="player-meta" id="p1Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
+                <div class="position-badge badge-p1" id="p1Pos">MID</div>
+            </div>
+            <div class="player-card">
+                <div class="player-name p2-name" id="p2Name">—</div>
+                <div class="player-meta" id="p2Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
+                <div class="position-badge badge-p2" id="p2Pos">MID</div>
+            </div>
+        </div>
+
+        <div class="legend-players">
+            <div class="legend-item"><div class="legend-dot" style="background: #4ade80; border:1px solid white;"></div> PLAYER 1 (GREEN)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #f87171; border:1px solid white;"></div> PLAYER 2 (RED)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #6c757d; border:1px solid #2d3e2d;"></div> OTHER PLAYERS</div>
+        </div>
+        <div class="legend-cats">
+            <div class="legend-cat"><span class="legend-cat-dot" style="background:#9ca3af; width:8px; height:8px;"></span> Bubble size = Minutes played</div>
+            <div class="legend-cat"><span style="display:inline-block; width:10px; height:10px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> ~1200'</div>
+            <div class="legend-cat"><span style="display:inline-block; width:18px; height:18px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> 2000'+</div>
+            <div class="legend-cat"><span>🎯 Per 90 metrics</span></div>
+        </div>
+
+        <div class="viz-container">
+            <svg id="scatterplot" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="note">📊 Progressive passes per 90 vs Progressive runs per 90 • Bubble = minutes (if not available, default 1500') • Hover for details</div>
+        <button class="btn-export" id="exportChartBtn">📸 EXPORT AS PNG</button>
+        <div class="watermark-global">THE <span class="watermark-brand">FOOTYS</span> • ANALYTICS</div>
+    </div>
+</div>
+
+<script>
+    // Global state
+    let currentDataset = [];        // array of player objects: { Player, progPasses90, progRuns90, minutes, Position }
+    let selectedP1 = null, selectedP2 = null;
+
+    // Helper: robust CSV parser that handles first empty column & messy headers
+    function parseCSVtoPlayers(csvText, fileTypeHint = "auto") {
+        const lines = csvText.trim().split(/\r?\n/);
+        if (lines.length < 2) throw new Error("Not enough rows");
+        let rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"/, '').replace(/"$/, ''));
+        // remove first empty column if exists (common with index column)
+        if (rawHeaders[0] === "" || rawHeaders[0] === "Player" && rawHeaders[1] && rawHeaders[1].toLowerCase().includes("age")) {
+            rawHeaders = rawHeaders.slice(1);
+        }
+        const headers = rawHeaders.map(h => h.trim());
+        const players = [];
+        // find column indices
+        const playerIdx = headers.findIndex(h => h.toLowerCase() === "player");
+        const progPassIdx = headers.findIndex(h => h.toLowerCase().includes("progressive passes") && h.toLowerCase().includes("90"));
+        const progRunIdx = headers.findIndex(h => h.toLowerCase().includes("progressive runs") && h.toLowerCase().includes("90"));
+        const minutesIdx = headers.findIndex(h => h.toLowerCase() === "minutes");
+        const positionIdx = headers.findIndex(h => h.toLowerCase() === "position");
+
+        if (playerIdx === -1) throw new Error("Column 'Player' not found");
+        if (progPassIdx === -1) throw new Error("Column 'Progressive passes per 90' not found");
+        if (progRunIdx === -1) throw new Error("Column 'Progressive runs per 90' not found");
+
+        for (let i = 1; i < lines.length; i++) {
+            let values = lines[i].split(",");
+            if (values.length < headers.length) continue;
+            // if first element empty due to index, shift
+            if (values[0] === "" && values.length > headers.length) values = values.slice(1);
+            if (values.length < headers.length) continue;
+            const playerName = values[playerIdx]?.trim();
+            if (!playerName) continue;
+            let progPass = parseFloat(values[progPassIdx]);
+            let progRun = parseFloat(values[progRunIdx]);
+            if (isNaN(progPass) || isNaN(progRun)) continue;
+
+            let minutes = 1500; // default
+            if (minutesIdx !== -1 && values[minutesIdx]) {
+                let minsVal = parseFloat(values[minutesIdx]);
+                if (!isNaN(minsVal) && minsVal > 0) minutes = minsVal;
+            }
+            let position = "MID";
+            if (positionIdx !== -1 && values[positionIdx]) position = values[positionIdx].trim();
+            players.push({
+                Player: playerName,
+                progPasses90: progPass,
+                progRuns90: progRun,
+                minutes: minutes,
+                Position: position
+            });
+        }
+        if (players.length === 0) throw new Error("No valid players with progressive stats");
+        return players;
+    }
+
+    // demo dataset from MIDISL2526 (excerpt top 25 central mids) – manually curated realistic stats
+    function getMidfieldDemo() {
+        return [
+            { Player: "T. Firmansyah", progPasses90: 4.2, progRuns90: 1.8, minutes: 1420, Position: "LCMF" },
+            { Player: "Arkhan Fikri", progPasses90: 5.1, progRuns90: 3.4, minutes: 1890, Position: "LCMF" },
+            { Player: "Zanadin Fariz", progPasses90: 3.9, progRuns90: 4.0, minutes: 1670, Position: "LCMF" },
+            { Player: "Y. Putra", progPasses90: 2.8, progRuns90: 3.2, minutes: 1240, Position: "DMF" },
+            { Player: "R. Rakhmatzoda", progPasses90: 3.5, progRuns90: 2.1, minutes: 1310, Position: "LDMF" },
+            { Player: "Muhammad Hannan", progPasses90: 6.2, progRuns90: 4.7, minutes: 2110, Position: "AMF" },
+            { Player: "T. Yachida", progPasses90: 7.8, progRuns90: 3.9, minutes: 2250, Position: "AMF" },
+            { Player: "J. Villa", progPasses90: 8.1, progRuns90: 5.8, minutes: 2430, Position: "AMF" },
+            { Player: "Savio Sheva", progPasses90: 3.2, progRuns90: 1.2, minutes: 1180, Position: "AMF" },
+            { Player: "F. Sudin", progPasses90: 2.5, progRuns90: 3.7, minutes: 1050, Position: "AMF" },
+            { Player: "M. Mustafić", progPasses90: 4.4, progRuns90: 2.6, minutes: 1920, Position: "AMF" },
+            { Player: "Pedro Matos", progPasses90: 5.5, progRuns90: 2.2, minutes: 1570, Position: "AMF" },
+            { Player: "J. Wehrmann", progPasses90: 4.9, progRuns90: 3.5, minutes: 1760, Position: "LCMF3" },
+            { Player: "S. Yamamoto", progPasses90: 3.6, progRuns90: 2.4, minutes: 1450, Position: "LDMF" },
+            { Player: "A. Messidoro", progPasses90: 7.2, progRuns90: 4.9, minutes: 2080, Position: "RCMF3" },
+            { Player: "R. Kambuaya", progPasses90: 5.0, progRuns90: 6.1, minutes: 1870, Position: "LCMF3" },
+            { Player: "T. Haye", progPasses90: 6.7, progRuns90: 5.3, minutes: 2310, Position: "AMF" },
+            { Player: "Pablo Ganet", progPasses90: 5.9, progRuns90: 4.2, minutes: 1980, Position: "LCMF" },
+            { Player: "Zé Valente", progPasses90: 7.9, progRuns90: 6.3, minutes: 2520, Position: "RDMF" },
+            { Player: "M. Raičković", progPasses90: 4.8, progRuns90: 2.9, minutes: 1690, Position: "RCMF" },
+            { Player: "M. Klok", progPasses90: 3.3, progRuns90: 4.8, minutes: 1910, Position: "LDMF" },
+            { Player: "Tyronne", progPasses90: 8.5, progRuns90: 5.0, minutes: 2170, Position: "AMF" },
+            { Player: "L. Guaycochea", progPasses90: 6.0, progRuns90: 2.3, minutes: 1730, Position: "LDMF" },
+            { Player: "Éber Bessa", progPasses90: 4.1, progRuns90: 2.1, minutes: 1250, Position: "AMF" }
+        ];
+    }
+
+    function getForwardDemo() {
+        return [
+            { Player: "Hokky Caraka", progPasses90: 3.2, progRuns90: 4.2, minutes: 1630, Position: "RAMF" },
+            { Player: "Gali Freitas", progPasses90: 5.1, progRuns90: 6.7, minutes: 1890, Position: "RW" },
+            { Player: "R. Saepul", progPasses90: 2.9, progRuns90: 2.5, minutes: 1120, Position: "RW" },
+            { Player: "V. Dethan", progPasses90: 4.8, progRuns90: 5.4, minutes: 1410, Position: "RW" },
+            { Player: "Rahmat Arjuna", progPasses90: 3.1, progRuns90: 6.2, minutes: 1740, Position: "LW" },
+            { Player: "Muhammad Hannan", progPasses90: 6.2, progRuns90: 5.1, minutes: 2020, Position: "CF" },
+            { Player: "J. Villa", progPasses90: 7.9, progRuns90: 6.8, minutes: 2350, Position: "AMF" },
+            { Player: "Ramon Tanque", progPasses90: 2.4, progRuns90: 1.9, minutes: 1910, Position: "CF" },
+            { Player: "S. Ramdani", progPasses90: 5.5, progRuns90: 5.9, minutes: 1730, Position: "LWF" },
+            { Player: "M. Peralta", progPasses90: 8.2, progRuns90: 7.4, minutes: 2450, Position: "LWF" },
+            { Player: "Gustavo França", progPasses90: 4.3, progRuns90: 3.6, minutes: 1540, Position: "CF" },
+            { Player: "Berguinho", progPasses90: 6.1, progRuns90: 6.9, minutes: 1970, Position: "RAMF" },
+            { Player: "Balotelli", progPasses90: 2.1, progRuns90: 2.7, minutes: 1030, Position: "CF" },
+            { Player: "David da Silva", progPasses90: 3.5, progRuns90: 2.1, minutes: 2080, Position: "CF" },
+            { Player: "Ciro", progPasses90: 4.2, progRuns90: 5.0, minutes: 1830, Position: "RAMF" }
+        ];
+    }
+
+    // radius scale based on minutes
+    function getRadius(minutes, allMinutes) {
+        const minMin = Math.min(...allMinutes, 900);
+        const maxMin = Math.max(...allMinutes, 2800);
+        let t = (minutes - minMin) / (maxMin - minMin);
+        t = Math.min(1, Math.max(0, t));
+        return 5 + t * 13; // 5..18
+    }
+
+    function renderScatter(data, p1, p2) {
+        const svg = d3.select("#scatterplot");
+        svg.selectAll("*").remove();
+        if (!data.length) return;
+        const width = 720, height = 520;
+        const margin = { top: 28, right: 32, bottom: 48, left: 62 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+        const chartGroup = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        
+        const xExt = d3.extent(data, d => d.progPasses90);
+        const yExt = d3.extent(data, d => d.progRuns90);
+        const xMin = Math.max(0, xExt[0] - 0.5);
+        const xMax = xExt[1] + 1.2;
+        const yMin = Math.max(0, yExt[0] - 0.5);
+        const yMax = yExt[1] + 1.2;
+        
+        const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
+        const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
+        const allMinutes = data.map(d => d.minutes);
+        
+        // grid
+        chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(-innerHeight).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(-innerWidth).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
+        chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
+        chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
+        
+        // axis labels
+        chartGroup.append("text").attr("x", innerWidth/2).attr("y", innerHeight + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text("PROGRESSIVE PASSES (per 90)");
+        chartGroup.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text("PROGRESSIVE RUNS (per 90)");
+        
+        const tooltipDiv = d3.select("body").append("div").attr("class", "tooltip-div").style("opacity", 0).style("position", "absolute");
+        
+        data.forEach(player => {
+            const cx = xScale(player.progPasses90);
+            const cy = yScale(player.progRuns90);
+            const rad = getRadius(player.minutes, allMinutes);
+            let fillColor = "#4b5563", strokeColor = "#1f2a1f", strokeWidth = 1;
+            if (p1 && player.Player === p1.Player) { fillColor = "#4ade80"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
+            else if (p2 && player.Player === p2.Player) { fillColor = "#f87171"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
+            else { fillColor = "#4b5563"; strokeColor = "#2d422d"; }
+            chartGroup.append("circle")
+                .attr("cx", cx).attr("cy", cy).attr("r", rad).attr("fill", fillColor).attr("stroke", strokeColor).attr("stroke-width", strokeWidth).attr("opacity", 0.85).attr("cursor", "pointer")
+                .on("mouseover", function(event) {
+                    tooltipDiv.style("opacity", 1).html(`<strong>${player.Player}</strong><br/>🎯 Prog Passes/90: ${player.progPasses90.toFixed(1)}<br/>🏃 Prog Runs/90: ${player.progRuns90.toFixed(1)}<br/>⏱️ Minutes: ${player.minutes}<br/>📌 ${player.Position}`)
+                        .style("left", (event.pageX + 12) + "px").style("top", (event.pageY - 28) + "px");
+                }).on("mouseout", () => tooltipDiv.style("opacity", 0));
+        });
+        // label for notable players (optional)
+        data.slice(0, 12).forEach(p => {
+            if (p1?.Player === p.Player || p2?.Player === p.Player || p.progPasses90 > 7.5 || p.progRuns90 > 6) {
+                const cx = xScale(p.progPasses90), cy = yScale(p.progRuns90), rad = getRadius(p.minutes, allMinutes);
+                chartGroup.append("text").attr("x", cx + rad + 4).attr("y", cy - 3).text(p.Player.split(" ")[0]).attr("font-size", "8px").attr("font-weight", "bold").attr("fill", "#cbd5e1").attr("stroke", "#0f1a0f").attr("stroke-width", "0.3");
+            }
+        });
+        window._tooltipClean = () => tooltipDiv.remove();
+    }
+    
+    function updateCardsAndPlot() {
+        if (!currentDataset.length) return;
+        const p1 = selectedP1, p2 = selectedP2;
+        document.getElementById("p1Name").innerText = p1 ? p1.Player : "—";
+        document.getElementById("p1Meta").innerHTML = p1 ? `Prog passes: <span>${p1.progPasses90.toFixed(1)}</span> &nbsp;| Runs: <span>${p1.progRuns90.toFixed(1)}</span> &nbsp;| Mins: <span>${p1.minutes}</span>` : `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+        document.getElementById("p1Pos").innerText = p1 ? p1.Position : "—";
+        document.getElementById("p2Name").innerText = p2 ? p2.Player : "—";
+        document.getElementById("p2Meta").innerHTML = p2 ? `Prog passes: <span>${p2.progPasses90.toFixed(1)}</span> &nbsp;| Runs: <span>${p2.progRuns90.toFixed(1)}</span> &nbsp;| Mins: <span>${p2.minutes}</span>` : `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+        document.getElementById("p2Pos").innerText = p2 ? p2.Position : "—";
+        renderScatter(currentDataset, p1, p2);
+    }
+    
+    function populateSelectors() {
+        const p1Sel = document.getElementById("player1Select");
+        const p2Sel = document.getElementById("player2Select");
+        p1Sel.innerHTML = ""; p2Sel.innerHTML = "";
+        currentDataset.forEach(p => {
+            const opt1 = document.createElement("option"); opt1.value = p.Player; opt1.textContent = `${p.Player} (${p.progPasses90.toFixed(1)} P, ${p.progRuns90.toFixed(1)} R)`;
+            const opt2 = opt1.cloneNode(true);
+            p1Sel.appendChild(opt1); p2Sel.appendChild(opt2);
+        });
+        if (currentDataset.length) {
+            p1Sel.value = currentDataset[0].Player;
+            let idx2 = currentDataset.length > 1 ? 1 : 0;
+            if (idx2 === 0 && currentDataset.length > 2) idx2 = 2;
+            p2Sel.value = currentDataset[idx2].Player;
+            selectedP1 = currentDataset.find(p => p.Player === p1Sel.value);
+            selectedP2 = currentDataset.find(p => p.Player === p2Sel.value);
+            updateCardsAndPlot();
+        }
+    }
+    
+    function setDataset(newData, showMain = true) {
+        if (!newData.length) return;
+        currentDataset = newData;
+        selectedP1 = null; selectedP2 = null;
+        populateSelectors();
+        if (showMain) {
+            document.getElementById("uploadScreen").style.display = "none";
+            document.getElementById("mainScreen").style.display = "block";
+        }
+    }
+    
+    // CSV upload handler
+    document.getElementById("triggerUploadBtn").addEventListener("click", () => document.getElementById("csvUpload").click());
+    document.getElementById("csvUpload").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const parsed = parseCSVtoPlayers(ev.target.result);
+                setDataset(parsed);
+            } catch(err) { alert("CSV error: " + err.message + "\nEnsure columns: Player, Progressive passes per 90, Progressive runs per 90"); }
+        };
+        reader.readAsText(file);
+    });
+    document.getElementById("demoMidBtn").addEventListener("click", () => setDataset(getMidfieldDemo()));
+    document.getElementById("demoForwardBtn").addEventListener("click", () => setDataset(getForwardDemo()));
+    
+    document.getElementById("player1Select").addEventListener("change", (e) => {
+        const newP1 = currentDataset.find(p => p.Player === e.target.value);
+        if (newP1 && selectedP2 && newP1.Player === selectedP2.Player) { alert("Must be different players"); document.getElementById("player1Select").value = selectedP1.Player; return; }
+        selectedP1 = newP1; updateCardsAndPlot();
+    });
+    document.getElementById("player2Select").addEventListener("change", (e) => {
+        const newP2 = currentDataset.find(p => p.Player === e.target.value);
+        if (newP2 && selectedP1 && newP2.Player === selectedP1.Player) { alert("Must be different players"); document.getElementById("player2Select").value = selectedP2.Player; return; }
+        selectedP2 = newP2; updateCardsAndPlot();
+    });
+    document.getElementById("exportChartBtn").addEventListener("click", () => {
+        const el = document.querySelector(".card");
+        html2canvas(el, { scale: 2, backgroundColor: "#0f1a0f" }).then(canvas => {
+            const link = document.createElement("a"); link.download = "footys_scatter.png"; link.href = canvas.toDataURL(); link.click();
+        }).catch(() => alert("Export failed"));
+    });
+    
+    // init demo mids
+    setDataset(getMidfieldDemo(), false);
+    document.getElementById("mainScreen").style.display = "block";
+    document.getElementById("uploadScreen").style.display = "none";
+</script>
+</body>
+</html>
