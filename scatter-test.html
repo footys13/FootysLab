@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>THE FOOTYS · Progressive Passes vs Runs | Scatter Hub</title>
+    <title>THE FOOTYS · Dynamic Scatter | Pick any stats</title>
     <!-- Google Fonts & D3 -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -22,7 +22,7 @@
         }
         .topbar {
             width: 100%;
-            max-width: 780px;
+            max-width: 820px;
             border-left: 3px solid #4ade80;
             padding: 12px 20px;
             background: #0f1a0f;
@@ -39,7 +39,7 @@
             justify-content: center;
             min-height: 60vh;
             width: 100%;
-            max-width: 780px;
+            max-width: 820px;
         }
         .upload-box {
             border: 2px dashed #1f2d1f;
@@ -78,13 +78,29 @@
         #mainScreen {
             display: none;
             width: 100%;
-            max-width: 780px;
+            max-width: 820px;
         }
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
             gap: 12px;
             margin-bottom: 20px;
+            background: #0f1a0f;
+            padding: 12px 16px;
+            border-radius: 20px;
+            align-items: center;
+        }
+        .axis-selector {
+            flex: 1;
+            min-width: 160px;
+        }
+        .axis-selector label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #9ca3af;
+            display: block;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
         }
         select {
             width: 100%;
@@ -92,11 +108,17 @@
             color: white;
             border: 1px solid #2d4a2d;
             border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 13px;
+            padding: 8px 12px;
+            font-size: 12px;
             font-family: 'Barlow', sans-serif;
             font-weight: 500;
             cursor: pointer;
+        }
+        .player-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         .card {
             background: #0f1a0f;
@@ -150,7 +172,7 @@
             display: flex;
             gap: 24px;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 14px;
         }
         .legend-item {
             display: flex;
@@ -164,45 +186,6 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-        }
-        .legend-cats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .legend-cat {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 10px;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .legend-cat-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #6b7280;
-        }
-        .watermark-global {
-            text-align: center;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 14px;
-            font-weight: 900;
-            letter-spacing: 6px;
-            color: #2c4a2c;
-            text-transform: uppercase;
-            margin-top: 14px;
-            padding-top: 10px;
-            border-top: 1px solid #1a2e1a;
-        }
-        .watermark-brand {
-            color: #4ade80;
-            opacity: 0.9;
-            letter-spacing: 4px;
         }
         .viz-container {
             position: relative;
@@ -265,40 +248,71 @@
             color: #4b5563;
             margin-top: 12px;
         }
+        .watermark-global {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #2c4a2c;
+            text-transform: uppercase;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .watermark-brand {
+            color: #4ade80;
+            opacity: 0.9;
+            letter-spacing: 4px;
+        }
     </style>
 </head>
 <body>
-<div class="topbar" id="infoBar">⚽ THE FOOTYS · PROGRESSIVE METRICS | CENTRAL MIDFIELDERS · ISL 25/26</div>
+<div class="topbar">⚽ THE FOOTYS · CUSTOMIZABLE SCATTERPLOT | PICK ANY STATS</div>
 
 <!-- UPLOAD SCREEN -->
 <div id="uploadScreen">
     <div class="upload-box">
-        <p>📁 UPLOAD CSV (MIDFIELDERS / FORWARDS)</p>
+        <p>📁 UPLOAD CSV (ANY STATS, ANY POSITION)</p>
         <input type="file" id="csvUpload" accept=".csv" style="display: none;">
         <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
-        <button id="demoMidBtn" class="demo-btn">⭐ DEMO: CENTRAL MIDS (ISL)</button>
+        <button id="demoMidBtn" class="demo-btn">⭐ DEMO: MIDFIELDERS (ISL)</button>
         <button id="demoForwardBtn" class="demo-btn">⚡ DEMO: FORWARDS (ISL)</button>
-        <div style="margin-top: 20px; font-size: 10px; color:#3a4a3a;">Expects columns: Player, Progressive passes per 90, Progressive runs per 90, Minutes (optional), Position</div>
+        <div style="margin-top: 20px; font-size: 10px; color:#3a4a3a;">CSV must have a "Player" column and numeric columns. You can select X/Y axis later.</div>
     </div>
 </div>
 
 <!-- MAIN DASHBOARD -->
 <div id="mainScreen">
-    <div class="controls">
+    <!-- Axis selection panel -->
+    <div class="controls-panel">
+        <div class="axis-selector">
+            <label>📊 X-AXIS STAT</label>
+            <select id="xAxisSelect"></select>
+        </div>
+        <div class="axis-selector">
+            <label>📈 Y-AXIS STAT</label>
+            <select id="yAxisSelect"></select>
+        </div>
+    </div>
+
+    <!-- Player compare dropdowns -->
+    <div class="player-compare">
         <select id="player1Select"></select>
         <select id="player2Select"></select>
     </div>
+
     <div class="card">
         <div class="card-header">
             <div class="player-card">
                 <div class="player-name p1-name" id="p1Name">—</div>
-                <div class="player-meta" id="p1Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
-                <div class="position-badge badge-p1" id="p1Pos">MID</div>
+                <div class="player-meta" id="p1Meta">—</div>
+                <div class="position-badge badge-p1" id="p1Pos">—</div>
             </div>
             <div class="player-card">
                 <div class="player-name p2-name" id="p2Name">—</div>
-                <div class="player-meta" id="p2Meta">Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span></div>
-                <div class="position-badge badge-p2" id="p2Pos">MID</div>
+                <div class="player-meta" id="p2Meta">—</div>
+                <div class="position-badge badge-p2" id="p2Pos">—</div>
             </div>
         </div>
 
@@ -307,192 +321,191 @@
             <div class="legend-item"><div class="legend-dot" style="background: #f87171; border:1px solid white;"></div> PLAYER 2 (RED)</div>
             <div class="legend-item"><div class="legend-dot" style="background: #6c757d; border:1px solid #2d3e2d;"></div> OTHER PLAYERS</div>
         </div>
-        <div class="legend-cats">
-            <div class="legend-cat"><span class="legend-cat-dot" style="background:#9ca3af; width:8px; height:8px;"></span> Bubble size = Minutes played</div>
-            <div class="legend-cat"><span style="display:inline-block; width:10px; height:10px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> ~1200'</div>
-            <div class="legend-cat"><span style="display:inline-block; width:18px; height:18px; background:#4ade80; border-radius:50%; opacity:0.6;"></span> 2000'+</div>
-            <div class="legend-cat"><span>🎯 Per 90 metrics</span></div>
-        </div>
 
         <div class="viz-container">
             <svg id="scatterplot" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
-        <div class="note">📊 Progressive passes per 90 vs Progressive runs per 90 • Bubble = minutes (if not available, default 1500') • Hover for details</div>
+        <div class="note">💡 Hover over any bubble to see details. Adjust X/Y stats from dropdowns above.</div>
         <button class="btn-export" id="exportChartBtn">📸 EXPORT AS PNG</button>
         <div class="watermark-global">THE <span class="watermark-brand">FOOTYS</span> • ANALYTICS</div>
     </div>
 </div>
 
 <script>
-    // Global state
-    let currentDataset = [];        // array of player objects: { Player, progPasses90, progRuns90, minutes, Position }
+    // ----------------------------- GLOBALS ---------------------------------
+    let currentDataset = [];        // array of player objects: { Player, Position, ...numericStats }
     let selectedP1 = null, selectedP2 = null;
+    let currentXField = "Progressive passes per 90";
+    let currentYField = "Progressive runs per 90";
+    let numericFields = [];          // list of available numeric column names
 
-    // Helper: robust CSV parser that handles first empty column & messy headers
-    function parseCSVtoPlayers(csvText, fileTypeHint = "auto") {
+    // ----------------------------- HELPER: parse CSV dynamically ----------
+    function parseCSVtoPlayers(csvText) {
         const lines = csvText.trim().split(/\r?\n/);
         if (lines.length < 2) throw new Error("Not enough rows");
         let rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"/, '').replace(/"$/, ''));
-        // remove first empty column if exists (common with index column)
+        // Remove initial empty column if present
         if (rawHeaders[0] === "" || rawHeaders[0] === "Player" && rawHeaders[1] && rawHeaders[1].toLowerCase().includes("age")) {
             rawHeaders = rawHeaders.slice(1);
         }
         const headers = rawHeaders.map(h => h.trim());
-        const players = [];
-        // find column indices
+        
+        // Locate mandatory Player column
         const playerIdx = headers.findIndex(h => h.toLowerCase() === "player");
-        const progPassIdx = headers.findIndex(h => h.toLowerCase().includes("progressive passes") && h.toLowerCase().includes("90"));
-        const progRunIdx = headers.findIndex(h => h.toLowerCase().includes("progressive runs") && h.toLowerCase().includes("90"));
-        const minutesIdx = headers.findIndex(h => h.toLowerCase() === "minutes");
+        if (playerIdx === -1) throw new Error("CSV must contain a 'Player' column");
+        
+        // Locate optional Position column
         const positionIdx = headers.findIndex(h => h.toLowerCase() === "position");
-
-        if (playerIdx === -1) throw new Error("Column 'Player' not found");
-        if (progPassIdx === -1) throw new Error("Column 'Progressive passes per 90' not found");
-        if (progRunIdx === -1) throw new Error("Column 'Progressive runs per 90' not found");
-
+        
+        // Gather numeric columns (everything except Player, Position, and maybe non-numeric)
+        const potentialNumeric = [];
+        for (let i = 0; i < headers.length; i++) {
+            const col = headers[i];
+            if (col.toLowerCase() === "player") continue;
+            if (col.toLowerCase() === "position") continue;
+            potentialNumeric.push(col);
+        }
+        
+        const players = [];
+        // First pass: read all rows to collect numeric values
         for (let i = 1; i < lines.length; i++) {
             let values = lines[i].split(",");
-            if (values.length < headers.length) continue;
-            // if first element empty due to index, shift
             if (values[0] === "" && values.length > headers.length) values = values.slice(1);
             if (values.length < headers.length) continue;
             const playerName = values[playerIdx]?.trim();
             if (!playerName) continue;
-            let progPass = parseFloat(values[progPassIdx]);
-            let progRun = parseFloat(values[progRunIdx]);
-            if (isNaN(progPass) || isNaN(progRun)) continue;
-
-            let minutes = 1500; // default
-            if (minutesIdx !== -1 && values[minutesIdx]) {
-                let minsVal = parseFloat(values[minutesIdx]);
-                if (!isNaN(minsVal) && minsVal > 0) minutes = minsVal;
+            
+            const playerObj = { Player: playerName };
+            if (positionIdx !== -1 && values[positionIdx]) playerObj.Position = values[positionIdx].trim();
+            else playerObj.Position = "—";
+            
+            let hasValidNumeric = false;
+            for (let j = 0; j < potentialNumeric.length; j++) {
+                const col = potentialNumeric[j];
+                const colIdx = headers.findIndex(h => h === col);
+                let rawVal = values[colIdx]?.trim();
+                let numVal = parseFloat(rawVal);
+                if (!isNaN(numVal)) {
+                    playerObj[col] = numVal;
+                    hasValidNumeric = true;
+                } else {
+                    playerObj[col] = null;
+                }
             }
-            let position = "MID";
-            if (positionIdx !== -1 && values[positionIdx]) position = values[positionIdx].trim();
-            players.push({
-                Player: playerName,
-                progPasses90: progPass,
-                progRuns90: progRun,
-                minutes: minutes,
-                Position: position
-            });
+            if (hasValidNumeric) players.push(playerObj);
         }
-        if (players.length === 0) throw new Error("No valid players with progressive stats");
-        return players;
+        
+        if (players.length === 0) throw new Error("No valid players with numeric data");
+        
+        // Determine numeric fields that have at least some non-null values
+        const fieldSet = new Set();
+        players.forEach(p => {
+            potentialNumeric.forEach(f => {
+                if (p[f] !== null && typeof p[f] === 'number') fieldSet.add(f);
+            });
+        });
+        numericFields = Array.from(fieldSet).sort();
+        
+        return { players, numericFields };
     }
-
-    // demo dataset from MIDISL2526 (excerpt top 25 central mids) – manually curated realistic stats
+    
+    // ----------------------------- DEMO DATASETS (based on user's original files) -------------
     function getMidfieldDemo() {
-        return [
-            { Player: "T. Firmansyah", progPasses90: 4.2, progRuns90: 1.8, minutes: 1420, Position: "LCMF" },
-            { Player: "Arkhan Fikri", progPasses90: 5.1, progRuns90: 3.4, minutes: 1890, Position: "LCMF" },
-            { Player: "Zanadin Fariz", progPasses90: 3.9, progRuns90: 4.0, minutes: 1670, Position: "LCMF" },
-            { Player: "Y. Putra", progPasses90: 2.8, progRuns90: 3.2, minutes: 1240, Position: "DMF" },
-            { Player: "R. Rakhmatzoda", progPasses90: 3.5, progRuns90: 2.1, minutes: 1310, Position: "LDMF" },
-            { Player: "Muhammad Hannan", progPasses90: 6.2, progRuns90: 4.7, minutes: 2110, Position: "AMF" },
-            { Player: "T. Yachida", progPasses90: 7.8, progRuns90: 3.9, minutes: 2250, Position: "AMF" },
-            { Player: "J. Villa", progPasses90: 8.1, progRuns90: 5.8, minutes: 2430, Position: "AMF" },
-            { Player: "Savio Sheva", progPasses90: 3.2, progRuns90: 1.2, minutes: 1180, Position: "AMF" },
-            { Player: "F. Sudin", progPasses90: 2.5, progRuns90: 3.7, minutes: 1050, Position: "AMF" },
-            { Player: "M. Mustafić", progPasses90: 4.4, progRuns90: 2.6, minutes: 1920, Position: "AMF" },
-            { Player: "Pedro Matos", progPasses90: 5.5, progRuns90: 2.2, minutes: 1570, Position: "AMF" },
-            { Player: "J. Wehrmann", progPasses90: 4.9, progRuns90: 3.5, minutes: 1760, Position: "LCMF3" },
-            { Player: "S. Yamamoto", progPasses90: 3.6, progRuns90: 2.4, minutes: 1450, Position: "LDMF" },
-            { Player: "A. Messidoro", progPasses90: 7.2, progRuns90: 4.9, minutes: 2080, Position: "RCMF3" },
-            { Player: "R. Kambuaya", progPasses90: 5.0, progRuns90: 6.1, minutes: 1870, Position: "LCMF3" },
-            { Player: "T. Haye", progPasses90: 6.7, progRuns90: 5.3, minutes: 2310, Position: "AMF" },
-            { Player: "Pablo Ganet", progPasses90: 5.9, progRuns90: 4.2, minutes: 1980, Position: "LCMF" },
-            { Player: "Zé Valente", progPasses90: 7.9, progRuns90: 6.3, minutes: 2520, Position: "RDMF" },
-            { Player: "M. Raičković", progPasses90: 4.8, progRuns90: 2.9, minutes: 1690, Position: "RCMF" },
-            { Player: "M. Klok", progPasses90: 3.3, progRuns90: 4.8, minutes: 1910, Position: "LDMF" },
-            { Player: "Tyronne", progPasses90: 8.5, progRuns90: 5.0, minutes: 2170, Position: "AMF" },
-            { Player: "L. Guaycochea", progPasses90: 6.0, progRuns90: 2.3, minutes: 1730, Position: "LDMF" },
-            { Player: "Éber Bessa", progPasses90: 4.1, progRuns90: 2.1, minutes: 1250, Position: "AMF" }
+        // Simulate realistic numeric stats from MIDISL2526 (Progressive passes/90, runs/90, plus extra)
+        const raw = [
+            { Player: "T. Firmansyah", Position: "LCMF", "Progressive passes per 90": 4.2, "Progressive runs per 90": 1.8, "Non-penalty goals per 90": 0.13, "Successful dribbles %": 0.98, "Touches in box per 90": 0.11 },
+            { Player: "Arkhan Fikri", Position: "LCMF", "Progressive passes per 90": 5.1, "Progressive runs per 90": 3.4, "Non-penalty goals per 90": 0.60, "Successful dribbles %": 0.24, "Touches in box per 90": 0.52 },
+            { Player: "Zanadin Fariz", Position: "LCMF", "Progressive passes per 90": 3.9, "Progressive runs per 90": 4.0, "Non-penalty goals per 90": 0.34, "Successful dribbles %": 0.93, "Touches in box per 90": 0.38 },
+            { Player: "Y. Putra", Position: "DMF", "Progressive passes per 90": 2.8, "Progressive runs per 90": 3.2, "Non-penalty goals per 90": 0.5, "Successful dribbles %": 0.75, "Touches in box per 90": 0.34 },
+            { Player: "Muhammad Hannan", Position: "AMF", "Progressive passes per 90": 6.2, "Progressive runs per 90": 4.7, "Non-penalty goals per 90": 0.93, "Successful dribbles %": 0.92, "Touches in box per 90": 0.93 },
+            { Player: "T. Yachida", Position: "AMF", "Progressive passes per 90": 7.8, "Progressive runs per 90": 3.9, "Non-penalty goals per 90": 0.97, "Successful dribbles %": 0.74, "Touches in box per 90": 1.0 },
+            { Player: "J. Villa", Position: "AMF", "Progressive passes per 90": 8.1, "Progressive runs per 90": 5.8, "Non-penalty goals per 90": 1.0, "Successful dribbles %": 0.28, "Touches in box per 90": 0.84 },
+            { Player: "Savio Sheva", Position: "AMF", "Progressive passes per 90": 3.2, "Progressive runs per 90": 1.2, "Non-penalty goals per 90": 0.84, "Successful dribbles %": 0.11, "Touches in box per 90": 0.74 },
+            { Player: "F. Sudin", Position: "AMF", "Progressive passes per 90": 2.5, "Progressive runs per 90": 3.7, "Non-penalty goals per 90": 0.67, "Successful dribbles %": 0.18, "Touches in box per 90": 0.98 },
+            { Player: "M. Mustafić", Position: "AMF", "Progressive passes per 90": 4.4, "Progressive runs per 90": 2.6, "Non-penalty goals per 90": 0.89, "Successful dribbles %": 0.40, "Touches in box per 90": 0.95 },
+            { Player: "Pedro Matos", Position: "AMF", "Progressive passes per 90": 5.5, "Progressive runs per 90": 2.2, "Non-penalty goals per 90": 0.42, "Successful dribbles %": 0.20, "Touches in box per 90": 0.62 },
+            { Player: "T. Haye", Position: "AMF", "Progressive passes per 90": 6.7, "Progressive runs per 90": 5.3, "Non-penalty goals per 90": 0.54, "Successful dribbles %": 0.72, "Touches in box per 90": 0.72 },
+            { Player: "Pablo Ganet", Position: "LCMF", "Progressive passes per 90": 5.9, "Progressive runs per 90": 4.2, "Non-penalty goals per 90": 0.81, "Successful dribbles %": 0.62, "Touches in box per 90": 0.56 },
+            { Player: "Zé Valente", Position: "RDMF", "Progressive passes per 90": 7.9, "Progressive runs per 90": 6.3, "Non-penalty goals per 90": 0.67, "Successful dribbles %": 0.38, "Touches in box per 90": 0.70 },
+            { Player: "Tyronne", Position: "AMF", "Progressive passes per 90": 8.5, "Progressive runs per 90": 5.0, "Non-penalty goals per 90": 0.95, "Successful dribbles %": 0.51, "Touches in box per 90": 0.90 }
         ];
+        return raw;
     }
-
+    
     function getForwardDemo() {
         return [
-            { Player: "Hokky Caraka", progPasses90: 3.2, progRuns90: 4.2, minutes: 1630, Position: "RAMF" },
-            { Player: "Gali Freitas", progPasses90: 5.1, progRuns90: 6.7, minutes: 1890, Position: "RW" },
-            { Player: "R. Saepul", progPasses90: 2.9, progRuns90: 2.5, minutes: 1120, Position: "RW" },
-            { Player: "V. Dethan", progPasses90: 4.8, progRuns90: 5.4, minutes: 1410, Position: "RW" },
-            { Player: "Rahmat Arjuna", progPasses90: 3.1, progRuns90: 6.2, minutes: 1740, Position: "LW" },
-            { Player: "Muhammad Hannan", progPasses90: 6.2, progRuns90: 5.1, minutes: 2020, Position: "CF" },
-            { Player: "J. Villa", progPasses90: 7.9, progRuns90: 6.8, minutes: 2350, Position: "AMF" },
-            { Player: "Ramon Tanque", progPasses90: 2.4, progRuns90: 1.9, minutes: 1910, Position: "CF" },
-            { Player: "S. Ramdani", progPasses90: 5.5, progRuns90: 5.9, minutes: 1730, Position: "LWF" },
-            { Player: "M. Peralta", progPasses90: 8.2, progRuns90: 7.4, minutes: 2450, Position: "LWF" },
-            { Player: "Gustavo França", progPasses90: 4.3, progRuns90: 3.6, minutes: 1540, Position: "CF" },
-            { Player: "Berguinho", progPasses90: 6.1, progRuns90: 6.9, minutes: 1970, Position: "RAMF" },
-            { Player: "Balotelli", progPasses90: 2.1, progRuns90: 2.7, minutes: 1030, Position: "CF" },
-            { Player: "David da Silva", progPasses90: 3.5, progRuns90: 2.1, minutes: 2080, Position: "CF" },
-            { Player: "Ciro", progPasses90: 4.2, progRuns90: 5.0, minutes: 1830, Position: "RAMF" }
+            { Player: "Hokky Caraka", Position: "RAMF", "Progressive passes per 90": 3.2, "Progressive runs per 90": 4.2, "Non-penalty goals per 90": 0.46, "Successful dribbles %": 0.40, "Touches in box per 90": 0.33 },
+            { Player: "Gali Freitas", Position: "RW", "Progressive passes per 90": 5.1, "Progressive runs per 90": 6.7, "Non-penalty goals per 90": 0.68, "Successful dribbles %": 0.63, "Touches in box per 90": 0.55 },
+            { Player: "R. Saepul", Position: "RW", "Progressive passes per 90": 2.9, "Progressive runs per 90": 2.5, "Non-penalty goals per 90": 0.19, "Successful dribbles %": 0.93, "Touches in box per 90": 0.21 },
+            { Player: "Rahmat Arjuna", Position: "LW", "Progressive passes per 90": 3.1, "Progressive runs per 90": 6.2, "Non-penalty goals per 90": 0.04, "Successful dribbles %": 0.75, "Touches in box per 90": 0.46 },
+            { Player: "Muhammad Hannan", Position: "CF", "Progressive passes per 90": 6.2, "Progressive runs per 90": 5.1, "Non-penalty goals per 90": 0.62, "Successful dribbles %": 0.99, "Touches in box per 90": 0.49 },
+            { Player: "J. Villa", Position: "AMF", "Progressive passes per 90": 7.9, "Progressive runs per 90": 6.8, "Non-penalty goals per 90": 0.90, "Successful dribbles %": 0.46, "Touches in box per 90": 0.23 },
+            { Player: "Ramon Tanque", Position: "CF", "Progressive passes per 90": 2.4, "Progressive runs per 90": 1.9, "Non-penalty goals per 90": 0.95, "Successful dribbles %": 0.65, "Touches in box per 90": 0.99 },
+            { Player: "M. Peralta", Position: "LWF", "Progressive passes per 90": 8.2, "Progressive runs per 90": 7.4, "Non-penalty goals per 90": 0.91, "Successful dribbles %": 0.94, "Touches in box per 90": 0.95 },
+            { Player: "Berguinho", Position: "RAMF", "Progressive passes per 90": 6.1, "Progressive runs per 90": 6.9, "Non-penalty goals per 90": 0.15, "Successful dribbles %": 0.96, "Touches in box per 90": 0.88 },
+            { Player: "David da Silva", Position: "CF", "Progressive passes per 90": 3.5, "Progressive runs per 90": 2.1, "Non-penalty goals per 90": 0.92, "Successful dribbles %": 0.22, "Touches in box per 90": 0.55 },
+            { Player: "Ciro", Position: "RAMF", "Progressive passes per 90": 4.2, "Progressive runs per 90": 5.0, "Non-penalty goals per 90": 0.80, "Successful dribbles %": 0.59, "Touches in box per 90": 0.85 }
         ];
     }
-
-    // radius scale based on minutes
-    function getRadius(minutes, allMinutes) {
-        const minMin = Math.min(...allMinutes, 900);
-        const maxMin = Math.max(...allMinutes, 2800);
-        let t = (minutes - minMin) / (maxMin - minMin);
-        t = Math.min(1, Math.max(0, t));
-        return 5 + t * 13; // 5..18
-    }
-
-    function renderScatter(data, p1, p2) {
+    
+    // ----------------------------- RENDER SCATTERPLOT (dynamic axes) -----------------
+    function renderScatter() {
         const svg = d3.select("#scatterplot");
         svg.selectAll("*").remove();
-        if (!data.length) return;
+        if (!currentDataset.length || !numericFields.length) return;
+        const xField = currentXField;
+        const yField = currentYField;
+        // filter out players missing either axis value
+        const plotData = currentDataset.filter(p => p[xField] !== null && p[yField] !== null && !isNaN(p[xField]) && !isNaN(p[yField]));
+        if (plotData.length === 0) return;
+        
         const width = 720, height = 520;
         const margin = { top: 28, right: 32, bottom: 48, left: 62 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
         const chartGroup = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
         
-        const xExt = d3.extent(data, d => d.progPasses90);
-        const yExt = d3.extent(data, d => d.progRuns90);
-        const xMin = Math.max(0, xExt[0] - 0.5);
-        const xMax = xExt[1] + 1.2;
-        const yMin = Math.max(0, yExt[0] - 0.5);
-        const yMax = yExt[1] + 1.2;
+        const xExt = d3.extent(plotData, d => d[xField]);
+        const yExt = d3.extent(plotData, d => d[yField]);
+        const xMin = Math.max(0, xExt[0] - (xExt[1]-xExt[0])*0.05);
+        const xMax = xExt[1] + (xExt[1]-xExt[0])*0.05;
+        const yMin = Math.max(0, yExt[0] - (yExt[1]-yExt[0])*0.05);
+        const yMax = yExt[1] + (yExt[1]-yExt[0])*0.05;
         
         const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
         const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
-        const allMinutes = data.map(d => d.minutes);
         
-        // grid
+        // grids
         chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(-innerHeight).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
         chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(-innerWidth).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
         chartGroup.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
         chartGroup.append("g").call(d3.axisLeft(yScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
         
         // axis labels
-        chartGroup.append("text").attr("x", innerWidth/2).attr("y", innerHeight + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text("PROGRESSIVE PASSES (per 90)");
-        chartGroup.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text("PROGRESSIVE RUNS (per 90)");
+        chartGroup.append("text").attr("x", innerWidth/2).attr("y", innerHeight + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(xField.toUpperCase());
+        chartGroup.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(yField.toUpperCase());
         
         const tooltipDiv = d3.select("body").append("div").attr("class", "tooltip-div").style("opacity", 0).style("position", "absolute");
         
-        data.forEach(player => {
-            const cx = xScale(player.progPasses90);
-            const cy = yScale(player.progRuns90);
-            const rad = getRadius(player.minutes, allMinutes);
-            let fillColor = "#4b5563", strokeColor = "#1f2a1f", strokeWidth = 1;
-            if (p1 && player.Player === p1.Player) { fillColor = "#4ade80"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
-            else if (p2 && player.Player === p2.Player) { fillColor = "#f87171"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
-            else { fillColor = "#4b5563"; strokeColor = "#2d422d"; }
+        // draw circles (constant radius, no minutes)
+        plotData.forEach(player => {
+            const cx = xScale(player[xField]);
+            const cy = yScale(player[yField]);
+            let fillColor = "#4b5563", strokeColor = "#2d422d", strokeWidth = 1.2;
+            if (selectedP1 && player.Player === selectedP1.Player) { fillColor = "#4ade80"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
+            else if (selectedP2 && player.Player === selectedP2.Player) { fillColor = "#f87171"; strokeWidth = 2.5; strokeColor = "#ffffff"; }
             chartGroup.append("circle")
-                .attr("cx", cx).attr("cy", cy).attr("r", rad).attr("fill", fillColor).attr("stroke", strokeColor).attr("stroke-width", strokeWidth).attr("opacity", 0.85).attr("cursor", "pointer")
+                .attr("cx", cx).attr("cy", cy).attr("r", 7).attr("fill", fillColor).attr("stroke", strokeColor).attr("stroke-width", strokeWidth).attr("opacity", 0.85).attr("cursor", "pointer")
                 .on("mouseover", function(event) {
-                    tooltipDiv.style("opacity", 1).html(`<strong>${player.Player}</strong><br/>🎯 Prog Passes/90: ${player.progPasses90.toFixed(1)}<br/>🏃 Prog Runs/90: ${player.progRuns90.toFixed(1)}<br/>⏱️ Minutes: ${player.minutes}<br/>📌 ${player.Position}`)
+                    tooltipDiv.style("opacity", 1).html(`<strong>${player.Player}</strong><br/>📌 ${player.Position}<br/>${xField}: ${player[xField].toFixed(2)}<br/>${yField}: ${player[yField].toFixed(2)}`)
                         .style("left", (event.pageX + 12) + "px").style("top", (event.pageY - 28) + "px");
                 }).on("mouseout", () => tooltipDiv.style("opacity", 0));
         });
-        // label for notable players (optional)
-        data.slice(0, 12).forEach(p => {
-            if (p1?.Player === p.Player || p2?.Player === p.Player || p.progPasses90 > 7.5 || p.progRuns90 > 6) {
-                const cx = xScale(p.progPasses90), cy = yScale(p.progRuns90), rad = getRadius(p.minutes, allMinutes);
-                chartGroup.append("text").attr("x", cx + rad + 4).attr("y", cy - 3).text(p.Player.split(" ")[0]).attr("font-size", "8px").attr("font-weight", "bold").attr("fill", "#cbd5e1").attr("stroke", "#0f1a0f").attr("stroke-width", "0.3");
+        // label some top players based on extreme values
+        plotData.forEach(p => {
+            if (selectedP1?.Player === p.Player || selectedP2?.Player === p.Player || p[xField] > xExt[1]*0.85 || p[yField] > yExt[1]*0.85) {
+                const cx = xScale(p[xField]), cy = yScale(p[yField]);
+                chartGroup.append("text").attr("x", cx + 9).attr("y", cy - 4).text(p.Player.split(" ")[0]).attr("font-size", "8px").attr("font-weight", "bold").attr("fill", "#cbd5e1").attr("stroke", "#0f1a0f").attr("stroke-width", "0.3");
             }
         });
         window._tooltipClean = () => tooltipDiv.remove();
@@ -502,20 +515,39 @@
         if (!currentDataset.length) return;
         const p1 = selectedP1, p2 = selectedP2;
         document.getElementById("p1Name").innerText = p1 ? p1.Player : "—";
-        document.getElementById("p1Meta").innerHTML = p1 ? `Prog passes: <span>${p1.progPasses90.toFixed(1)}</span> &nbsp;| Runs: <span>${p1.progRuns90.toFixed(1)}</span> &nbsp;| Mins: <span>${p1.minutes}</span>` : `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+        document.getElementById("p1Meta").innerHTML = p1 ? `${currentXField}: <span>${p1[currentXField]?.toFixed(2) || "?"}</span> &nbsp;| ${currentYField}: <span>${p1[currentYField]?.toFixed(2) || "?"}</span>` : "Select player";
         document.getElementById("p1Pos").innerText = p1 ? p1.Position : "—";
         document.getElementById("p2Name").innerText = p2 ? p2.Player : "—";
-        document.getElementById("p2Meta").innerHTML = p2 ? `Prog passes: <span>${p2.progPasses90.toFixed(1)}</span> &nbsp;| Runs: <span>${p2.progRuns90.toFixed(1)}</span> &nbsp;| Mins: <span>${p2.minutes}</span>` : `Prog passes: <span>—</span> &nbsp;| Runs: <span>—</span> &nbsp;| Mins: <span>—</span>`;
+        document.getElementById("p2Meta").innerHTML = p2 ? `${currentXField}: <span>${p2[currentXField]?.toFixed(2) || "?"}</span> &nbsp;| ${currentYField}: <span>${p2[currentYField]?.toFixed(2) || "?"}</span>` : "Select player";
         document.getElementById("p2Pos").innerText = p2 ? p2.Position : "—";
-        renderScatter(currentDataset, p1, p2);
+        renderScatter();
     }
     
-    function populateSelectors() {
+    function populateAxisSelectors() {
+        const xSelect = document.getElementById("xAxisSelect");
+        const ySelect = document.getElementById("yAxisSelect");
+        xSelect.innerHTML = ""; ySelect.innerHTML = "";
+        numericFields.forEach(f => {
+            const optX = document.createElement("option"); optX.value = f; optX.textContent = f;
+            const optY = optX.cloneNode(true);
+            xSelect.appendChild(optX);
+            ySelect.appendChild(optY);
+        });
+        // set defaults if available
+        if (numericFields.includes("Progressive passes per 90")) currentXField = "Progressive passes per 90";
+        else currentXField = numericFields[0];
+        if (numericFields.includes("Progressive runs per 90")) currentYField = "Progressive runs per 90";
+        else currentYField = numericFields.length > 1 ? numericFields[1] : numericFields[0];
+        xSelect.value = currentXField;
+        ySelect.value = currentYField;
+    }
+    
+    function populatePlayerSelectors() {
         const p1Sel = document.getElementById("player1Select");
         const p2Sel = document.getElementById("player2Select");
         p1Sel.innerHTML = ""; p2Sel.innerHTML = "";
         currentDataset.forEach(p => {
-            const opt1 = document.createElement("option"); opt1.value = p.Player; opt1.textContent = `${p.Player} (${p.progPasses90.toFixed(1)} P, ${p.progRuns90.toFixed(1)} R)`;
+            const opt1 = document.createElement("option"); opt1.value = p.Player; opt1.textContent = `${p.Player} (${p.Position})`;
             const opt2 = opt1.cloneNode(true);
             p1Sel.appendChild(opt1); p2Sel.appendChild(opt2);
         });
@@ -530,42 +562,53 @@
         }
     }
     
-    function setDataset(newData, showMain = true) {
-        if (!newData.length) return;
-        currentDataset = newData;
-        selectedP1 = null; selectedP2 = null;
-        populateSelectors();
-        if (showMain) {
-            document.getElementById("uploadScreen").style.display = "none";
-            document.getElementById("mainScreen").style.display = "block";
-        }
+    function setDataset(rawPlayers, numFields) {
+        currentDataset = rawPlayers;
+        numericFields = numFields;
+        populateAxisSelectors();
+        populatePlayerSelectors();
+        document.getElementById("uploadScreen").style.display = "none";
+        document.getElementById("mainScreen").style.display = "block";
     }
     
-    // CSV upload handler
+    function loadFromCSV(csvText) {
+        const { players, numericFields: fields } = parseCSVtoPlayers(csvText);
+        if (players.length === 0) throw new Error("No valid numeric data found");
+        setDataset(players, fields);
+    }
+    
+    // Event listeners
     document.getElementById("triggerUploadBtn").addEventListener("click", () => document.getElementById("csvUpload").click());
     document.getElementById("csvUpload").addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = ev => {
-            try {
-                const parsed = parseCSVtoPlayers(ev.target.result);
-                setDataset(parsed);
-            } catch(err) { alert("CSV error: " + err.message + "\nEnsure columns: Player, Progressive passes per 90, Progressive runs per 90"); }
+            try { loadFromCSV(ev.target.result); }
+            catch(err) { alert("CSV error: " + err.message); }
         };
         reader.readAsText(file);
     });
-    document.getElementById("demoMidBtn").addEventListener("click", () => setDataset(getMidfieldDemo()));
-    document.getElementById("demoForwardBtn").addEventListener("click", () => setDataset(getForwardDemo()));
-    
+    document.getElementById("demoMidBtn").addEventListener("click", () => {
+        const demo = getMidfieldDemo();
+        const fields = Object.keys(demo[0]).filter(k => k !== "Player" && k !== "Position");
+        setDataset(demo, fields);
+    });
+    document.getElementById("demoForwardBtn").addEventListener("click", () => {
+        const demo = getForwardDemo();
+        const fields = Object.keys(demo[0]).filter(k => k !== "Player" && k !== "Position");
+        setDataset(demo, fields);
+    });
+    document.getElementById("xAxisSelect").addEventListener("change", (e) => { currentXField = e.target.value; updateCardsAndPlot(); });
+    document.getElementById("yAxisSelect").addEventListener("change", (e) => { currentYField = e.target.value; updateCardsAndPlot(); });
     document.getElementById("player1Select").addEventListener("change", (e) => {
         const newP1 = currentDataset.find(p => p.Player === e.target.value);
-        if (newP1 && selectedP2 && newP1.Player === selectedP2.Player) { alert("Must be different players"); document.getElementById("player1Select").value = selectedP1.Player; return; }
+        if (newP1 && selectedP2 && newP1.Player === selectedP2.Player) { alert("Players must be different"); document.getElementById("player1Select").value = selectedP1.Player; return; }
         selectedP1 = newP1; updateCardsAndPlot();
     });
     document.getElementById("player2Select").addEventListener("change", (e) => {
         const newP2 = currentDataset.find(p => p.Player === e.target.value);
-        if (newP2 && selectedP1 && newP2.Player === selectedP1.Player) { alert("Must be different players"); document.getElementById("player2Select").value = selectedP2.Player; return; }
+        if (newP2 && selectedP1 && newP2.Player === selectedP1.Player) { alert("Players must be different"); document.getElementById("player2Select").value = selectedP2.Player; return; }
         selectedP2 = newP2; updateCardsAndPlot();
     });
     document.getElementById("exportChartBtn").addEventListener("click", () => {
@@ -575,10 +618,10 @@
         }).catch(() => alert("Export failed"));
     });
     
-    // init demo mids
-    setDataset(getMidfieldDemo(), false);
-    document.getElementById("mainScreen").style.display = "block";
-    document.getElementById("uploadScreen").style.display = "none";
+    // initial load with midfield demo
+    const initDemo = getMidfieldDemo();
+    const initFields = Object.keys(initDemo[0]).filter(k => k !== "Player" && k !== "Position");
+    setDataset(initDemo, initFields);
 </script>
 </body>
 </html>
