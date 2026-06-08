@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radar Comparison</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 680px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 680px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+    }
+    .card-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .p1-name { color: #4ade80; }
+    .p2-name { color: #f87171; }
+    .player-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 3px;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+    .position-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .badge-p1 { background: #4ade80; color: #0a0f0a; }
+    .badge-p2 { background: #f87171; color: #0a0f0a; }
+    .legend-players {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .legend-cats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .legend-cat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .legend-cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .watermark {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #1a2e1a;
+    }
+    .btn-export {
+      margin-top: 16px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">THE FOOTYS · RADAR COMPARISON</div>
+
+  <div id="uploadScreen">
+    <div class="upload-box">
+      <p>Upload CSV database</p>
+      <input type="file" id="inputCSV" accept=".csv">
+    </div>
+  </div>
+
+  <div id="mainScreen">
+    <div class="controls">
+      <select id="select1" onchange="updateChart()"></select>
+      <select id="select2" onchange="updateChart()"></select>
+    </div>
+
+    <div class="card" id="cardExport">
+
+      <div class="card-header">
+        <div>
+          <div class="player-name p1-name" id="name1">-</div>
+          <div class="player-meta">Club: <span id="team1">-</span></div>
+          <div class="player-meta">Age: <span id="age1">-</span></div>
+          <div class="position-badge badge-p1" id="pos1">-</div>
+        </div>
+        <div>
+          <div class="player-name p2-name" id="name2">-</div>
+          <div class="player-meta">Club: <span id="team2">-</span></div>
+          <div class="player-meta">Age: <span id="age2">-</span></div>
+          <div class="position-badge badge-p2" id="pos2">-</div>
+        </div>
+      </div>
+
+      <div class="legend-players">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4ade80"></div>
+          <span id="legend1">Player 1</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f87171"></div>
+          <span id="legend2">Player 2</span>
+        </div>
+      </div>
+
+      <div class="legend-cats">
+        <div class="legend-cat"><div class="legend-cat-dot" style="background:#f87171"></div> Attacking</div>
+        <div class="legend-cat"><div class="legend-cat-dot" style="background:#4ade80"></div> Possession</div>
+        <div class="legend-cat"><div class="legend-cat-dot" style="background:#c084fc"></div> Progression</div>
+        <div class="legend-cat"><div class="legend-cat-dot" style="background:#60a5fa"></div> Defending</div>
+        <div class="legend-cat"><div class="legend-cat-dot" style="background:#facc15"></div> Discipline</div>
+      </div>
+
+      <svg id="radarSVG" viewBox="0 0 600 600" width="100%" height="100%"></svg>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+    <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    const STATS = [
+      { key: "Non-penalty goals per 90",           label: "NP Goals",   color: "#f87171" },
+      { key: "npxG per 90",                         label: "npxG",       color: "#f87171" },
+      { key: "Goal conversion, %",                  label: "Goal Conv",  color: "#f87171" },
+      { key: "Touches in box per 90",               label: "Box Touch",  color: "#f87171" },
+      { key: "Passes per 90",                       label: "Passes",     color: "#4ade80" },
+      { key: "Accurate short / medium passes, %",   label: "Sh/Med Acc", color: "#4ade80" },
+      { key: "Successful dribbles, %",              label: "Dribbles",   color: "#4ade80" },
+      { key: "Accurate long passes, %",             label: "Long Acc",   color: "#4ade80" },
+      { key: "Progressive passes per 90",           label: "Prog Pass",  color: "#c084fc" },
+      { key: "Progressive runs per 90",             label: "Prog Runs",  color: "#c084fc" },
+      { key: "Shot assists per 90",                 label: "Shot Ast",   color: "#c084fc" },
+      { key: "xA per 90",                           label: "xA",         color: "#c084fc" },
+      { key: "Assists per 90",                      label: "Assists",    color: "#c084fc" },
+      { key: "Duels won, %",                        label: "Duels Won",  color: "#60a5fa" },
+      { key: "Defensive duels won, %",              label: "Def Duels",  color: "#60a5fa" },
+      { key: "Aerial duels won, %",                 label: "Aerial",     color: "#60a5fa" },
+      { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int",    color: "#60a5fa" },
+      { key: "Successful defensive actions per 90", label: "Def Act",    color: "#60a5fa" },
+      { key: "PAdj Interceptions",                  label: "Intercept",  color: "#60a5fa" },
+      { key: "Fouls per 90",                        label: "Fouls",      color: "#facc15" },
+      { key: "Cards per 90",                        label: "Cards",      color: "#facc15" },
+    ];
+
+    let dataPemain = [];
+
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    document.getElementById("inputCSV").onchange = function() {
+      const file = this.files[0];
+      if (!file) return;
+      fetch(URL.createObjectURL(file))
+        .then(function(r) {
+          r.text().then(function(teks) {
+            dataPemain = prosesCSV(teks);
+            ["select1", "select2"].forEach(function(id) {
+              const sel = document.getElementById(id);
+              sel.innerHTML = "";
+              dataPemain.forEach(function(p, i) {
+                sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+              });
+            });
+            document.getElementById("select2").selectedIndex = 1;
+            document.getElementById("uploadScreen").style.display = "none";
+            document.getElementById("mainScreen").style.display = "block";
+            updateChart();
+          });
+        });
+    };
+
+    function updateChart() {
+      const p1 = dataPemain[document.getElementById("select1").value];
+      const p2 = dataPemain[document.getElementById("select2").value];
+      if (!p1 || !p2) return;
+
+      document.getElementById("name1").textContent = p1["Player"];
+      document.getElementById("team1").textContent = p1["Team"];
+      document.getElementById("age1").textContent  = p1["Age"];
+      document.getElementById("pos1").textContent  = p1["Position"];
+      document.getElementById("name2").textContent = p2["Player"];
+      document.getElementById("team2").textContent = p2["Team"];
+      document.getElementById("age2").textContent  = p2["Age"];
+      document.getElementById("pos2").textContent  = p2["Position"];
+      document.getElementById("legend1").textContent = p1["Player"];
+      document.getElementById("legend2").textContent = p2["Player"];
+
+      gambarRadar(p1, p2);
+    }
+
+    function gambarRadar(p1, p2) {
+      const svg = document.getElementById("radarSVG");
+      svg.innerHTML = "";
+
+      const cx = 300, cy = 300;
+      const rMax = 220, rMin = 40;
+      const n = STATS.length;
+      const slice = (2 * Math.PI) / n;
+
+      // Lingkaran latar
+      [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function(pct) {
+        const r = rMin + (rMax - rMin) * pct;
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
+        circle.setAttribute("r", r); circle.setAttribute("fill", "none");
+        circle.setAttribute("stroke", "#1a2e1a"); circle.setAttribute("stroke-width", "1");
+        svg.appendChild(circle);
+        if (pct === 0.5 || pct === 1.0) {
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", cx + 4); label.setAttribute("y", cy - r + 12);
+          label.setAttribute("fill", "#374151"); label.setAttribute("font-size", "8");
+          label.textContent = Math.round(pct * 100);
+          svg.appendChild(label);
+        }
+      });
+
+      // Garis pembagi
+      for (let i = 0; i < n; i++) {
+        const angle = slice * i - Math.PI / 2;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+        line.setAttribute("x2", cx + rMax * Math.cos(angle));
+        line.setAttribute("y2", cy + rMax * Math.sin(angle));
+        line.setAttribute("stroke", "#1a2e1a"); line.setAttribute("stroke-width", "1");
+        svg.appendChild(line);
+      }
+
+      // Background kategori
+      STATS.forEach(function(stat, i) {
+        const startAngle = slice * i - Math.PI / 2;
+        const endAngle   = slice * (i + 1) - Math.PI / 2;
+        const x1 = cx + rMin * Math.cos(startAngle); const y1 = cy + rMin * Math.sin(startAngle);
+        const x2 = cx + rMax * Math.cos(startAngle); const y2 = cy + rMax * Math.sin(startAngle);
+        const x3 = cx + rMax * Math.cos(endAngle);   const y3 = cy + rMax * Math.sin(endAngle);
+        const x4 = cx + rMin * Math.cos(endAngle);   const y4 = cy + rMin * Math.sin(endAngle);
+        const bg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        bg.setAttribute("d", ["M",x1,y1,"L",x2,y2,"A",rMax,rMax,0,0,1,x3,y3,"L",x4,y4,"A",rMin,rMin,0,0,0,x1,y1,"Z"].join(" "));
+        bg.setAttribute("fill", stat.color); bg.setAttribute("opacity", "0.05");
+        svg.appendChild(bg);
+      });
+
+      // Polygon p1 dan p2
+      [
+        { pemain: p1, stroke: "#4ade80", fill: "rgba(74,222,128,0.1)", opacity: "1"   },
+        { pemain: p2, stroke: "#f87171", fill: "rgba(248,113,113,0.1)", opacity: "0.8" }
+      ].forEach(function(item) {
+        const points = [];
+        STATS.forEach(function(stat, i) {
+          const val = parseFloat(item.pemain[stat.key]) || 0;
+          const r = rMin + (rMax - rMin) * val;
+          const angle = slice * i - Math.PI / 2;
+          points.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+        });
+
+        const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygon.setAttribute("points", points.map(function(p) { return p[0] + "," + p[1]; }).join(" "));
+        polygon.setAttribute("fill", item.fill);
+        polygon.setAttribute("stroke", item.stroke);
+        polygon.setAttribute("stroke-width", "1.5");
+        polygon.setAttribute("opacity", item.opacity);
+        svg.appendChild(polygon);
+
+        // Titik
+        STATS.forEach(function(stat, i) {
+          const val = parseFloat(item.pemain[stat.key]) || 0;
+          const r = rMin + (rMax - rMin) * val;
+          const angle = slice * i - Math.PI / 2;
+          const px = cx + r * Math.cos(angle);
+          const py = cy + r * Math.sin(angle);
+          const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dot.setAttribute("cx", px); dot.setAttribute("cy", py);
+          dot.setAttribute("r", "3"); dot.setAttribute("fill", item.stroke);
+          dot.setAttribute("stroke", "#0a0f0a"); dot.setAttribute("stroke-width", "1");
+          svg.appendChild(dot);
+        });
+      });
+
+      // Label stat di luar
+      STATS.forEach(function(stat, i) {
+        const angle = slice * i - Math.PI / 2;
+        const lx = cx + (rMax + 26) * Math.cos(angle);
+        const ly = cy + (rMax + 26) * Math.sin(angle);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", lx); text.setAttribute("y", ly);
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("fill", stat.color); text.setAttribute("font-size", "9");
+        text.setAttribute("font-weight", "700"); text.textContent = stat.label;
+        svg.appendChild(text);
+      });
+    }
+
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "radar-comparison.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>

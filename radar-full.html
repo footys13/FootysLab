@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full Radar Chart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 620px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 620px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 620px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+    }
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 38px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .player-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+
+    /* Legend kategori */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .watermark {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #1a2e1a;
+    }
+    .btn-export {
+      margin-top: 16px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+    }
+    .btn-upload {
+      background: #4ade80;
+      color: #0a0f0a;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">THE FOOTYS · FULL RADAR</div>
+
+  <div id="uploadScreen">
+    <div class="upload-box">
+      <p>Upload CSV database</p>
+      <input type="file" id="inputCSV" accept=".csv">
+    </div>
+  </div>
+
+  <div id="mainScreen">
+    <select id="selectPemain" onchange="updateChart()"></select>
+
+    <div class="card" id="cardExport">
+      <div class="player-name" id="playerName">-</div>
+      <div class="player-meta">
+        <div>Club: <span id="playerTeam">-</span></div>
+        <div>Pos: <span id="playerPos">-</span></div>
+        <div>Age: <span id="playerAge">-</span></div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f87171"></div> Attacking
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4ade80"></div> Possession
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#c084fc"></div> Progression
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#60a5fa"></div> Defending
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#facc15"></div> Discipline
+        </div>
+      </div>
+
+      <svg id="radarSVG" viewBox="0 0 600 600" width="100%" height="100%"></svg>
+
+      <div class="watermark">THE FOOTYS</div>
+    </div>
+
+    <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+
+    // Stats dengan kategori dan warna
+    const STATS = [
+      // ATTACKING — merah
+      { key: "Non-penalty goals per 90",          label: "NP Goals",   cat: "attacking",  color: "#f87171" },
+      { key: "npxG per 90",                        label: "npxG",       cat: "attacking",  color: "#f87171" },
+      { key: "Goal conversion, %",                 label: "Goal Conv",  cat: "attacking",  color: "#f87171" },
+      { key: "Touches in box per 90",              label: "Box Touch",  cat: "attacking",  color: "#f87171" },
+
+      // POSSESSION — hijau
+      { key: "Passes per 90",                      label: "Passes",     cat: "possession", color: "#4ade80" },
+      { key: "Accurate short / medium passes, %",  label: "Sh/Med Acc", cat: "possession", color: "#4ade80" },
+      { key: "Successful dribbles, %",             label: "Dribbles",   cat: "possession", color: "#4ade80" },
+      { key: "Accurate long passes, %",            label: "Long Acc",   cat: "possession", color: "#4ade80" },
+
+      // PROGRESSION — ungu
+      { key: "Progressive passes per 90",          label: "Prog Pass",  cat: "progression",color: "#c084fc" },
+      { key: "Progressive runs per 90",            label: "Prog Runs",  cat: "progression",color: "#c084fc" },
+      { key: "Shot assists per 90",                label: "Shot Ast",   cat: "progression",color: "#c084fc" },
+      { key: "xA per 90",                          label: "xA",         cat: "progression",color: "#c084fc" },
+      { key: "Assists per 90",                     label: "Assists",    cat: "progression",color: "#c084fc" },
+
+      // DEFENDING — biru
+      { key: "Duels won, %",                       label: "Duels Won",  cat: "defending",  color: "#60a5fa" },
+      { key: "Defensive duels won, %",             label: "Def Duels",  cat: "defending",  color: "#60a5fa" },
+      { key: "Aerial duels won, %",                label: "Aerial",     cat: "defending",  color: "#60a5fa" },
+      { key: "pAdj Tkl+Int per 90",                label: "Tkl+Int",    cat: "defending",  color: "#60a5fa" },
+      { key: "Successful defensive actions per 90",label: "Def Act",    cat: "defending",  color: "#60a5fa" },
+      { key: "PAdj Interceptions",                 label: "Intercept",  cat: "defending",  color: "#60a5fa" },
+
+      // DISCIPLINE — kuning
+      { key: "Fouls per 90",                       label: "Fouls",      cat: "discipline", color: "#facc15" },
+      { key: "Cards per 90",                       label: "Cards",      cat: "discipline", color: "#facc15" },
+    ];
+
+    let dataPemain = [];
+
+    function parseBaris(str) {
+      const hasil = [];
+      let current = "";
+      let dalamKutip = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') {
+          dalamKutip = !dalamKutip;
+        } else if (char === ',' && !dalamKutip) {
+          hasil.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      hasil.push(current.trim());
+      return hasil;
+    }
+
+    function prosesCSV(teks) {
+      const baris = teks.trim().split("\n");
+      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const data = [];
+      for (let i = 1; i < baris.length; i++) {
+        const kolom = parseBaris(baris[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
+      }
+      return data;
+    }
+
+    document.getElementById("inputCSV").onchange = function() {
+      const file = this.files[0];
+      if (!file) return;
+      fetch(URL.createObjectURL(file))
+        .then(function(r) {
+          r.text().then(function(teks) {
+            dataPemain = prosesCSV(teks);
+            const sel = document.getElementById("selectPemain");
+            sel.innerHTML = "";
+            dataPemain.forEach(function(p, i) {
+              sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
+            });
+            document.getElementById("uploadScreen").style.display = "none";
+            document.getElementById("mainScreen").style.display = "block";
+            updateChart();
+          });
+        });
+    };
+
+    function updateChart() {
+      const i = document.getElementById("selectPemain").value;
+      const p = dataPemain[i];
+      if (!p) return;
+      document.getElementById("playerName").textContent = p["Player"];
+      document.getElementById("playerTeam").textContent = p["Team"];
+      document.getElementById("playerPos").textContent  = p["Position"];
+      document.getElementById("playerAge").textContent  = p["Age"];
+      gambarRadar(p);
+    }
+
+    function gambarRadar(pemain) {
+      const svg = document.getElementById("radarSVG");
+      svg.innerHTML = "";
+
+      const cx = 300, cy = 300;
+      const rMax = 220, rMin = 40;
+      const n = STATS.length;
+      const slice = (2 * Math.PI) / n;
+
+      // Lingkaran latar
+      [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function(pct) {
+        const r = rMin + (rMax - rMin) * pct;
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
+        circle.setAttribute("r", r); circle.setAttribute("fill", "none");
+        circle.setAttribute("stroke", "#1a2e1a"); circle.setAttribute("stroke-width", "1");
+        svg.appendChild(circle);
+
+        if (pct === 0.5 || pct === 1.0) {
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", cx + 4); label.setAttribute("y", cy - r + 12);
+          label.setAttribute("fill", "#374151"); label.setAttribute("font-size", "8");
+          label.textContent = Math.round(pct * 100);
+          svg.appendChild(label);
+        }
+      });
+
+      // Garis pembagi
+      for (let i = 0; i < n; i++) {
+        const angle = slice * i - Math.PI / 2;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+        line.setAttribute("x2", cx + rMax * Math.cos(angle));
+        line.setAttribute("y2", cy + rMax * Math.sin(angle));
+        line.setAttribute("stroke", "#1a2e1a"); line.setAttribute("stroke-width", "1");
+        svg.appendChild(line);
+      }
+
+      // Background kategori — area per kategori diberi warna subtle
+      const cats = ["attacking", "possession", "progression", "defending", "discipline"];
+      const catColors = {
+        attacking:   "#f87171",
+        possession:  "#4ade80",
+        progression: "#c084fc",
+        defending:   "#60a5fa",
+        discipline:  "#facc15"
+      };
+
+      cats.forEach(function(cat) {
+        const indices = STATS.map(function(s, i) { return s.cat === cat ? i : -1; }).filter(function(i) { return i >= 0; });
+        if (indices.length === 0) return;
+
+        const points = [];
+        indices.forEach(function(i) {
+          const startAngle = slice * i - Math.PI / 2;
+          const endAngle = slice * (i + 1) - Math.PI / 2;
+          points.push(cx + rMax * Math.cos(startAngle) + "," + (cy + rMax * Math.sin(startAngle)));
+          points.push(cx + rMax * Math.cos(endAngle) + "," + (cy + rMax * Math.sin(endAngle)));
+        });
+
+        // Gambar sector background per kategori
+        indices.forEach(function(i) {
+          const startAngle = slice * i - Math.PI / 2;
+          const endAngle   = slice * (i + 1) - Math.PI / 2;
+          const x1 = cx + rMin * Math.cos(startAngle); const y1 = cy + rMin * Math.sin(startAngle);
+          const x2 = cx + rMax * Math.cos(startAngle); const y2 = cy + rMax * Math.sin(startAngle);
+          const x3 = cx + rMax * Math.cos(endAngle);   const y3 = cy + rMax * Math.sin(endAngle);
+          const x4 = cx + rMin * Math.cos(endAngle);   const y4 = cy + rMin * Math.sin(endAngle);
+
+          const bg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          bg.setAttribute("d", ["M",x1,y1,"L",x2,y2,"A",rMax,rMax,0,0,1,x3,y3,"L",x4,y4,"A",rMin,rMin,0,0,0,x1,y1,"Z"].join(" "));
+          bg.setAttribute("fill", catColors[cat]);
+          bg.setAttribute("opacity", "0.05");
+          svg.appendChild(bg);
+        });
+      });
+
+      // Plot nilai pemain — polygon
+      const points = [];
+      STATS.forEach(function(stat, i) {
+        const val = parseFloat(pemain[stat.key]) || 0;
+        const r = rMin + (rMax - rMin) * val;
+        const angle = slice * i - Math.PI / 2;
+        points.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+      });
+
+      // Area polygon
+      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      polygon.setAttribute("points", points.map(function(p) { return p[0] + "," + p[1]; }).join(" "));
+      polygon.setAttribute("fill", "rgba(255,255,255,0.05)");
+      polygon.setAttribute("stroke", "white");
+      polygon.setAttribute("stroke-width", "1.5");
+      polygon.setAttribute("stroke-opacity", "0.4");
+      svg.appendChild(polygon);
+
+      // Titik per stat dengan warna kategori
+      STATS.forEach(function(stat, i) {
+        const val = parseFloat(pemain[stat.key]) || 0;
+        const r = rMin + (rMax - rMin) * val;
+        const angle = slice * i - Math.PI / 2;
+        const px = cx + r * Math.cos(angle);
+        const py = cy + r * Math.sin(angle);
+
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("cx", px); dot.setAttribute("cy", py);
+        dot.setAttribute("r", "4"); dot.setAttribute("fill", stat.color);
+        dot.setAttribute("stroke", "#0a0f0a"); dot.setAttribute("stroke-width", "1");
+        svg.appendChild(dot);
+
+        // Label stat di luar
+        const labelAngle = slice * i + slice / 2 - Math.PI / 2;
+        const lAngle = slice * i - Math.PI / 2;
+        const lx = cx + (rMax + 26) * Math.cos(lAngle);
+        const ly = cy + (rMax + 26) * Math.sin(lAngle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", lx); text.setAttribute("y", ly);
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("fill", stat.color); text.setAttribute("font-size", "9");
+        text.setAttribute("font-weight", "700"); text.textContent = stat.label;
+        svg.appendChild(text);
+
+        // Nilai percentile
+        if (val > 0.15) {
+          const vx = cx + (rMin + (r - rMin) * 0.6) * Math.cos(lAngle);
+          const vy = cy + (rMin + (r - rMin) * 0.6) * Math.sin(lAngle);
+          const num = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          num.setAttribute("x", vx); num.setAttribute("y", vy);
+          num.setAttribute("text-anchor", "middle"); num.setAttribute("dominant-baseline", "middle");
+          num.setAttribute("fill", "#ffffff"); num.setAttribute("font-size", "8");
+          num.setAttribute("font-weight", "800"); num.setAttribute("opacity", "0.7");
+          num.textContent = Math.round(val * 100);
+          svg.appendChild(num);
+        }
+      });
+    }
+
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport"), {
+        backgroundColor: "#0f1a0f",
+        scale: 2,
+        useCORS: true
+      }).then(function(canvas) {
+        const link = document.createElement("a");
+        link.download = "full-radar.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+  </script>
+</body>
+</html>

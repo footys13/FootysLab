@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radar Chart</title>
+  <style>
+    body {
+      background: #0d1117;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 { color: #58a6ff; }
+    .chart-box {
+      background: #161b22;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚽ Player Radar</h1>
+
+  <div class="chart-box">
+    <!-- Canvas = "kanvas kosong" tempat Chart.js menggambar -->
+    <canvas id="radarChart"></canvas>
+  </div>
+
+  <!-- Ini cara "import" library Chart.js dari internet -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Data pemain
+    const pemain = {
+      nama: "Messi",
+      stats: [80, 89, 89, 90, 55, 65]
+      //       │    │   │   │   │   │
+      //     Pace Shoot Pass Drib Def Phy
+    };
+
+    // Ambil canvas dari HTML
+    const canvas = document.getElementById("radarChart");
+
+    // Buat radar chart
+    new Chart(canvas, {
+      type: "radar",      // jenis chart = radar
+
+      data: {
+        // Label tiap sudut jaring
+        labels: ["Pace", "Shooting", "Passing", "Dribbling", "Defending", "Physical"],
+
+        datasets: [{
+          label: pemain.nama,         // nama di legenda
+          data: pemain.stats,         // data dari object pemain
+          backgroundColor: "rgba(88, 166, 255, 0.2)",   // warna isi (transparan)
+          borderColor: "#58a6ff",     // warna garis
+          borderWidth: 2,
+          pointBackgroundColor: "#58a6ff"  // warna titik di sudut
+        }]
+      },
+
+      options: {
+        scales: {
+          r: {
+            min: 0,         // nilai minimum
+            max: 100,       // nilai maksimum
+            ticks: {
+              color: "white",
+              backdropColor: "transparent"
+            },
+            grid: { color: "rgba(255,255,255,0.1)" },
+            pointLabels: { color: "white", font: { size: 13 } }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: "white" } }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
