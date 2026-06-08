@@ -75,8 +75,6 @@
       padding: 24px;
       width: 100%;
     }
-
-    /* Header pemain */
     .player-header {
       text-align: center;
       margin-bottom: 20px;
@@ -97,8 +95,6 @@
       letter-spacing: 1px;
     }
     .player-header .info span { color: #9ca3af; }
-
-    /* Section label */
     .section-label {
       font-size: 9px;
       letter-spacing: 2px;
@@ -109,8 +105,6 @@
       padding-bottom: 6px;
       border-bottom: 1px solid #1a2e1a;
     }
-
-    /* Bar rows */
     .bar-row {
       display: flex;
       align-items: center;
@@ -131,7 +125,6 @@
       border-radius: 4px;
       height: 14px;
       overflow: hidden;
-      position: relative;
     }
     .bar-fill {
       height: 100%;
@@ -140,7 +133,6 @@
       transition: width 0.8s ease;
     }
     .bar-high { background: #1d4ed8; }
-    .bar-mid  { background: #92400e; }
     .bar-low  { background: #92400e; }
     .bar-val {
       font-family: 'Barlow Condensed', sans-serif;
@@ -151,8 +143,6 @@
       flex-shrink: 0;
       text-align: left;
     }
-
-    /* X axis */
     .x-axis {
       display: flex;
       margin-top: 12px;
@@ -178,7 +168,6 @@
       margin-top: 4px;
       padding-left: 168px;
     }
-
     .watermark {
       text-align: center;
       font-family: 'Barlow Condensed', sans-serif;
@@ -222,7 +211,6 @@
     <select id="selectPemain" onchange="updateChart()"></select>
 
     <div class="card" id="cardExport">
-
       <div class="player-header">
         <div class="name" id="playerName">-</div>
         <div class="info">
@@ -262,67 +250,98 @@
         stats: [
           { key: "Non-penalty goals per 90", label: "Non-penalty goals" },
           { key: "npxG per 90",              label: "npxG"              },
-          { key: "Goal conversion, %",        label: "Goal conversion %" },
+          { key: "Goal conversion, %",       label: "Goal conversion %" },
           { key: "Touches in box per 90",    label: "Touches in box"    }
         ]
       },
       {
         label: "Creativity",
         stats: [
-          { key: "Shot assists per 90",      label: "Shot assists"      },
-          { key: "xA per 90",                label: "xA"                },
-          { key: "Assists per 90",           label: "Assists"           },
-          { key: "Second assists per 90",    label: "Second assists"    },
-          { key: "Third assists per 90",     label: "Third assists"     },
-          { key: "Accurate crosses, %",      label: "Accurate crosses %" },
-          { key: "Crosses per 90",           label: "Crosses"           }
+          { key: "Shot assists per 90",   label: "Shot assists"       },
+          { key: "xA per 90",             label: "xA"                 },
+          { key: "Assists per 90",        label: "Assists"            },
+          { key: "Second assists per 90", label: "Second assists"     },
+          { key: "Third assists per 90",  label: "Third assists"      },
+          { key: "Accurate crosses, %",   label: "Accurate crosses %" },
+          { key: "Crosses per 90",        label: "Crosses"            }
         ]
       },
       {
         label: "Possession",
         stats: [
-          { key: "Passes per 90",                      label: "Passes"              },
-          { key: "Accurate short / medium passes, %",  label: "Short/med pass acc %" },
-          { key: "Successful dribbles, %",             label: "Successful dribbles %" },
-          { key: "Accurate long passes, %",            label: "Long pass acc %"      }
+          { key: "Passes per 90",                     label: "Passes"               },
+          { key: "Accurate short / medium passes, %", label: "Short/med pass acc %" },
+          { key: "Successful dribbles, %",            label: "Successful dribbles %" },
+          { key: "Accurate long passes, %",           label: "Long pass acc %"       }
         ]
       },
       {
         label: "Progression",
         stats: [
-          { key: "Progressive passes per 90", label: "Progressive passes" },
-          { key: "Progressive runs per 90",   label: "Progressive runs"   },
-          { key: "1st, 2nd, 3rd assists",     label: "1st/2nd/3rd assists"}
+          { key: "Progressive passes per 90", label: "Progressive passes"  },
+          { key: "Progressive runs per 90",   label: "Progressive runs"    },
+          { key: "1st, 2nd, 3rd assists",     label: "1st/2nd/3rd assists" }
         ]
       },
       {
         label: "Defending",
         stats: [
-          { key: "Duels won, %",                        label: "Duels won %"          },
-          { key: "Defensive duels won, %",              label: "Defensive duels won %" },
-          { key: "Aerial duels won, %",                 label: "Aerial duels won %"    },
-          { key: "pAdj Tkl+Int per 90",                 label: "pAdj Tkl+Int"          },
-          { key: "Successful defensive actions per 90", label: "Def. actions"          },
-          { key: "PAdj Sliding tackles",                label: "PAdj sliding tackles"  },
-          { key: "PAdj Interceptions",                  label: "PAdj interceptions"    },
-          { key: "Fouls per 90",                        label: "Fouls"                 }
+          { key: "Duels won, %",                        label: "Duels won %"           },
+          { key: "Defensive duels won, %",              label: "Defensive duels won %"  },
+          { key: "Aerial duels won, %",                 label: "Aerial duels won %"     },
+          { key: "pAdj Tkl+Int per 90",                 label: "pAdj Tkl+Int"           },
+          { key: "Successful defensive actions per 90", label: "Def. actions"           },
+          { key: "PAdj Sliding tackles",                label: "PAdj sliding tackles"   },
+          { key: "PAdj Interceptions",                  label: "PAdj interceptions"     },
+          { key: "Fouls per 90",                        label: "Fouls"                  }
         ]
       }
     ];
 
     let dataPemain = [];
 
+    // ── PARSE CSV DENGAN SUPPORT MULTILINE ──
+    function parseCSVLengkap(teks) {
+      const cleaned = teks.replace(/^\uFEFF/, "");
+      const rows = [];
+      let current = "";
+      let inQuote = false;
+
+      for (let i = 0; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (char === '"') {
+          inQuote = !inQuote;
+          current += char;
+        } else if (char === '\n' && !inQuote) {
+          rows.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      if (current.trim()) rows.push(current);
+      return rows;
+    }
+
     function parseBaris(str) {
       const hasil = [];
       let current = "";
-      let dalamKutip = false;
+      let inQuote = false;
       for (let i = 0; i < str.length; i++) {
         const char = str[i];
         if (char === '"') {
-          dalamKutip = !dalamKutip;
-        } else if (char === ',' && !dalamKutip) {
+          inQuote = !inQuote;
+        } else if (char === ',' && !inQuote) {
           hasil.push(current.trim());
           current = "";
+        } else if (char === '\n' || char === '\r') {
+          // skip newline dalam quote
+          if (!inQuote) {
+            hasil.push(current.trim());
+            current = "";
+          } else {
+            current += " ";
+          }
         } else {
           current += char;
         }
@@ -332,11 +351,12 @@
     }
 
     function prosesCSV(teks) {
-      const baris = teks.trim().split("\n");
-      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      const rows = parseCSVLengkap(teks);
+      const header = parseBaris(rows[0]);
       const data = [];
-      for (let i = 1; i < baris.length; i++) {
-        const kolom = parseBaris(baris[i]);
+
+      for (let i = 1; i < rows.length; i++) {
+        const kolom = parseBaris(rows[i]);
         if (kolom.length < 2) continue;
         const p = {};
         for (let j = 0; j < header.length; j++) {
@@ -380,13 +400,11 @@
       container.innerHTML = "";
 
       SECTIONS.forEach(function(section) {
-        // Section label
         const label = document.createElement("div");
         label.className = "section-label";
         label.textContent = section.label;
         container.appendChild(label);
 
-        // Bars
         section.stats.forEach(function(stat) {
           const val = parseFloat(p[stat.key]) || 0;
           const pct = Math.round(val * 100);
@@ -397,7 +415,7 @@
           row.innerHTML = `
             <span class="bar-stat-label">${stat.label}</span>
             <div class="bar-track">
-              <div class="bar-fill ${isHigh ? 'bar-high' : 'bar-mid'}"
+              <div class="bar-fill ${isHigh ? 'bar-high' : 'bar-low'}"
                    id="bar_${stat.key.replace(/[^a-zA-Z0-9]/g, '_')}"
                    style="width:0%"></div>
             </div>
@@ -407,7 +425,6 @@
         });
       });
 
-      // Animasi bars
       setTimeout(function() {
         SECTIONS.forEach(function(section) {
           section.stats.forEach(function(stat) {
