@@ -203,58 +203,86 @@
   <script>
 
     const AXIS_OPTIONS = [
-  // ATTACKING
-  { key: "Non-penalty goals per 90", label: "NP Goals per 90"    },
-  { key: "npxG per 90",              label: "npxG per 90"         },
-  { key: "Goal conversion, %",       label: "Goal Conversion %"   },
-  { key: "Touches in box per 90",    label: "Touches in Box"      },
-  // CREATIVITY
-  { key: "Shot assists per 90",      label: "Shot Assists per 90" },
-  { key: "xA per 90",                label: "xA per 90"           },
-  { key: "Assists per 90",           label: "Assists per 90"      },
-  { key: "Second assists per 90",    label: "Second Assists"      },
-  { key: "Third assists per 90",     label: "Third Assists"       },
-  { key: "Accurate crosses, %",      label: "Accurate Crosses %"  },
-  { key: "Crosses per 90",           label: "Crosses per 90"      },
-  // POSSESSION
-  { key: "Passes per 90",                     label: "Passes per 90"        },
-  { key: "Accurate short / medium passes, %", label: "Short/Med Pass Acc %" },
-  { key: "Successful dribbles, %",            label: "Dribbles %"           },
-  { key: "Accurate long passes, %",           label: "Long Pass Acc %"      },
-  // PROGRESSION
-  { key: "Progressive passes per 90", label: "Progressive Passes" },
-  { key: "Progressive runs per 90",   label: "Progressive Runs"   },
-  { key: "1st, 2nd, 3rd assists",     label: "1/2/3rd Assists"    },
-  // DEFENDING
-  { key: "Duels won, %",                        label: "Duels Won %"          },
-  { key: "Defensive duels won, %",              label: "Defensive Duels %"    },
-  { key: "Aerial duels won, %",                 label: "Aerial Duels Won %"   },
-  { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int per 90"       },
-  { key: "Successful defensive actions per 90", label: "Def. Actions"         },
-  { key: "PAdj Sliding tackles",                label: "Sliding Tackles"      },
-  { key: "PAdj Interceptions",                  label: "Interceptions"        },
-  { key: "Fouls per 90",                        label: "Fouls per 90"         },
-  // GK
-  { key: "Save rate, %",           label: "Save Rate %"         },
-  { key: "Prevented goals per 90", label: "Prevented Goals p90" },
-  { key: "Exits per 90",           label: "Exits p90"           }
-];
+      // ATTACKING
+      { key: "Non-penalty goals per 90", label: "NP Goals per 90"    },
+      { key: "npxG per 90",              label: "npxG per 90"         },
+      { key: "Goal conversion, %",       label: "Goal Conversion %"   },
+      { key: "Touches in box per 90",    label: "Touches in Box"      },
+      // CREATIVITY
+      { key: "Shot assists per 90",      label: "Shot Assists per 90" },
+      { key: "xA per 90",                label: "xA per 90"           },
+      { key: "Assists per 90",           label: "Assists per 90"      },
+      { key: "Second assists per 90",    label: "Second Assists"      },
+      { key: "Third assists per 90",     label: "Third Assists"       },
+      { key: "Accurate crosses, %",      label: "Accurate Crosses %"  },
+      { key: "Crosses per 90",           label: "Crosses per 90"      },
+      // POSSESSION
+      { key: "Passes per 90",                     label: "Passes per 90"        },
+      { key: "Accurate short / medium passes, %", label: "Short/Med Pass Acc %" },
+      { key: "Successful dribbles, %",            label: "Dribbles %"           },
+      { key: "Accurate long passes, %",           label: "Long Pass Acc %"      },
+      // PROGRESSION
+      { key: "Progressive passes per 90", label: "Progressive Passes" },
+      { key: "Progressive runs per 90",   label: "Progressive Runs"   },
+      { key: "1st, 2nd, 3rd assists",     label: "1/2/3rd Assists"    },
+      // DEFENDING
+      { key: "Duels won, %",                        label: "Duels Won %"          },
+      { key: "Defensive duels won, %",              label: "Defensive Duels %"    },
+      { key: "Aerial duels won, %",                 label: "Aerial Duels Won %"   },
+      { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int per 90"       },
+      { key: "Successful defensive actions per 90", label: "Def. Actions"         },
+      { key: "PAdj Sliding tackles",                label: "Sliding Tackles"      },
+      { key: "PAdj Interceptions",                  label: "Interceptions"        },
+      { key: "Fouls per 90",                        label: "Fouls per 90"         },
+      // GK
+      { key: "Save rate, %",           label: "Save Rate %"         },
+      { key: "Prevented goals per 90", label: "Prevented Goals p90" },
+      { key: "Exits per 90",           label: "Exits p90"           }
+    ];
 
     let dataPemain = [];
+
+    function parseCSVLengkap(teks) {
+      const cleaned = teks.replace(/^\uFEFF/, "");
+      const rows = [];
+      let current = "";
+      let inQuote = false;
+      for (let i = 0; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (char === '"') {
+          inQuote = !inQuote;
+          current += char;
+        } else if (char === '\n' && !inQuote) {
+          rows.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      if (current.trim()) rows.push(current);
+      return rows;
+    }
 
     function parseBaris(str) {
       const hasil = [];
       let current = "";
-      let dalamKutip = false;
+      let inQuote = false;
       for (let i = 0; i < str.length; i++) {
         const char = str[i];
         if (char === '"') {
-          dalamKutip = !dalamKutip;
-        } else if (char === ',' && !dalamKutip) {
+          inQuote = !inQuote;
+        } else if (char === ',' && !inQuote) {
+          hasil.push(current.trim());
+          current = "";
+        } else if ((char === '\n' || char === '\r') && !inQuote) {
           hasil.push(current.trim());
           current = "";
         } else {
-          current += char;
+          if (inQuote && (char === '\n' || char === '\r')) {
+            current += " ";
+          } else {
+            current += char;
+          }
         }
       }
       hasil.push(current.trim());
@@ -262,68 +290,20 @@
     }
 
     function prosesCSV(teks) {
-    function parseCSVLengkap(teks) {
-  const cleaned = teks.replace(/^\uFEFF/, "");
-  const rows = [];
-  let current = "";
-  let inQuote = false;
-  for (let i = 0; i < cleaned.length; i++) {
-    const char = cleaned[i];
-    if (char === '"') {
-      inQuote = !inQuote;
-      current += char;
-    } else if (char === '\n' && !inQuote) {
-      rows.push(current);
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  if (current.trim()) rows.push(current);
-  return rows;
-}
-
-function parseBaris(str) {
-  const hasil = [];
-  let current = "";
-  let inQuote = false;
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    if (char === '"') {
-      inQuote = !inQuote;
-    } else if (char === ',' && !inQuote) {
-      hasil.push(current.trim());
-      current = "";
-    } else if ((char === '\n' || char === '\r') && !inQuote) {
-      hasil.push(current.trim());
-      current = "";
-    } else {
-      if (inQuote && (char === '\n' || char === '\r')) {
-        current += " ";
-      } else {
-        current += char;
+      const rows = parseCSVLengkap(teks);
+      const header = parseBaris(rows[0]);
+      const data = [];
+      for (let i = 1; i < rows.length; i++) {
+        const kolom = parseBaris(rows[i]);
+        if (kolom.length < 2) continue;
+        const p = {};
+        for (let j = 0; j < header.length; j++) {
+          p[header[j]] = kolom[j] || "";
+        }
+        data.push(p);
       }
+      return data;
     }
-  }
-  hasil.push(current.trim());
-  return hasil;
-}
-
-function prosesCSV(teks) {
-  const rows = parseCSVLengkap(teks);
-  const header = parseBaris(rows[0]);
-  const data = [];
-  for (let i = 1; i < rows.length; i++) {
-    const kolom = parseBaris(rows[i]);
-    if (kolom.length < 2) continue;
-    const p = {};
-    for (let j = 0; j < header.length; j++) {
-      p[header[j]] = kolom[j] || "";
-    }
-    data.push(p);
-  }
-  return data;
-}
 
     document.getElementById("inputCSV").onchange = function() {
       const file = this.files[0];
