@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE FOOTYS · Scatterplot | Full Names + Clean Export</title>
+    <title>THE FOOTYS · Fullback/Wingback Scatterplot</title>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -210,27 +210,24 @@
             cursor: pointer;
             width: 100%;
         }
-        /* This class is added temporarily during export to hide the button */
-        .export-mode .btn-export {
-            display: none;
-        }
         .watermark-global {
-    text-align: center;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px;
-    letter-spacing: 5px;
-    color: #ffffff;  /* ← WHITE */
-    margin-top: 14px;
-    padding-top: 10px;
-    border-top: 1px solid #1a2e1a;
-}
-.watermark-brand { 
-    color: #ffffff;  /* ← Also WHITE to keep consistency */
-}
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px;
+            letter-spacing: 5px;
+            color: #ffffff;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .watermark-brand { color: #4ade80; }
+        .note { font-size: 9px; text-align: center; color: #4b5563; margin-top: 12px; }
+        .status-msg { color: #86efac; font-size: 11px; margin-top: 10px; }
+        .file-info { font-size: 9px; color: #4b5563; margin-top: 12px; }
     </style>
 </head>
 <body>
-<div class="topbar">⚽ THE FOOTYS · SCATTERPLOT | UPLOAD CSV → SELECT PLAYERS → COMPARE</div>
+<div class="topbar">⚽ THE FOOTYS · FULLBACK/WINGBACK SCOUTING | UPLOAD CSV → COMPARE</div>
 
 <div id="uploadScreen">
     <div class="upload-box">
@@ -238,7 +235,7 @@
         <input type="file" id="csvUpload" accept=".csv" style="display: none;">
         <button id="triggerUploadBtn">📂 CHOOSE CSV</button>
         <button id="demoBtn" style="background:#2a3e2a;">⭐ LOAD DEMO</button>
-        <div class="file-info">Your CSV: First column = row index, Second column = Player Name, then Age, League, Position, Team, then stats.</div>
+        <div class="file-info">Your CSV: First column = row index, Second column = Player Name, then Age, League, Position, Team, then stats.<br>Handles quoted fields (e.g., "Duels won, %") correctly.</div>
         <div id="uploadStatus" class="status-msg"></div>
     </div>
 </div>
@@ -289,7 +286,7 @@
         </div>
         <div class="note">💡 Hover any bubble for details • Click COMPARE to refresh chart</div>
         <button class="btn-export" id="exportChartBtn">📸 SAVE AS PNG</button>
-        <div class="watermark-global">THE <span class="watermark-brand">FOOTYS</span></div>
+        <div class="watermark-global">THE <span class="watermark-brand">FOOTYS</span> • ANALYTICS</div>
     </div>
 </div>
 
@@ -299,45 +296,81 @@
     let currentX = "", currentY = "";
     let numericCols = [];
 
-    // CSV parser - specifically for your format: index,Player,Age,League,Position,Team,stats...
+    // Robust CSV parser that handles quoted fields with commas
+    function parseCSVRow(rowStr) {
+        const result = [];
+        let inQuote = false;
+        let current = "";
+        for (let i = 0; i < rowStr.length; i++) {
+            const ch = rowStr[i];
+            if (ch === '"') {
+                inQuote = !inQuote;
+            } else if (ch === ',' && !inQuote) {
+                result.push(current.trim());
+                current = "";
+            } else {
+                current += ch;
+            }
+        }
+        result.push(current.trim());
+        // Remove surrounding quotes from each field
+        return result.map(field => field.replace(/^"|"$/g, '').trim());
+    }
+
     function parseCSV(csvText) {
         const lines = csvText.trim().split(/\r?\n/);
         if (lines.length < 2) throw new Error("Not enough rows");
         
-        let headers = lines[0].split(",").map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"/, '').replace(/"$/, ''));
+        // Parse headers using robust parser
+        let headers = parseCSVRow(lines[0]);
         
-        const playerNameCol = 1;  // Second column has player names
-        const positionCol = 4;    // Fifth column has position
+        // Remove empty first column if it exists (row index)
+        if (headers[0] === "" || headers[0] === " ") {
+            headers = headers.slice(1);
+        }
         
+        // Find column indices by position (your specific format)
+        // After removing empty first, column 0 = Player, col 1 = Age, col 2 = League, col 3 = Position, col 4 = Team, col 5+ = stats
+        const playerColIdx = 0;
+        const positionColIdx = 3;
+        
+        // Collect numeric column names (from index 5 onward, but we'll detect all after position)
         const numericColNames = [];
-        for (let i = 6; i < headers.length; i++) {
-            if (headers[i] && headers[i] !== "") {
-                numericColNames.push(headers[i]);
+        for (let i = 5; i < headers.length; i++) {
+            const header = headers[i];
+            if (header && header !== "") {
+                numericColNames.push(header);
             }
         }
         
         const players = [];
         
         for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(",");
-            if (values.length < 7) continue;
+            const values = parseCSVRow(lines[i]);
+            if (values.length < headers.length) continue;
             
-            let playerName = values[playerNameCol]?.trim();
+            // Remove empty first element if present
+            let cleanValues = values;
+            if (values[0] === "" || (!isNaN(parseFloat(values[0])) && values[0].length < 4 && values[1])) {
+                cleanValues = values.slice(1);
+            }
+            
+            let playerName = cleanValues[playerColIdx]?.trim();
             if (!playerName || playerName === "") continue;
+            playerName = playerName.replace(/^"|"$/g, '');
             
-            playerName = playerName.replace(/^"/, '').replace(/"$/, '');
-            
-            const position = values[positionCol]?.trim().replace(/^"/, '').replace(/"$/, '') || "Player";
+            const position = cleanValues[positionColIdx]?.trim().replace(/^"|"$/g, '') || "Player";
             
             const player = { 
                 Player: playerName,
                 Position: position
             };
             
-            for (let j = 6; j < Math.min(values.length, headers.length); j++) {
+            // Parse numeric stats (starting from column 5 in original headers)
+            for (let j = 5; j < headers.length; j++) {
                 const header = headers[j];
                 if (!header) continue;
-                const val = parseFloat(values[j]);
+                const val = parseFloat(cleanValues[j]);
                 if (!isNaN(val)) {
                     player[header] = val;
                 }
@@ -348,22 +381,25 @@
         
         if (players.length === 0) throw new Error("No valid players found");
         
-        return { players, numericCols: numericColNames };
+        // Filter numeric columns that actually have values
+        const existingNumericCols = numericColNames.filter(col => 
+            players.some(p => p[col] !== undefined && typeof p[col] === 'number')
+        );
+        
+        return { players, numericCols: existingNumericCols };
     }
 
-    // Demo dataset with full names
+    // Demo dataset for fullbacks
     function getDemoData() {
         return {
             players: [
-                { Player: "V. Dethan", Position: "RW", "Progressive runs per 90": 0.951, "Duels won": 0.961 },
-                { Player: "I. Maulana", Position: "RW", "Progressive runs per 90": 0.833, "Duels won": 0.578 },
-                { Player: "Hokky Caraka", Position: "RAMF", "Progressive runs per 90": 0.524, "Duels won": 0.480 },
-                { Player: "Gali Freitas", Position: "RAMF", "Progressive runs per 90": 0.912, "Duels won": 0.892 },
-                { Player: "Muhammad Hannan", Position: "AMF", "Progressive runs per 90": 0.525, "Duels won": 1.0 },
-                { Player: "R. Saepul", Position: "RW", "Progressive runs per 90": 0.206, "Duels won": 0.618 },
-                { Player: "Rahmat Arjuna", Position: "LW", "Progressive runs per 90": 0.980, "Duels won": 0.775 }
+                { Player: "V. Dethan", Position: "RW", "Progressive runs per 90": 0.951, "Duels won, %": 0.961, "pAdj Tkl+Int per 90": 0.960, "Crosses per 90": 0.5 },
+                { Player: "I. Maulana", Position: "RW", "Progressive runs per 90": 0.833, "Duels won, %": 0.578, "pAdj Tkl+Int per 90": 0.578, "Crosses per 90": 0.3 },
+                { Player: "Hokky Caraka", Position: "RAMF", "Progressive runs per 90": 0.524, "Duels won, %": 0.480, "pAdj Tkl+Int per 90": 0.289, "Crosses per 90": 0.2 },
+                { Player: "Gali Freitas", Position: "RAMF", "Progressive runs per 90": 0.912, "Duels won, %": 0.892, "pAdj Tkl+Int per 90": 0.519, "Crosses per 90": 0.6 },
+                { Player: "R. Saepul", Position: "RW", "Progressive runs per 90": 0.206, "Duels won, %": 0.618, "pAdj Tkl+Int per 90": 0.505, "Crosses per 90": 0.1 }
             ],
-            numericCols: ["Progressive runs per 90", "Duels won", "Non-penalty goals per 90", "Goal conversion %"]
+            numericCols: ["Progressive runs per 90", "Duels won, %", "pAdj Tkl+Int per 90", "Crosses per 90"]
         };
     }
 
@@ -394,15 +430,13 @@
         const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, innerW]);
         const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerH, 0]);
         
-        // Grids
         chart.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).tickSize(-innerH).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
         chart.append("g").call(d3.axisLeft(yScale).tickSize(-innerW).ticks(7)).style("color", "#2a3e2a").style("font-size", "9px");
         chart.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
         chart.append("g").call(d3.axisLeft(yScale).tickSize(5).ticks(7)).style("color", "#b0c4b0");
         
-        // Labels
-        chart.append("text").attr("x", innerW/2).attr("y", innerH + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentX.toUpperCase());
-        chart.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentY.toUpperCase());
+        chart.append("text").attr("x", innerW/2).attr("y", innerH + 38).attr("text-anchor", "middle").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentX);
+        chart.append("text").attr("x", -38).attr("y", 12).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("fill", "#9ca3af").style("font-size", "11px").style("font-weight", "600").text(currentY);
         
         const tooltip = d3.select("body").append("div").attr("class", "tooltip-div").style("opacity", 0);
         
@@ -432,34 +466,28 @@
                 .on("mouseout", () => tooltip.style("opacity", 0));
         });
         
-        // Add FULL player name labels for selected players (not truncated)
-        if (selectedP1) {
-            const p1 = selectedP1;
-            if (p1[currentX] !== undefined && p1[currentY] !== undefined) {
-                chart.append("text")
-                    .attr("x", xScale(p1[currentX]) + 10)
-                    .attr("y", yScale(p1[currentY]) - 5)
-                    .text(p1.Player)  // FULL name, not truncated
-                    .attr("font-size", "10px")
-                    .attr("font-weight", "bold")
-                    .attr("fill", "#4ade80")
-                    .attr("stroke", "#0a0f0a")
-                    .attr("stroke-width", "0.5");
-            }
+        // Add full player name labels for selected players
+        if (selectedP1 && selectedP1[currentX] !== undefined && selectedP1[currentY] !== undefined) {
+            chart.append("text")
+                .attr("x", xScale(selectedP1[currentX]) + 10)
+                .attr("y", yScale(selectedP1[currentY]) - 5)
+                .text(selectedP1.Player)
+                .attr("font-size", "10px")
+                .attr("font-weight", "bold")
+                .attr("fill", "#4ade80")
+                .attr("stroke", "#0a0f0a")
+                .attr("stroke-width", "0.5");
         }
-        if (selectedP2) {
-            const p2 = selectedP2;
-            if (p2[currentX] !== undefined && p2[currentY] !== undefined) {
-                chart.append("text")
-                    .attr("x", xScale(p2[currentX]) + 10)
-                    .attr("y", yScale(p2[currentY]) - 5)
-                    .text(p2.Player)  // FULL name, not truncated
-                    .attr("font-size", "10px")
-                    .attr("font-weight", "bold")
-                    .attr("fill", "#f87171")
-                    .attr("stroke", "#0a0f0a")
-                    .attr("stroke-width", "0.5");
-            }
+        if (selectedP2 && selectedP2[currentX] !== undefined && selectedP2[currentY] !== undefined) {
+            chart.append("text")
+                .attr("x", xScale(selectedP2[currentX]) + 10)
+                .attr("y", yScale(selectedP2[currentY]) - 5)
+                .text(selectedP2.Player)
+                .attr("font-size", "10px")
+                .attr("font-weight", "bold")
+                .attr("fill", "#f87171")
+                .attr("stroke", "#0a0f0a")
+                .attr("stroke-width", "0.5");
         }
     }
     
@@ -532,34 +560,18 @@
         document.getElementById("mainScreen").style.display = "block";
     }
     
-    // Export function that hides the button before capture
     async function exportAsPNG() {
         const card = document.getElementById("exportCard");
         const exportBtn = document.getElementById("exportChartBtn");
-        
-        // Hide the button temporarily
         exportBtn.style.display = "none";
-        
-        // Small delay to ensure DOM updates
         await new Promise(resolve => setTimeout(resolve, 100));
-        
         try {
-            const canvas = await html2canvas(card, {
-                scale: 2,
-                backgroundColor: "#0f1a0f",
-                logging: false
-            });
-            
+            const canvas = await html2canvas(card, { scale: 2, backgroundColor: "#0f1a0f" });
             const link = document.createElement("a");
             link.download = "footys_scatterplot.png";
             link.href = canvas.toDataURL();
             link.click();
-        } catch (err) {
-            console.error("Export error:", err);
-            alert("Failed to export image");
-        }
-        
-        // Show the button again
+        } catch (err) { alert("Export failed"); }
         exportBtn.style.display = "block";
     }
     
@@ -572,7 +584,7 @@
             try {
                 const { players, numericCols } = parseCSV(ev.target.result);
                 loadData(players, numericCols);
-                document.getElementById("uploadStatus").innerText = `✅ Loaded ${players.length} players`;
+                document.getElementById("uploadStatus").innerText = `✅ Loaded ${players.length} players, ${numericCols.length} stats`;
             } catch(err) {
                 document.getElementById("uploadStatus").innerText = "❌ " + err.message;
                 alert(err.message);
