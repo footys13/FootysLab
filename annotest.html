@@ -27,12 +27,12 @@
         }
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             margin-bottom: 10px;
         }
         button {
-            padding: 10px 15px;
+            padding: 8px 12px;
             background: #444;
             color: white;
             border: 1px solid #666;
@@ -46,9 +46,8 @@
             border-color: #0056b3;
             font-weight: bold;
         }
-        /* Palet Warna untuk Mode Nama */
         .color-palette {
-            display: none; /* Sembunyikan secara default */
+            display: none;
             gap: 5px;
             margin-top: 5px;
             padding: 5px;
@@ -62,11 +61,9 @@
             border: 2px solid transparent;
             cursor: pointer;
         }
-        .color-btn.active-color {
-            border-color: white; /* Tandai warna aktif */
-        }
+        .color-btn.active-color { border-color: white; }
         #clearBtn { background: #dc3545; border-color: #a71d2a; }
-        #status { font-weight: bold; color: #ffeb3b; padding: 5px; background: #333; border-radius: 5px; display: inline-block; }
+        #status { font-weight: bold; color: #ffeb3b; padding: 5px; background: #333; border-radius: 5px; display: inline-block; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -79,10 +76,12 @@
 </div>
 
 <div class="controls">
-    <button id="playBtn" class="active">Mode Nonton</button>
-    <button id="triangleBtn">Mode Segitiga</button>
-    <button id="nameBtn">Mode Nama Pemain</button>
-    <button id="clearBtn">Hapus Coretan</button>
+    <button id="playBtn" class="active">Nonton</button>
+    <button id="triangleBtn">Segitiga</button>
+    <button id="quadBtn">Segiempat</button>
+    <button id="arrowBtn">Panah</button>
+    <button id="nameBtn">Nama</button>
+    <button id="clearBtn">Hapus Semua</button>
     
     <div id="colorPalette" class="color-palette">
         <div class="color-btn active-color" style="background: rgb(255, 0, 0);" data-color="rgb(255, 0, 0)"></div>
@@ -102,19 +101,22 @@
     // UI Elements
     const btnPlay = document.getElementById('playBtn');
     const btnSegitiga = document.getElementById('triangleBtn');
+    const btnQuad = document.getElementById('quadBtn');
+    const btnArrow = document.getElementById('arrowBtn');
     const btnName = document.getElementById('nameBtn');
     const btnClear = document.getElementById('clearBtn');
     const statusText = document.getElementById('status');
     const colorPalette = document.getElementById('colorPalette');
 
-    // State Management
     let currentMode = 'nonton'; 
-    let selectedColor = 'rgb(255, 0, 0)'; // Default warna merah
+    let selectedColor = 'rgb(255, 0, 0)'; 
     
     // Data Penyimpanan
     let currentPoints = []; 
     let savedTriangles = []; 
-    let savedNames = []; // Menyimpan data { text, x, y, color }
+    let savedQuads = [];
+    let savedArrows = [];
+    let savedNames = []; 
 
     function resizeCanvas() {
         canvas.width = canvas.clientWidth;
@@ -124,15 +126,12 @@
     video.addEventListener('loadeddata', resizeCanvas);
     window.addEventListener('resize', resizeCanvas);
 
-    // FUNGSI UTAMA PERBAIKAN MODE
     function setMode(mode) {
         currentMode = mode;
         
-        // Reset tombol aktif
-        btnPlay.classList.remove('active');
-        btnSegitiga.classList.remove('active');
-        btnName.classList.remove('active');
-        colorPalette.style.display = 'none'; // Sembunyikan palet warna
+        // Reset UI
+        [btnPlay, btnSegitiga, btnQuad, btnArrow, btnName].forEach(btn => btn.classList.remove('active'));
+        colorPalette.style.display = 'none'; 
 
         if (mode === 'nonton') {
             btnPlay.classList.add('active');
@@ -140,7 +139,7 @@
             statusText.innerText = "Status: Memutar Video";
             currentPoints = []; 
             redraw();
-            video.play();
+            video.play().catch(e => console.log("Play tertahan"));
         } else {
             video.pause();
             canvas.style.pointerEvents = 'auto'; 
@@ -149,34 +148,41 @@
             if (mode === 'segitiga') {
                 btnSegitiga.classList.add('active');
                 statusText.innerText = "Status: Mode Segitiga. Sentuh 3 titik!";
+            } else if (mode === 'segiempat') {
+                btnQuad.classList.add('active');
+                statusText.innerText = "Status: Mode Segiempat. Sentuh 4 titik!";
+            } else if (mode === 'panah') {
+                btnArrow.classList.add('active');
+                statusText.innerText = "Status: Mode Panah. Sentuh 2 titik (Awal ke Akhir)!";
             } else if (mode === 'nama') {
                 btnName.classList.add('active');
-                colorPalette.style.display = 'flex'; // Tampilkan palet warna
+                colorPalette.style.display = 'flex'; 
                 statusText.innerText = "Status: Mode Nama. Pilih warna, lalu sentuh pemain!";
-                currentPoints = []; 
-                redraw();
             }
+            currentPoints = []; 
+            redraw();
         }
     }
 
-    // Event Listener Tombol
+    // Tombol Mode
     btnPlay.addEventListener('click', () => setMode('nonton'));
     btnSegitiga.addEventListener('click', () => setMode('segitiga'));
+    btnQuad.addEventListener('click', () => setMode('segiempat'));
+    btnArrow.addEventListener('click', () => setMode('panah'));
     btnName.addEventListener('click', () => setMode('nama'));
     
     btnClear.addEventListener('click', () => {
         savedTriangles = [];
+        savedQuads = [];
+        savedArrows = [];
         savedNames = [];
         currentPoints = [];
         redraw();
     });
 
-    // Event Listener Palet Warna
     colorPalette.addEventListener('click', (e) => {
         if (e.target.classList.contains('color-btn')) {
-            // Hapus tanda aktif dari warna sebelumnya
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active-color'));
-            // Tandai warna baru
             e.target.classList.add('active-color');
             selectedColor = e.target.getAttribute('data-color');
         }
@@ -198,12 +204,26 @@
             }
             redraw();
         } 
-        
+        else if (currentMode === 'segiempat') {
+            currentPoints.push({ x: x, y: y });
+            if (currentPoints.length === 4) {
+                savedQuads.push([...currentPoints]);
+                currentPoints = []; 
+            }
+            redraw();
+        }
+        else if (currentMode === 'panah') {
+            currentPoints.push({ x: x, y: y });
+            if (currentPoints.length === 2) {
+                savedArrows.push([...currentPoints]);
+                currentPoints = []; 
+            }
+            redraw();
+        }
         else if (currentMode === 'nama') {
             setTimeout(() => {
                 const playerName = prompt("Masukkan Nama Pemain:");
                 if (playerName && playerName.trim() !== "") {
-                    // Masukkan teks, posisi, dan warna yang dipilih
                     savedNames.push({ text: playerName.trim(), x: x, y: y, color: selectedColor });
                 }
                 redraw();
@@ -215,17 +235,25 @@
     function redraw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. Gambar Segitiga
-        savedTriangles.forEach(tri => drawTriangle(tri, true));
-        if (currentPoints.length > 0) {
-            drawTriangle(currentPoints, false);
-        }
-
-        // 2. Gambar Label Nama
+        // Gambar semua grafis yang sudah selesai
+        savedTriangles.forEach(tri => drawPolygon(tri, true));
+        savedQuads.forEach(quad => drawPolygon(quad, true));
+        savedArrows.forEach(arrow => drawArrow(arrow));
         savedNames.forEach(nameObj => drawNameTag(nameObj));
+
+        // Gambar titik-titik yang sedang diproses
+        if (currentPoints.length > 0) {
+            if (currentMode === 'segitiga' || currentMode === 'segiempat') {
+                drawPolygon(currentPoints, false);
+            } else if (currentMode === 'panah') {
+                drawArrow(currentPoints);
+            }
+        }
     }
 
-    function drawTriangle(points, isComplete) {
+    // Fungsi pintar: Bisa buat segitiga (3 titik) atau segiempat (4 titik)
+    function drawPolygon(points, isComplete) {
+        if (points.length === 0) return;
         ctx.beginPath();
         ctx.strokeStyle = "white";
         ctx.lineWidth = 3;
@@ -233,22 +261,54 @@
         ctx.moveTo(points[0].x, points[0].y);
         ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2); 
 
-        if (points.length > 1) {
-            ctx.lineTo(points[1].x, points[1].y);
-            ctx.arc(points[1].x, points[1].y, 4, 0, Math.PI*2);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+            ctx.arc(points[i].x, points[i].y, 4, 0, Math.PI*2);
         }
-        if (points.length > 2) {
-            ctx.lineTo(points[2].x, points[2].y);
+
+        if (isComplete) {
             ctx.closePath(); 
-            if (isComplete) {
-                ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
-                ctx.fill();
-            }
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
+            ctx.fill();
         }
         ctx.stroke(); 
     }
 
-    // FUNGSI UTAMA BARU UNTUK LABEL NAMA SOLID
+    // Fungsi Menggambar Panah
+    function drawArrow(points) {
+        if (points.length === 0) return;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = "#ffeb3b"; // Warna Kuning agar menonjol
+        ctx.lineWidth = 3;
+        
+        // Titik awal
+        ctx.moveTo(points[0].x, points[0].y);
+        ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2);
+
+        // Jika titik akhir sudah disentuh
+        if (points.length > 1) {
+            ctx.lineTo(points[1].x, points[1].y);
+            
+            // Rumus Matematika untuk Kepala Panah
+            const angle = Math.atan2(points[1].y - points[0].y, points[1].x - points[0].x);
+            const headLength = 15; // Panjang ujung panah
+            
+            // Sayap panah kanan
+            ctx.lineTo(points[1].x - headLength * Math.cos(angle - Math.PI / 6), 
+                       points[1].y - headLength * Math.sin(angle - Math.PI / 6));
+            
+            // Kembali ke ujung
+            ctx.moveTo(points[1].x, points[1].y);
+            
+            // Sayap panah kiri
+            ctx.lineTo(points[1].x - headLength * Math.cos(angle + Math.PI / 6), 
+                       points[1].y - headLength * Math.sin(angle + Math.PI / 6));
+        }
+        ctx.stroke();
+    }
+
+    // Fungsi Label Nama Solid
     function drawNameTag(nameObj) {
         ctx.font = "bold 14px sans-serif";
         const textWidth = ctx.measureText(nameObj.text).width;
@@ -256,30 +316,24 @@
         const boxWidth = textWidth + (paddingX * 2);
         const boxHeight = 26;
         
-        // Posisi kotak: di tengah X, dan sedikit di atas titik Y yang disentuh
         const boxX = nameObj.x - (boxWidth / 2);
         const boxY = nameObj.y - boxHeight - 15; 
 
-        // Menambahkan bayangan halus untuk efek menonjol
         ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
         ctx.shadowBlur = 4;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
 
-        // Gambar kotak background solid (Rounded Rectangle) dengan warna yang disimpan
         ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); // Radius lengkungan 6px
-        ctx.fillStyle = nameObj.color; // Warna dinamis sesuai jersey
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); 
+        ctx.fillStyle = nameObj.color; 
         ctx.fill();
         
-        // Matikan bayangan untuk teks agar teks tetap tajam
         ctx.shadowColor = "transparent";
 
-        // Tulis teks nama pemain (selalu putih)
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        // Koordinat teks ada di tengah-tengah kotak
         ctx.fillText(nameObj.text, nameObj.x, boxY + (boxHeight / 2));
     }
 </script>
