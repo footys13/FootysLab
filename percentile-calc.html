@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Percentile Calculator</title>
+  <title>Percentile Calculator - Comprehensive Stats</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,7 +19,7 @@
     }
     .topbar {
       width: 100%;
-      max-width: 560px;
+      max-width: 600px;
       border-left: 3px solid #4ade80;
       padding: 12px 20px;
       background: #0f1a0f;
@@ -35,7 +35,7 @@
       border-radius: 16px;
       padding: 20px;
       width: 100%;
-      max-width: 560px;
+      max-width: 600px;
       margin-bottom: 16px;
     }
     .card-title {
@@ -82,7 +82,7 @@
       border-radius: 16px;
       padding: 20px;
       width: 100%;
-      max-width: 560px;
+      max-width: 600px;
       display: none;
     }
     .result-name {
@@ -166,7 +166,7 @@
 </head>
 <body>
 
-  <div class="topbar">THE FOOTYS · PERCENTILE CALCULATOR</div>
+  <div class="topbar">THE FOOTYS · COMPREHENSIVE PERCENTILE</div>
 
   <div class="card">
     <div class="card-title">Upload CSV Raw Stats</div>
@@ -175,11 +175,13 @@
   </div>
 
   <div class="card" id="controlsCard" style="display:none;">
-    <div class="card-title">Pilih Posisi</div>
+    <div class="card-title">Pilih Template Posisi</div>
     <select id="selectPosisi" onchange="gantiPosisi()">
-      <option value="striker">Striker / CF</option>
-      <option value="winger">Winger / LW / RW</option>
+      <option value="all_stats">All-Round (17 Stats)</option>
+      <option value="fullback">Fullback / Wingback</option>
       <option value="midfielder">Midfielder / CM</option>
+      <option value="winger">Winger / LW / RW</option>
+      <option value="striker">Striker / CF</option>
       <option value="defender">Defender / CB</option>
     </select>
 
@@ -197,14 +199,14 @@
     <div class="result-meta">
       Club: <span id="resultKlub">-</span> ·
       Pos: <span id="resultPosisi">-</span> ·
-      Age: <span id="resultUmur">-</span>
+      Min: <span id="resultMenit">-</span>
     </div>
 
     <div class="card-title">Percentile vs Liga</div>
     <div class="percentile-grid" id="percentileGrid"></div>
 
     <div class="card-title" style="margin-top:8px;">Pizza Chart</div>
-    <svg id="pizzaSVG" viewBox="0 0 400 400" width="100%" height="100%"></svg>
+    <svg id="pizzaSVG" viewBox="0 0 450 450" width="100%" height="100%"></svg>
 
     <div class="watermark">THE FOOTYS</div>
 
@@ -217,42 +219,100 @@
   <script>
 
     const STATS_MAP = {
-      striker: [
-        { key: "Goals",              label: "Goals"     },
-        { key: "Shots on Target",    label: "SoT"       },
-        { key: "Key Passes",         label: "Key Pass"  },
-        { key: "Assists",            label: "Assists"   },
-        { key: "Duels Won",          label: "Duels Won" },
-        { key: "Big Chances Missed", label: "BCM"       }
+      all_stats: [
+        { key: "Goals", label: "Goals" },
+        { key: "xG", label: "xG" },
+        { key: "Shots on Target", label: "SoT" },
+        { key: "Assists", label: "Assists" },
+        { key: "xA", label: "xA" },
+        { key: "Key Passes", label: "Key Pass" },
+        { key: "Crosses", label: "Crosses" },
+        { key: "Acc. Passes", label: "Acc Pass" },
+        { key: "Acc. Opp Half Passes", label: "Opp Half Pass" },
+        { key: "Acc. Long Balls", label: "Acc Long B" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
+        { key: "Aerial Duels Won", label: "Aerial Won" },
+        { key: "Interceptions", label: "Intercept" },
+        { key: "Tackles Won", label: "Tkl Won" },
+        { key: "Clearances", label: "Clearances" },
+        { key: "Ball Recoveries", label: "Recoveries" }
       ],
-      winger: [
-        { key: "Goals",        label: "Goals"     },
-        { key: "Key Passes",   label: "Key Pass"  },
-        { key: "Assists",      label: "Assists"   },
-        { key: "Crosses",      label: "Crosses"   },
-        { key: "Duels Won",    label: "Duels Won" },
-        { key: "Long Balls",   label: "Long Balls"}
-      ],
-      midfielder: [
-        { key: "Passes",        label: "Passes"    },
-        { key: "Acc. Passes",   label: "Acc Pass"  },
-        { key: "Key Passes",    label: "Key Pass"  },
-        { key: "Assists",       label: "Assists"   },
-        { key: "Duels Won",     label: "Duels Won" },
-        { key: "Interceptions", label: "Intercept" }
+      fullback: [
+        { key: "Assists", label: "Assists" },
+        { key: "xA", label: "xA" },
+        { key: "Key Passes", label: "Key Pass" },
+        { key: "Crosses", label: "Crosses" },
+        { key: "Acc. Crosses", label: "Acc Cross" },
+        { key: "Acc. Opp Half Passes", label: "Opp Half Pass" },
+        { key: "Acc. Long Balls", label: "Acc Long B" },
+        { key: "Contests Won", label: "Dribble Won" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
+        { key: "Interceptions", label: "Intercept" },
+        { key: "Tackles Won", label: "Tkl Won" },
+        { key: "Ball Recoveries", label: "Recoveries" },
+        { key: "Clearances", label: "Clearances" }
       ],
       defender: [
-        { key: "Duels Won",        label: "Duels Won"  },
+        { key: "Goals", label: "Goals" },
+        { key: "Acc. Passes", label: "Acc Pass" },
+        { key: "Acc. Long Balls", label: "Acc Long B" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
         { key: "Aerial Duels Won", label: "Aerial Won" },
-        { key: "Interceptions",    label: "Intercept"  },
-        { key: "Clearances",       label: "Clearances" },
-        { key: "Acc. Long Balls",  label: "Long Ball"  },
-        { key: "Tackles Won",      label: "Tkl Won"    }
+        { key: "Interceptions", label: "Intercept" },
+        { key: "Tackles Won", label: "Tkl Won" },
+        { key: "Clearances", label: "Clearances" },
+        { key: "Blocked Shots", label: "Blocks" },
+        { key: "Ball Recoveries", label: "Recoveries" }
+      ],
+      midfielder: [
+        { key: "Goals", label: "Goals" },
+        { key: "xG", label: "xG" },
+        { key: "Assists", label: "Assists" },
+        { key: "xA", label: "xA" },
+        { key: "Key Passes", label: "Key Pass" },
+        { key: "Acc. Passes", label: "Acc Pass" },
+        { key: "Acc. Opp Half Passes", label: "Opp Half Pass" },
+        { key: "Acc. Long Balls", label: "Acc Long B" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
+        { key: "Interceptions", label: "Intercept" },
+        { key: "Tackles Won", label: "Tkl Won" },
+        { key: "Ball Recoveries", label: "Recoveries" }
+      ],
+      winger: [
+        { key: "Goals", label: "Goals" },
+        { key: "xG", label: "xG" },
+        { key: "Shots on Target", label: "SoT" },
+        { key: "Assists", label: "Assists" },
+        { key: "xA", label: "xA" },
+        { key: "Key Passes", label: "Key Pass" },
+        { key: "Crosses", label: "Crosses" },
+        { key: "Contests Won", label: "Dribble Won" },
+        { key: "Acc. Opp Half Passes", label: "Opp Half Pass" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
+        { key: "Ball Recoveries", label: "Recoveries" }
+      ],
+      striker: [
+        { key: "Goals", label: "Goals" },
+        { key: "xG", label: "xG" },
+        { key: "Shots", label: "Shots" },
+        { key: "Shots on Target", label: "SoT" },
+        { key: "Assists", label: "Assists" },
+        { key: "xA", label: "xA" },
+        { key: "Key Passes", label: "Key Pass" },
+        { key: "Touches", label: "Touches" },
+        { key: "Duels Won", label: "Duels Won" },
+        { key: "Aerial Duels Won", label: "Aerial Won" },
+        { key: "Ball Recoveries", label: "Recoveries" }
       ]
     };
 
     let data = [];
-    let statsAktif = STATS_MAP["striker"];
+    let statsAktif = STATS_MAP["all_stats"];
 
     function parseBaris(str) {
       const hasil = [];
@@ -289,7 +349,6 @@
       return result;
     }
 
-    // Load CSV
     document.getElementById("inputCSV").onchange = function() {
       const file = this.files[0];
       if (!file) return;
@@ -325,13 +384,11 @@
       const hasil = statsAktif.map(function(stat) {
         const nilaiPemain = parseFloat(pemain[stat.key]) || 0;
 
-        // Ambil semua nilai stat dari seluruh pemain
         const semuaNilai = data
           .map(function(p) { return parseFloat(p[stat.key]); })
           .filter(function(v) { return !isNaN(v); })
           .sort(function(a, b) { return a - b; });
 
-        // Hitung percentile
         const dibawah = semuaNilai.filter(function(v) { return v <= nilaiPemain; }).length;
         const pct = Math.round((dibawah / semuaNilai.length) * 100);
 
@@ -345,9 +402,8 @@
       document.getElementById("resultNama").textContent = pemain["Player"];
       document.getElementById("resultKlub").textContent = pemain["Team"];
       document.getElementById("resultPosisi").textContent = pemain["Pos"] || "-";
-      document.getElementById("resultUmur").textContent = pemain["Age"] || "-";
+      document.getElementById("resultMenit").textContent = pemain["Min"] ? pemain["Min"] + " mins" : "-";
 
-      // Grid percentile
       const grid = document.getElementById("percentileGrid");
       grid.innerHTML = "";
       hasil.forEach(function(h) {
@@ -383,8 +439,8 @@
     function gambarPizza(hasil) {
       const svg = document.getElementById("pizzaSVG");
       svg.innerHTML = "";
-      const cx = 200, cy = 200;
-      const rMax = 150, rMin = 40;
+      const cx = 225, cy = 225; // Center point adjusted for 450x450 box
+      const rMax = 160, rMin = 40;
       const n = hasil.length;
       const slice = (2 * Math.PI) / n;
 
@@ -432,12 +488,12 @@
         svg.appendChild(path);
 
         const labelAngle = slice * i + slice / 2 - Math.PI / 2;
-        const lx = cx + (rMax + 26) * Math.cos(labelAngle);
-        const ly = cy + (rMax + 26) * Math.sin(labelAngle);
+        const lx = cx + (rMax + 30) * Math.cos(labelAngle);
+        const ly = cy + (rMax + 30) * Math.sin(labelAngle);
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", lx); text.setAttribute("y", ly);
         text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("fill", "#9ca3af"); text.setAttribute("font-size", "11");
+        text.setAttribute("fill", "#9ca3af"); text.setAttribute("font-size", "10");
         text.setAttribute("font-weight", "600"); text.textContent = h.stat.label;
         svg.appendChild(text);
 
