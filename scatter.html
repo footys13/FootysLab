@@ -2,164 +2,125 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scatter Plot - The Footys</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0f0a; color: white; font-family: 'Barlow', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
-    .topbar { width: 100%; max-width: 680px; border-left: 3px solid #4ade80; padding: 12px 20px; background: #0f1a0f; letter-spacing: 2px; font-size: 10px; color: #6b7280; font-weight: 600; margin-bottom: 24px; text-transform: uppercase; }
-    #uploadScreen { display: flex; align-items: center; justify-content: center; min-height: 60vh; width: 100%; max-width: 680px; }
-    .upload-box { border: 2px dashed #1f2d1f; border-radius: 16px; padding: 48px 32px; text-align: center; max-width: 400px; width: 100%; }
-    #mainScreen { display: none; width: 100%; max-width: 680px; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .control-group { display: flex; flex-direction: column; gap: 5px; }
-    .control-label { font-size: 9px; letter-spacing: 2px; color: #4b5563; text-transform: uppercase; font-weight: 700; }
-    select { width: 100%; background: #161f16; color: white; border: 1px solid #2d4a2d; border-radius: 8px; padding: 10px 12px; font-size: 11px; font-family: 'Barlow', sans-serif; }
-    .card { background: #0f1a0f; border-radius: 20px; padding: 24px; width: 100%; }
-    .chart-title { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; color: #4b5563; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
-    .svg-wrap { position: relative; width: 100%; }
-    svg { width: 100%; display: block; }
-    .tooltip { position: absolute; padding: 8px 12px; font-size: 12px; pointer-events: none; display: none; z-index: 10; min-width: 140px; background: rgba(15, 26, 15, 0.85); border: 1px solid #2d4a2d; border-radius: 8px; backdrop-filter: blur(4px); }
-    .tooltip-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: #4ade80; text-transform: uppercase; }
-    .tooltip-team { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
-    .tooltip-stats { font-size: 11px; color: #e5e7eb; line-height: 1.6; }
-    .watermark { margin-top: 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; color: #ffffff; text-transform: uppercase; text-align: center; }
-    .btn-export { margin-top: 20px; background: #161f16; color: #4ade80; border: 1px solid #4ade80; border-radius: 8px; padding: 10px 24px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; width: 100%; }
+    body { background: #0a0f0a; color: white; font-family: 'Barlow', sans-serif; padding: 24px; }
+    #mainScreen { max-width: 900px; margin: 0 auto; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    select { width: 100%; background: #161f16; color: white; border: 1px solid #2d4a2d; padding: 10px; border-radius: 8px; }
+    .svg-wrap { background: #0f1a0f; border-radius: 20px; padding: 20px; position: relative; }
+    svg { width: 100%; height: 500px; cursor: crosshair; }
+    .tooltip { position: absolute; background: rgba(0,0,0,0.9); border: 1px solid #4ade80; padding: 10px; border-radius: 5px; pointer-events: none; display: none; font-size: 12px; z-index: 10; }
   </style>
 </head>
 <body>
 
-  <div class="topbar">THE FOOTYS · SCATTER PLOT</div>
-
-  <div id="uploadScreen">
-    <div class="upload-box">
-      <p>Upload CSV database</p>
-      <input type="file" id="inputCSV" accept=".csv">
-    </div>
+  <div id="uploadScreen" style="text-align:center; padding-top:100px;">
+    <input type="file" id="inputCSV" accept=".csv">
   </div>
 
-  <div id="mainScreen">
+  <div id="mainScreen" style="display:none;">
     <div class="controls">
-      <div class="control-group">
-        <div class="control-label" style="color:#4ade80">X Axis</div>
-        <select id="selectX" onchange="updateChart()"></select>
-      </div>
-      <div class="control-group">
-        <div class="control-label" style="color:#60a5fa">Y Axis</div>
-        <select id="selectY" onchange="updateChart()"></select>
-      </div>
-      <div class="control-group">
-        <div class="control-label" style="color:#fbbf24">Origin</div>
-        <select id="selectCountry" onchange="updateChart()">
-          <option value="all">Semua</option>
-          <option value="Indonesia">Indonesia</option>
-          <option value="Luar">Luar Negeri</option>
-        </select>
-      </div>
+      <div><label style="font-size:9px; color:#4ade80">X AXIS</label><select id="selectX" onchange="updateChart()"></select></div>
+      <div><label style="font-size:9px; color:#60a5fa">Y AXIS</label><select id="selectY" onchange="updateChart()"></select></div>
+      <div><label style="font-size:9px; color:#fbbf24">ORIGIN</label><select id="selectCountry" onchange="updateChart()">
+        <option value="all">Semua Pemain</option>
+        <option value="Indonesia">Indonesia Saja</option>
+        <option value="Luar">Luar Negeri Saja</option>
+      </select></div>
     </div>
-
-    <div class="card" id="cardExport">
-      <div class="chart-title" id="chartTitle">-</div>
-      <div class="svg-wrap" id="svgWrap">
-        <svg id="scatterSVG" viewBox="0 0 600 500"></svg>
-        <div class="tooltip" id="tooltip">
-          <div class="tooltip-name" id="ttName">-</div>
-          <div class="tooltip-team" id="ttTeam">-</div>
-          <div class="tooltip-stats" id="ttStats">-</div>
-        </div>
-      </div>
-      <div class="watermark">THE FOOTYS</div>
+    <div class="svg-wrap" id="cardExport">
+      <svg id="scatterSVG" viewBox="0 0 700 500"></svg>
+      <div class="tooltip" id="tooltip"></div>
     </div>
-
-    <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
+    <button onclick="exportGambar()" style="margin-top:20px; width:100%; padding:10px; cursor:pointer;">💾 Save Image</button>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    const AXIS_OPTIONS = [
-      { key: "Non-penalty goals per 90", label: "NP Goals" },
-      { key: "npxG per 90", label: "npxG" },
-      { key: "Goal conversion, %", label: "Conv %" },
-      { key: "Shot assists per 90", label: "Shot Assists" },
-      { key: "xA per 90", label: "xA" },
-      { key: "Assists per 90", label: "Assists" }
-    ];
-
     let dataPemain = [];
 
-    function parseBaris(str) {
-      const hasil = []; let current = ""; let dalamKutip = false;
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        if (char === '"') dalamKutip = !dalamKutip;
-        else if (char === ',' && !dalamKutip) { hasil.push(current.trim()); current = ""; }
-        else current += char;
-      }
-      hasil.push(current.trim()); return hasil;
-    }
-
-    document.getElementById("inputCSV").onchange = function() {
-      const file = this.files[0];
-      if (!file) return;
+    document.getElementById("inputCSV").onchange = function(e) {
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const lines = e.target.result.split("\n");
-        const header = parseBaris(lines[0]);
-        dataPemain = lines.slice(1).filter(l => l.length > 0).map(l => {
-          const vals = parseBaris(l);
+      reader.onload = function(event) {
+        const rows = event.target.result.split("\n").map(r => r.trim()).filter(r => r !== "");
+        // Regex untuk split CSV agar tanda koma di dalam kutip tidak terpecah
+        const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.replace(/["\r]/g, ""));
+        
+        dataPemain = rows.slice(1).map(row => {
+          const vals = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/["\r]/g, ""));
           let obj = {};
-          header.forEach((h, i) => obj[h] = vals[i]);
+          headers.forEach((h, i) => obj[h] = vals[i]);
           return obj;
         });
-        
-        ["selectX", "selectY"].forEach((id, idx) => {
-          const sel = document.getElementById(id);
-          AXIS_OPTIONS.forEach(opt => sel.appendChild(new Option(opt.label, opt.key)));
-          sel.selectedIndex = idx;
+
+        // Masukkan semua kolom angka ke dropdown
+        const numericCols = headers.filter(h => !["Player", "Team", "Position", "League", "Birth country"].includes(h));
+        const selX = document.getElementById("selectX");
+        const selY = document.getElementById("selectY");
+        numericCols.forEach(col => {
+          selX.add(new Option(col, col));
+          selY.add(new Option(col, col));
         });
+        selY.selectedIndex = 1;
+
         document.getElementById("uploadScreen").style.display = "none";
         document.getElementById("mainScreen").style.display = "block";
         updateChart();
       };
-      reader.readAsText(file);
+      reader.readAsText(e.target.files[0]);
     };
 
     function updateChart() {
       const keyX = document.getElementById("selectX").value;
       const keyY = document.getElementById("selectY").value;
       const filter = document.getElementById("selectCountry").value;
-      const labelX = AXIS_OPTIONS.find(o => o.key === keyX).label;
-      const labelY = AXIS_OPTIONS.find(o => o.key === keyY).label;
-      document.getElementById("chartTitle").textContent = labelX + " · " + labelY;
-      gambarScatter(keyX, keyY, labelX, labelY, filter);
-    }
-
-    function gambarScatter(keyX, keyY, labelX, labelY, filter) {
       const svg = document.getElementById("scatterSVG");
       svg.innerHTML = "";
-      
-      const filteredData = dataPemain.filter(p => {
-        const country = (p["Birth Country"] || "").toLowerCase();
+
+      const filtered = dataPemain.filter(p => {
+        const country = (p["Birth country"] || "").toLowerCase();
         if (filter === "Indonesia") return country === "indonesia";
         if (filter === "Luar") return country !== "indonesia" && country !== "";
         return true;
       });
 
-      // (Logika rendering SVG tetap sama seperti kodemu, pastikan data dipanggil dari filteredData)
-      // ... (Gunakan variabel filteredData di sini untuk looping circle) ...
-      
-      // Contoh cuplikan:
-      filteredData.forEach(pemain => {
-         // ... logika menggambar titik ...
+      filtered.forEach(p => {
+        const valX = parseFloat(p[keyX]) || 0;
+        const valY = parseFloat(p[keyY]) || 0;
+        const x = 50 + (valX * 500); // Skala bisa disesuaikan
+        const y = 450 - (valY * 400);
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", "5");
+        circle.setAttribute("fill", "#4ade80");
+
+        circle.onmouseover = () => {
+          const tt = document.getElementById("tooltip");
+          tt.style.display = "block";
+          tt.style.left = (x + 20) + "px";
+          tt.style.top = (y + 20) + "px";
+          tt.innerHTML = `<strong>${p.Player}</strong><br>${keyX}: ${valX}<br>${keyY}: ${valY}`;
+        };
+        circle.onmouseout = () => document.getElementById("tooltip").style.display = "none";
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x); text.setAttribute("y", y - 10);
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("fill", "#6b7280");
+        text.setAttribute("font-size", "8px");
+        text.textContent = p.Player ? p.Player.split(" ").pop() : "";
+
+        g.appendChild(circle); g.appendChild(text);
+        svg.appendChild(g);
       });
     }
 
     function exportGambar() {
-      document.getElementById("tooltip").style.display = "none";
-      html2canvas(document.getElementById("cardExport"), { backgroundColor: "#0f1a0f", scale: 2 }).then(canvas => {
+      html2canvas(document.getElementById("cardExport")).then(canvas => {
         const link = document.createElement("a");
-        link.download = "plot.png";
+        link.download = "scatter.png";
         link.href = canvas.toDataURL("image/png");
         link.click();
       });
