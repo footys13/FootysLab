@@ -1,342 +1,518 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Football Tactics - Curved Arrow & Annotations</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: white; padding: 10px; margin: 0; }
+        * {
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', sans-serif;
+            background: #0a0c12;
+            color: #f0f0f0;
+            padding: 12px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
         .video-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            margin-bottom: 15px;
-            border: 2px solid #444;
-            border-radius: 8px;
+            max-width: 700px;
+            margin: 0 auto 16px auto;
+            border-radius: 20px;
+            border: 2px solid #2c3e4e;
             overflow: hidden;
+            background: #000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
+
         video {
             width: 100%;
             display: block;
+            pointer-events: none;  /* forces all touches to canvas */
         }
+
         #drawCanvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10; 
-            pointer-events: none;
+            z-index: 25;
+            touch-action: none;
+            background: transparent;
         }
+
         .controls {
             display: flex;
-            gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            justify-content: center;
+            gap: 10px;
+            margin: 12px 0 10px;
+            background: #151b24dd;
+            backdrop-filter: blur(10px);
+            padding: 10px 12px;
+            border-radius: 60px;
         }
+
         button {
-            padding: 8px 12px;
-            background: #444;
+            background: #242c38;
+            border: none;
             color: white;
-            border: 1px solid #666;
-            border-radius: 5px;
             font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 40px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.2s ease;
+            touch-action: manipulation;
         }
+
+        button:active { transform: scale(0.96); }
         button.active {
-            background: #007bff;
-            border-color: #0056b3;
-            font-weight: bold;
+            background: #2b7e3a;
+            box-shadow: 0 0 0 2px #86efac;
         }
+        #clearBtn { background: #9e2a2a; }
+
         .color-palette {
             display: none;
-            gap: 5px;
+            justify-content: center;
+            gap: 12px;
+            background: #10161ecc;
+            backdrop-filter: blur(8px);
+            padding: 8px 14px;
+            border-radius: 50px;
             margin-top: 5px;
-            padding: 5px;
-            background: #333;
-            border-radius: 5px;
         }
+
         .color-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            border: 2px solid transparent;
-            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.7);
+            box-shadow: 0 2px 5px black;
         }
-        .color-btn.active-color { border-color: white; }
-        #clearBtn { background: #dc3545; border-color: #a71d2a; }
-        #status { font-weight: bold; color: #ffeb3b; padding: 5px; background: #333; border-radius: 5px; display: inline-block; font-size: 14px; }
+        .color-btn.active-color {
+            transform: scale(1.1);
+            border: 3px solid white;
+        }
+        #status {
+            background: #1e2933;
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+            margin: 8px auto 0;
+        }
+        .bottom-bar { text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="video-container">
-    <video id="myVideo" controls>
+    <video id="myVideo" controls disablePictureInPicture playsinline>
         <source src="video-pertandingan.mp4" type="video/mp4">
     </video>
     <canvas id="drawCanvas"></canvas>
 </div>
 
 <div class="controls">
-    <button id="playBtn" class="active">Nonton</button>
-    <button id="triangleBtn">Segitiga</button>
-    <button id="quadBtn">Segiempat</button>
-    <button id="arrowBtn">Panah</button>
-    <button id="nameBtn">Nama</button>
-    <button id="clearBtn">Hapus Semua</button>
-    
-    <div id="colorPalette" class="color-palette">
-        <div class="color-btn active-color" style="background: rgb(255, 0, 0);" data-color="rgb(255, 0, 0)"></div>
-        <div class="color-btn" style="background: rgb(0, 0, 255);" data-color="rgb(0, 0, 255)"></div>
-        <div class="color-btn" style="background: rgb(255, 255, 255);" data-color="rgb(255, 255, 255)"></div>
-        <div class="color-btn" style="background: rgb(255, 235, 59);" data-color="rgb(255, 235, 59)"></div>
-    </div>
+    <button id="playBtn" class="active">📺 Nonton</button>
+    <button id="triangleBtn">🔺 Segitiga</button>
+    <button id="quadBtn">⬛ Segiempat</button>
+    <button id="arrowBtn">➡️ Panah Lengkung</button>
+    <button id="nameBtn">🏷️ Nama</button>
+    <button id="clearBtn">🗑️ Hapus</button>
 </div>
 
-<div id="status">Status: Memutar Video</div>
+<div id="colorPalette" class="color-palette">
+    <div class="color-btn active-color" style="background: #ef4444;" data-color="#ef4444"></div>
+    <div class="color-btn" style="background: #3b82f6;" data-color="#3b82f6"></div>
+    <div class="color-btn" style="background: #facc15;" data-color="#facc15"></div>
+    <div class="color-btn" style="background: #10b981;" data-color="#10b981"></div>
+    <div class="color-btn" style="background: #ffffff;" data-color="#ffffff"></div>
+</div>
+
+<div class="bottom-bar">
+    <div id="status">⚽ Mode: Nonton (Sentuh untuk menggambar)</div>
+</div>
 
 <script>
-    const video = document.getElementById('myVideo');
-    const canvas = document.getElementById('drawCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // UI Elements
-    const btnPlay = document.getElementById('playBtn');
-    const btnSegitiga = document.getElementById('triangleBtn');
-    const btnQuad = document.getElementById('quadBtn');
-    const btnArrow = document.getElementById('arrowBtn');
-    const btnName = document.getElementById('nameBtn');
-    const btnClear = document.getElementById('clearBtn');
-    const statusText = document.getElementById('status');
-    const colorPalette = document.getElementById('colorPalette');
+    (function(){
+        const video = document.getElementById('myVideo');
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
 
-    let currentMode = 'nonton'; 
-    let selectedColor = 'rgb(255, 0, 0)'; 
-    
-    // Data Penyimpanan
-    let currentPoints = []; 
-    let savedTriangles = []; 
-    let savedQuads = [];
-    let savedArrows = [];
-    let savedNames = []; 
+        // UI Buttons
+        const btnPlay = document.getElementById('playBtn');
+        const btnTriangle = document.getElementById('triangleBtn');
+        const btnQuad = document.getElementById('quadBtn');
+        const btnArrow = document.getElementById('arrowBtn');
+        const btnName = document.getElementById('nameBtn');
+        const btnClear = document.getElementById('clearBtn');
+        const statusDiv = document.getElementById('status');
+        const colorPalette = document.getElementById('colorPalette');
 
-    function resizeCanvas() {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-        redraw();
-    }
-    video.addEventListener('loadeddata', resizeCanvas);
-    window.addEventListener('resize', resizeCanvas);
+        // App state
+        let currentMode = 'nonton';    // nonton, segitiga, segiempat, panah, nama
+        let selectedColor = '#ef4444';
+        let currentPoints = [];         // temporary points for active drawing
+        let savedTriangles = [];         // array of 3-point arrays
+        let savedQuads = [];             // array of 4-point arrays
+        let savedArrows = [];            // array of [start, end]
+        let savedNames = [];             // array of {text, x, y, color}
 
-    function setMode(mode) {
-        currentMode = mode;
-        
-        // Reset UI
-        [btnPlay, btnSegitiga, btnQuad, btnArrow, btnName].forEach(btn => btn.classList.remove('active'));
-        colorPalette.style.display = 'none'; 
-
-        if (mode === 'nonton') {
-            btnPlay.classList.add('active');
-            canvas.style.pointerEvents = 'none'; 
-            statusText.innerText = "Status: Memutar Video";
-            currentPoints = []; 
-            redraw();
-            video.play().catch(e => console.log("Play tertahan"));
-        } else {
-            video.pause();
-            canvas.style.pointerEvents = 'auto'; 
-            resizeCanvas();
-            
-            if (mode === 'segitiga') {
-                btnSegitiga.classList.add('active');
-                statusText.innerText = "Status: Mode Segitiga. Sentuh 3 titik!";
-            } else if (mode === 'segiempat') {
-                btnQuad.classList.add('active');
-                statusText.innerText = "Status: Mode Segiempat. Sentuh 4 titik!";
-            } else if (mode === 'panah') {
-                btnArrow.classList.add('active');
-                statusText.innerText = "Status: Mode Panah. Sentuh 2 titik (Awal ke Akhir)!";
-            } else if (mode === 'nama') {
-                btnName.classList.add('active');
-                colorPalette.style.display = 'flex'; 
-                statusText.innerText = "Status: Mode Nama. Pilih warna, lalu sentuh pemain!";
+        // ----- RESIZE & CANVAS SYNC (critical for touch) -----
+        function resizeCanvasAndRedraw() {
+            const container = document.querySelector('.video-container');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            let w = rect.width;
+            let h = rect.height;
+            if (w === 0 || h === 0) {
+                // fallback: get from computed style
+                w = container.clientWidth;
+                h = container.clientHeight;
             }
-            currentPoints = []; 
-            redraw();
+            if (w === 0) w = window.innerWidth - 24;
+            if (h === 0) h = 300; // safe minimum
+            canvas.width = w;
+            canvas.height = h;
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${h}px`;
+            redrawAll();
         }
-    }
 
-    // Tombol Mode
-    btnPlay.addEventListener('click', () => setMode('nonton'));
-    btnSegitiga.addEventListener('click', () => setMode('segitiga'));
-    btnQuad.addEventListener('click', () => setMode('segiempat'));
-    btnArrow.addEventListener('click', () => setMode('panah'));
-    btnName.addEventListener('click', () => setMode('nama'));
-    
-    btnClear.addEventListener('click', () => {
-        savedTriangles = [];
-        savedQuads = [];
-        savedArrows = [];
-        savedNames = [];
-        currentPoints = [];
-        redraw();
-    });
+        // Force resize on load, metadata, and every possible event
+        window.addEventListener('load', () => { setTimeout(resizeCanvasAndRedraw, 50); });
+        video.addEventListener('loadedmetadata', resizeCanvasAndRedraw);
+        video.addEventListener('canplay', resizeCanvasAndRedraw);
+        window.addEventListener('resize', () => { setTimeout(resizeCanvasAndRedraw, 30); });
+        new ResizeObserver(() => resizeCanvasAndRedraw()).observe(document.querySelector('.video-container'));
 
-    colorPalette.addEventListener('click', (e) => {
-        if (e.target.classList.contains('color-btn')) {
-            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active-color'));
-            e.target.classList.add('active-color');
-            selectedColor = e.target.getAttribute('data-color');
+        // ----- helper: roundRect for name tags -----
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2*r) r = w/2;
+                if (h < 2*r) r = h/2;
+                this.moveTo(x+r, y);
+                this.lineTo(x+w-r, y);
+                this.quadraticCurveTo(x+w, y, x+w, y+r);
+                this.lineTo(x+w, y+h-r);
+                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                this.lineTo(x+r, y+h);
+                this.quadraticCurveTo(x, y+h, x, y+h-r);
+                this.lineTo(x, y+r);
+                this.quadraticCurveTo(x, y, x+r, y);
+                return this;
+            };
         }
-    });
 
-    // Menangkap sentuhan di layar
-    canvas.addEventListener('pointerdown', (e) => {
-        if (currentMode === 'nonton') return;
+        // ----- CURVED ARROW ENGINE (beautiful football pass) -----
+        function getCurveControl(p0, p1) {
+            const dx = p1.x - p0.x;
+            const dy = p1.y - p0.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 1) return { x: p0.x, y: p0.y };
+            const midX = (p0.x + p1.x) / 2;
+            const midY = (p0.y + p1.y) / 2;
+            let perpX = -dy;
+            let perpY = dx;
+            const perpLen = Math.hypot(perpX, perpY);
+            if (perpLen > 0.01) { perpX /= perpLen; perpY /= perpLen; }
+            let offset = Math.min(Math.max(dist * 0.32, 20), 60);
+            if (dist < 45) offset = dist * 0.42;
+            return { x: midX + perpX * offset, y: midY + perpY * offset };
+        }
 
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        if (currentMode === 'segitiga') {
-            currentPoints.push({ x: x, y: y });
-            if (currentPoints.length === 3) {
-                savedTriangles.push([...currentPoints]);
-                currentPoints = []; 
+        function drawCurvedArrow(points, isPreview = false) {
+            if (!points || points.length === 0) return;
+            if (points.length === 1) {
+                ctx.beginPath();
+                ctx.arc(points[0].x, points[0].y, 7, 0, Math.PI*2);
+                ctx.fillStyle = "#FFC107";
+                ctx.shadowBlur = 3;
+                ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 12px system-ui";
+                ctx.fillText("⬤", points[0].x-4, points[0].y-6);
+                return;
             }
-            redraw();
-        } 
-        else if (currentMode === 'segiempat') {
-            currentPoints.push({ x: x, y: y });
-            if (currentPoints.length === 4) {
-                savedQuads.push([...currentPoints]);
-                currentPoints = []; 
-            }
-            redraw();
-        }
-        else if (currentMode === 'panah') {
-            currentPoints.push({ x: x, y: y });
-            if (currentPoints.length === 2) {
-                savedArrows.push([...currentPoints]);
-                currentPoints = []; 
-            }
-            redraw();
-        }
-        else if (currentMode === 'nama') {
-            setTimeout(() => {
-                const playerName = prompt("Masukkan Nama Pemain:");
-                if (playerName && playerName.trim() !== "") {
-                    savedNames.push({ text: playerName.trim(), x: x, y: y, color: selectedColor });
-                }
-                redraw();
-            }, 50);
-        }
-    });
-
-    // MASTER DRAWING FUNCTION
-    function redraw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Gambar semua grafis yang sudah selesai
-        savedTriangles.forEach(tri => drawPolygon(tri, true));
-        savedQuads.forEach(quad => drawPolygon(quad, true));
-        savedArrows.forEach(arrow => drawArrow(arrow));
-        savedNames.forEach(nameObj => drawNameTag(nameObj));
-
-        // Gambar titik-titik yang sedang diproses
-        if (currentPoints.length > 0) {
-            if (currentMode === 'segitiga' || currentMode === 'segiempat') {
-                drawPolygon(currentPoints, false);
-            } else if (currentMode === 'panah') {
-                drawArrow(currentPoints);
-            }
-        }
-    }
-
-    // Fungsi pintar: Bisa buat segitiga (3 titik) atau segiempat (4 titik)
-    function drawPolygon(points, isComplete) {
-        if (points.length === 0) return;
-        ctx.beginPath();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
-        
-        ctx.moveTo(points[0].x, points[0].y);
-        ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2); 
-
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-            ctx.arc(points[i].x, points[i].y, 4, 0, Math.PI*2);
-        }
-
-        if (isComplete) {
-            ctx.closePath(); 
-            ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
+            if (points.length < 2) return;
+            const start = points[0], end = points[1];
+            const control = getCurveControl(start, end);
+            ctx.save();
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+            ctx.strokeStyle = "#FFD966";
+            ctx.lineWidth = 4.5;
+            ctx.lineCap = "round";
+            ctx.stroke();
+            // start & end markers
+            ctx.beginPath();
+            ctx.arc(start.x, start.y, 5, 0, Math.PI*2);
+            ctx.fillStyle = "#FFA559";
             ctx.fill();
+            ctx.beginPath();
+            ctx.arc(end.x, end.y, 5, 0, Math.PI*2);
+            ctx.fillStyle = "#FF6F3C";
+            ctx.fill();
+            // arrowhead based on curve tangent at end
+            const tangentX = end.x - control.x;
+            const tangentY = end.y - control.y;
+            const len = Math.hypot(tangentX, tangentY);
+            if (len > 0.01) {
+                const angle = Math.atan2(tangentY, tangentX);
+                const headSize = 16;
+                const wing = Math.PI / 6;
+                const tipX = end.x, tipY = end.y;
+                const leftX = tipX - headSize * Math.cos(angle - wing);
+                const leftY = tipY - headSize * Math.sin(angle - wing);
+                const rightX = tipX - headSize * Math.cos(angle + wing);
+                const rightY = tipY - headSize * Math.sin(angle + wing);
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(leftX, leftY);
+                ctx.lineTo(rightX, rightY);
+                ctx.closePath();
+                ctx.fillStyle = "#FFBF69";
+                ctx.fill();
+                ctx.strokeStyle = "#AA6F20";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+            // subtle dashed overlay
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+            ctx.strokeStyle = "#ffffff80";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 7]);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
-        ctx.stroke(); 
-    }
 
-    // Fungsi Menggambar Panah
-    function drawArrow(points) {
-        if (points.length === 0) return;
-        
-        ctx.beginPath();
-        ctx.strokeStyle = "#ffeb3b"; // Warna Kuning agar menonjol
-        ctx.lineWidth = 3;
-        
-        // Titik awal
-        ctx.moveTo(points[0].x, points[0].y);
-        ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2);
-
-        // Jika titik akhir sudah disentuh
-        if (points.length > 1) {
-            ctx.lineTo(points[1].x, points[1].y);
-            
-            // Rumus Matematika untuk Kepala Panah
-            const angle = Math.atan2(points[1].y - points[0].y, points[1].x - points[0].x);
-            const headLength = 15; // Panjang ujung panah
-            
-            // Sayap panah kanan
-            ctx.lineTo(points[1].x - headLength * Math.cos(angle - Math.PI / 6), 
-                       points[1].y - headLength * Math.sin(angle - Math.PI / 6));
-            
-            // Kembali ke ujung
-            ctx.moveTo(points[1].x, points[1].y);
-            
-            // Sayap panah kiri
-            ctx.lineTo(points[1].x - headLength * Math.cos(angle + Math.PI / 6), 
-                       points[1].y - headLength * Math.sin(angle + Math.PI / 6));
+        // Draw polygon (triangle/quad)
+        function drawPolygon(points, isComplete = true) {
+            if (!points.length) return;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i=1;i<points.length;i++) ctx.lineTo(points[i].x, points[i].y);
+            if(isComplete && (points.length===3||points.length===4)) {
+                ctx.closePath();
+                ctx.fillStyle = "rgba(255,200,100,0.2)";
+                ctx.fill();
+            }
+            ctx.strokeStyle = "#44ccff";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            for(let p of points) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+                ctx.fillStyle = "#3b82f6";
+                ctx.fill();
+            }
         }
-        ctx.stroke();
-    }
 
-    // Fungsi Label Nama Solid
-    function drawNameTag(nameObj) {
-        ctx.font = "bold 14px sans-serif";
-        const textWidth = ctx.measureText(nameObj.text).width;
-        const paddingX = 10;
-        const boxWidth = textWidth + (paddingX * 2);
-        const boxHeight = 26;
-        
-        const boxX = nameObj.x - (boxWidth / 2);
-        const boxY = nameObj.y - boxHeight - 15; 
+        function drawNameTag(item) {
+            ctx.save();
+            ctx.shadowBlur = 4;
+            ctx.font = "bold 15px system-ui";
+            const metrics = ctx.measureText(item.text);
+            const w = metrics.width + 20;
+            const h = 32;
+            const xBox = item.x - w/2;
+            const yBox = item.y - h - 8;
+            ctx.beginPath();
+            ctx.roundRect(xBox, yBox, w, h, 12);
+            ctx.fillStyle = item.color;
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px system-ui";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(item.text, item.x, yBox + h/2);
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, 7, 0, Math.PI*2);
+            ctx.fillStyle = "#FFE0A3";
+            ctx.fill();
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText("⚽", item.x-3, item.y+2);
+            ctx.restore();
+        }
 
-        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
+        function redrawAll() {
+            if (!ctx || canvas.width === 0 || canvas.height === 0) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            savedTriangles.forEach(t => drawPolygon(t, true));
+            savedQuads.forEach(q => drawPolygon(q, true));
+            savedArrows.forEach(a => drawCurvedArrow(a));
+            savedNames.forEach(n => drawNameTag(n));
+            if (currentPoints.length > 0) {
+                if (currentMode === 'segitiga' || currentMode === 'segiempat')
+                    drawPolygon(currentPoints, false);
+                else if (currentMode === 'panah')
+                    drawCurvedArrow(currentPoints, true);
+            }
+            // extra info
+            if (currentMode === 'segitiga' && currentPoints.length>0 && currentPoints.length<3) {
+                ctx.font = "12px monospace";
+                ctx.fillStyle = "#ccccff";
+                ctx.fillText(`${currentPoints.length}/3 titik`, 12, 30);
+            }
+            if (currentMode === 'segiempat' && currentPoints.length>0 && currentPoints.length<4) {
+                ctx.fillStyle = "#ccccff";
+                ctx.fillText(`${currentPoints.length}/4 titik`, 12, 30);
+            }
+            if (currentMode === 'panah' && currentPoints.length === 1) {
+                ctx.fillStyle = "#FFE484";
+                ctx.fillText("➡️ tap tujuan untuk panah lengkung", 12, 30);
+            }
+        }
 
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); 
-        ctx.fillStyle = nameObj.color; 
-        ctx.fill();
-        
-        ctx.shadowColor = "transparent";
+        // ----- MODE SETUP (crucial for pointer events) -----
+        function setMode(mode) {
+            currentMode = mode;
+            currentPoints = [];
+            [btnPlay, btnTriangle, btnQuad, btnArrow, btnName].forEach(b => b.classList.remove('active'));
+            colorPalette.style.display = 'none';
+            if (mode === 'nonton') {
+                btnPlay.classList.add('active');
+                canvas.style.pointerEvents = 'none';
+                statusDiv.innerText = "🎥 Mode Nonton (Video berjalan)";
+                video.play().catch(e=>console.log);
+                redrawAll();
+            } else {
+                video.pause();
+                canvas.style.pointerEvents = 'auto';
+                if (mode === 'segitiga') {
+                    btnTriangle.classList.add('active');
+                    statusDiv.innerText = "🔺 Mode Segitiga: tap 3 titik";
+                } else if (mode === 'segiempat') {
+                    btnQuad.classList.add('active');
+                    statusDiv.innerText = "⬛ Mode Segiempat: tap 4 titik";
+                } else if (mode === 'panah') {
+                    btnArrow.classList.add('active');
+                    statusDiv.innerText = "✨ Panah LENGKUNG: tap titik Awal → titik Akhir";
+                } else if (mode === 'nama') {
+                    btnName.classList.add('active');
+                    colorPalette.style.display = 'flex';
+                    statusDiv.innerText = `🏷️ Mode Nama (warna aktif) → tap pemain & isi nama`;
+                }
+                redrawAll();
+            }
+        }
 
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(nameObj.text, nameObj.x, boxY + (boxHeight / 2));
-    }
+        // ----- HANDLE TOUCH / CLICK (mobile first) -----
+        function onCanvasTap(e) {
+            if (currentMode === 'nonton') return;
+            e.preventDefault();
+            e.stopPropagation();
+            // ensure canvas dimensions are correct before capturing coordinates
+            if (canvas.width === 0 || canvas.height === 0) resizeCanvasAndRedraw();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            const rect = canvas.getBoundingClientRect();
+            let x = clientX - rect.left;
+            let y = clientY - rect.top;
+            x = Math.min(Math.max(x, 0), canvas.width);
+            y = Math.min(Math.max(y, 0), canvas.height);
+            const point = { x, y };
+
+            if (currentMode === 'segitiga') {
+                currentPoints.push(point);
+                if (currentPoints.length === 3) {
+                    savedTriangles.push([...currentPoints]);
+                    currentPoints = [];
+                    statusDiv.innerText = "✅ Segitiga tersimpan!";
+                } else statusDiv.innerText = `🔺 ${currentPoints.length}/3 titik`;
+                redrawAll();
+            }
+            else if (currentMode === 'segiempat') {
+                currentPoints.push(point);
+                if (currentPoints.length === 4) {
+                    savedQuads.push([...currentPoints]);
+                    currentPoints = [];
+                    statusDiv.innerText = "✅ Segiempat tersimpan!";
+                } else statusDiv.innerText = `⬛ ${currentPoints.length}/4 titik`;
+                redrawAll();
+            }
+            else if (currentMode === 'panah') {
+                currentPoints.push(point);
+                if (currentPoints.length === 2) {
+                    savedArrows.push([{...currentPoints[0]}, {...currentPoints[1]}]);
+                    currentPoints = [];
+                    statusDiv.innerText = "🏹 Panah lengkung tersimpan!";
+                } else statusDiv.innerText = "📍 Titik awal → sentuh tujuan";
+                redrawAll();
+            }
+            else if (currentMode === 'nama') {
+                setTimeout(() => {
+                    let name = prompt("Nama pemain / taktik:", "Pemain");
+                    if (name && name.trim() !== "") {
+                        savedNames.push({ text: name.trim(), x, y, color: selectedColor });
+                        statusDiv.innerText = `🏷️ "${name.trim()}" ditambahkan`;
+                        redrawAll();
+                    } else statusDiv.innerText = "Nama dibatalkan";
+                }, 20);
+            }
+        }
+
+        // Attach both mouse and touch events
+        canvas.addEventListener('pointerdown', onCanvasTap);
+        canvas.addEventListener('touchstart', onCanvasTap);
+        canvas.addEventListener('mousedown', onCanvasTap);
+        // prevent any context menu on canvas
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // color picker
+        colorPalette.addEventListener('click', (e) => {
+            const btn = e.target.closest('.color-btn');
+            if (!btn) return;
+            selectedColor = btn.getAttribute('data-color');
+            document.querySelectorAll('.color-btn').forEach(c => c.classList.remove('active-color'));
+            btn.classList.add('active-color');
+            if (currentMode === 'nama') statusDiv.innerText = `🎨 Warna diubah → tap pemain untuk label`;
+        });
+
+        btnClear.addEventListener('click', () => {
+            savedTriangles = [];
+            savedQuads = [];
+            savedArrows = [];
+            savedNames = [];
+            currentPoints = [];
+            redrawAll();
+            statusDiv.innerText = "🗑️ Semua anotasi dihapus";
+        });
+        btnPlay.addEventListener('click', () => setMode('nonton'));
+        btnTriangle.addEventListener('click', () => setMode('segitiga'));
+        btnQuad.addEventListener('click', () => setMode('segiempat'));
+        btnArrow.addEventListener('click', () => setMode('panah'));
+        btnName.addEventListener('click', () => setMode('nama'));
+
+        // final initialisation
+        resizeCanvasAndRedraw();
+        setMode('nonton');
+    })();
 </script>
-
 </body>
 </html>
