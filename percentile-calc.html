@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Percentile Calculator - Colored Categories</title>
+  <title>Percentile Calculator - Bug Fix</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -167,14 +167,14 @@
       text-align: center;
       border-radius: 6px;
       padding: 4px 0;
-      color: white; /* Default text color, overriden for yellow */
+      color: white; 
     }
 
     /* Category Colors */
-    .bg-attack { background-color: #f43f5e; }  /* Merah/Pink */
-    .bg-progress { background-color: #3b82f6; } /* Biru */
-    .bg-possess { background-color: #eab308; color: #0a0f0a !important; } /* Kuning (Teks Hitam) */
-    .bg-defend { background-color: #22c55e; }   /* Hijau */
+    .bg-attack { background-color: #f43f5e; }  
+    .bg-progress { background-color: #3b82f6; } 
+    .bg-possess { background-color: #eab308; color: #0a0f0a !important; } 
+    .bg-defend { background-color: #22c55e; }   
 
     .watermark {
       text-align: center;
@@ -250,7 +250,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
 
-    // Kategori: 'attack', 'progress', 'possess', 'defend'
     const STATS_MAP = {
       all_stats: [
         { key: "Goals", label: "Goals", cat: "attack" },
@@ -347,35 +346,64 @@
     let data = [];
     let statsAktif = STATS_MAP["all_stats"];
 
-    function parseBaris(str) {
-      const hasil = [];
-      let current = "";
-      let dalamKutip = false;
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        if (char === '"') {
-          dalamKutip = !dalamKutip;
-        } else if (char === ',' && !dalamKutip) {
-          hasil.push(current.trim());
-          current = "";
-        } else {
-          current += char;
+    // Parser CSV Super Kebal
+    function prosesCSV(teks) {
+      // Split regex biar \r di ujung (kalau ada) ikut ilang
+      const baris = teks.trim().split(/\r?\n/);
+      
+      let headerIndex = -1;
+      let pemisah = ",";
+      
+      // 1. Cari baris header yang sebenernya (buat skip baris error scraper di atas)
+      for (let i = 0; i < Math.min(15, baris.length); i++) {
+        if (baris[i].includes("Player") && (baris[i].includes("Team") || baris[i].includes("Klub"))) {
+          headerIndex = i;
+          // Deteksi pemisah koma vs titik koma
+          if (baris[i].includes(";")) pemisah = ";";
+          break;
         }
       }
-      hasil.push(current.trim());
-      return hasil;
-    }
 
-    function prosesCSV(teks) {
-      const baris = teks.trim().split("\n");
-      const header = parseBaris(baris[0].replace(/^\uFEFF/, ""));
+      if (headerIndex === -1) {
+        alert("Gagal membaca CSV! Pastikan ada kolom bernama 'Player' dan 'Team'.");
+        return [];
+      }
+
+      function splitBarisData(str) {
+        const hasil = [];
+        let current = "";
+        let dalamKutip = false;
+        for (let i = 0; i < str.length; i++) {
+          const char = str[i];
+          if (char === '"') {
+            dalamKutip = !dalamKutip;
+          } else if (char === pemisah && !dalamKutip) {
+            hasil.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        hasil.push(current.trim());
+        return hasil;
+      }
+
+      const header = splitBarisData(baris[headerIndex].replace(/^\uFEFF/, ""));
       const result = [];
-      for (let i = 1; i < baris.length; i++) {
-        const kolom = parseBaris(baris[i]);
-        if (kolom.length < 2) continue;
+      
+      for (let i = headerIndex + 1; i < baris.length; i++) {
+        const kolom = splitBarisData(baris[i]);
+        if (kolom.length < 5) continue; 
+        if (kolom[0].toLowerCase().includes("error")) continue; // Skip baris error lanjutan
+        
         const p = {};
         for (let j = 0; j < header.length; j++) {
-          p[header[j]] = kolom[j] || "";
+          let isi = kolom[j] || "0";
+          // Ubah angka pakai koma (23,77) jadi titik (23.77) biar ga NaN
+          if (/^-?\d+,\d+$/.test(isi)) {
+            isi = isi.replace(",", ".");
+          }
+          p[header[j]] = isi;
         }
         result.push(p);
       }
@@ -391,7 +419,7 @@
             data = prosesCSV(teks);
             isiDropdown();
             document.getElementById("csvStatus").textContent =
-              "✅ " + data.length + " pemain dimuat";
+              "✅ " + data.length + " data pemain sukses dimuat";
             document.getElementById("controlsCard").style.display = "block";
           });
         });
@@ -415,11 +443,19 @@
       if (!pemain) return;
 
       const hasil = statsAktif.map(function(stat) {
-        let nilaiPemain = parseFloat(pemain[stat.key]);
-        if (isNaN(nilaiPemain)) nilaiPemain = 0;
+        let valRawText = pemain[stat.key];
+        if (!valRawText) valRawText = "0";
+        if (typeof valRawText === "string") valRawText = valRawText.replace(",", ".");
+        
+        let nilaiPemain = parseFloat(valRawText);
+        if (isNaN(nilaiPemain)) nilaiPemain = 0; // Kuncian anti-NaN 
 
         const semuaNilai = data
-          .map(function(p) { return parseFloat(p[stat.key]); })
+          .map(function(p) { 
+             let v = p[stat.key] || "0";
+             if (typeof v === "string") v = v.replace(",", ".");
+             return parseFloat(v); 
+          })
           .filter(function(v) { return !isNaN(v); })
           .sort(function(a, b) { return a - b; });
 
@@ -445,6 +481,8 @@
       grid.innerHTML = "";
       hasil.forEach(function(h) {
         const catClass = "bg-" + h.stat.cat;
+        const rawTampil = Number.isNaN(h.raw) ? 0 : h.raw;
+
         const item = document.createElement("div");
         item.className = "pct-item";
         item.innerHTML = `
@@ -453,7 +491,7 @@
             <div class="pct-bar-bg">
               <div class="pct-bar-fill ${catClass}" id="pf_${h.stat.label.replace(/ /g,'_')}" style="width:0%"></div>
             </div>
-            <div class="pct-raw">${h.raw.toFixed(2)} per 90</div>
+            <div class="pct-raw">${rawTampil.toFixed(2)} per 90</div>
           </div>
           <div class="pct-num ${catClass}">${h.pct}</div>
         `;
@@ -474,10 +512,10 @@
     }
 
     function dapatkanHexWarnaKategori(cat) {
-      if (cat === "attack") return "#f43f5e"; // Merah
-      if (cat === "progress") return "#3b82f6"; // Biru
-      if (cat === "possess") return "#eab308"; // Kuning
-      if (cat === "defend") return "#22c55e"; // Hijau
+      if (cat === "attack") return "#f43f5e"; 
+      if (cat === "progress") return "#3b82f6"; 
+      if (cat === "possess") return "#eab308"; 
+      if (cat === "defend") return "#22c55e"; 
       return "#4ade80";
     }
 
@@ -489,7 +527,6 @@
       const n = hasil.length;
       const slice = (2 * Math.PI) / n;
 
-      // Garis grid lingkaran
       [0.25, 0.5, 0.75, 1.0].forEach(function(pct) {
         const r = rMin + (rMax - rMin) * pct;
         const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -505,7 +542,6 @@
         svg.appendChild(l);
       });
 
-      // Garis potong tiap slice
       for (let i = 0; i < n; i++) {
         const angle = slice * i - Math.PI / 2;
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -516,30 +552,12 @@
         svg.appendChild(line);
       }
 
-      // Fill Pizza
       hasil.forEach(function(h, i) {
+        if (isNaN(h.pct)) return; // Safety
+
         const val = h.pct / 100;
         const r = rMin + (rMax - rMin) * val;
         const startAngle = slice * i - Math.PI / 2;
         const endAngle   = slice * (i + 1) - Math.PI / 2;
 
-        const x1 = cx + rMin * Math.cos(startAngle); const y1 = cy + rMin * Math.sin(startAngle);
-        const x2 = cx + r * Math.cos(startAngle);    const y2 = cy + r * Math.sin(startAngle);
-        const x3 = cx + r * Math.cos(endAngle);      const y3 = cy + r * Math.sin(endAngle);
-        const x4 = cx + rMin * Math.cos(endAngle);   const y4 = cy + rMin * Math.sin(endAngle);
-
-        const warna = dapatkanHexWarnaKategori(h.stat.cat);
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", ["M",x1,y1,"L",x2,y2,"A",r,r,0,0,1,x3,y3,"L",x4,y4,"A",rMin,rMin,0,0,0,x1,y1,"Z"].join(" "));
-        path.setAttribute("fill", warna); path.setAttribute("stroke", "#0a0f0a");
-        path.setAttribute("stroke-width", "1.5");
-        svg.appendChild(path);
-
-        const labelAngle = slice * i + slice / 2 - Math.PI / 2;
-        const lx = cx + (rMax + 30) * Math.cos(labelAngle);
-        const ly = cy + (rMax + 30) * Math.sin(labelAngle);
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", lx); text.setAttribute("y", ly);
-        text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("fill", "#9ca3af"); text.
+        const x1 = cx + rMin * Math.cos(startAngle); const
