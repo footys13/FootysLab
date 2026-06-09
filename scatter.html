@@ -62,7 +62,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
     .control-group {
       display: flex;
@@ -85,6 +85,28 @@
       padding: 10px 12px;
       font-size: 12px;
       font-family: 'Barlow', sans-serif;
+    }
+    .filter-wrap {
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      background: #161f16;
+      color: #6b7280;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Barlow', sans-serif;
+      margin-right: 6px;
+    }
+    .filter-btn.active {
+      background: #4ade80;
+      color: #0a0f0a;
+      border-color: #4ade80;
     }
     .card {
       background: #0f1a0f;
@@ -172,6 +194,7 @@
   </div>
 
   <div id="mainScreen">
+
     <div class="controls">
       <div class="control-group">
         <div class="control-label" style="color:#4ade80">X Axis</div>
@@ -181,6 +204,13 @@
         <div class="control-label" style="color:#60a5fa">Y Axis</div>
         <select id="selectY" onchange="updateChart()"></select>
       </div>
+    </div>
+
+    <div class="filter-wrap">
+      <div class="control-label" style="color:#facc15; margin-bottom:8px;">Filter Players</div>
+      <button onclick="setFilter('all')"     id="btn-all"     class="filter-btn active">All</button>
+      <button onclick="setFilter('local')"   id="btn-local"   class="filter-btn">🇮🇩 Indonesia</button>
+      <button onclick="setFilter('foreign')" id="btn-foreign" class="filter-btn">🌍 Foreign</button>
     </div>
 
     <div class="card" id="cardExport">
@@ -226,14 +256,14 @@
       { key: "Progressive runs per 90",   label: "Progressive Runs"   },
       { key: "1st, 2nd, 3rd assists",     label: "1/2/3rd Assists"    },
       // DEFENDING
-      { key: "Duels won, %",                        label: "Duels Won %"          },
-      { key: "Defensive duels won, %",              label: "Defensive Duels %"    },
-      { key: "Aerial duels won, %",                 label: "Aerial Duels Won %"   },
-      { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int per 90"       },
-      { key: "Successful defensive actions per 90", label: "Def. Actions"         },
-      { key: "PAdj Sliding tackles",                label: "Sliding Tackles"      },
-      { key: "PAdj Interceptions",                  label: "Interceptions"        },
-      { key: "Fouls per 90",                        label: "Fouls per 90"         },
+      { key: "Duels won, %",                        label: "Duels Won %"       },
+      { key: "Defensive duels won, %",              label: "Defensive Duels %" },
+      { key: "Aerial duels won, %",                 label: "Aerial Duels %"    },
+      { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int per 90"    },
+      { key: "Successful defensive actions per 90", label: "Def. Actions"      },
+      { key: "PAdj Sliding tackles",                label: "Sliding Tackles"   },
+      { key: "PAdj Interceptions",                  label: "Interceptions"     },
+      { key: "Fouls per 90",                        label: "Fouls per 90"      },
       // GK
       { key: "Save rate, %",           label: "Save Rate %"         },
       { key: "Prevented goals per 90", label: "Prevented Goals p90" },
@@ -241,6 +271,16 @@
     ];
 
     let dataPemain = [];
+    let filterAktif = "all";
+
+    function setFilter(filter) {
+      filterAktif = filter;
+      document.querySelectorAll(".filter-btn").forEach(function(btn) {
+        btn.classList.remove("active");
+      });
+      document.getElementById("btn-" + filter).classList.add("active");
+      updateChart();
+    }
 
     function parseCSVLengkap(teks) {
       const cleaned = teks.replace(/^\uFEFF/, "");
@@ -344,8 +384,14 @@
       const plotW = W - pad.left - pad.right;
       const plotH = H - pad.top - pad.bottom;
 
+      // Filter berdasarkan nationality
       const valid = dataPemain.filter(function(p) {
-        return parseFloat(p[keyX]) > 0 || parseFloat(p[keyY]) > 0;
+        const hasData = parseFloat(p[keyX]) > 0 || parseFloat(p[keyY]) > 0;
+        if (!hasData) return false;
+        const country = (p["Birth country"] || "").toLowerCase();
+        if (filterAktif === "local")   return country === "indonesia";
+        if (filterAktif === "foreign") return country !== "indonesia";
+        return true;
       });
 
       function scaleX(val) { return pad.left + val * plotW; }
@@ -433,10 +479,17 @@
         const cx = scaleX(valX);
         const cy = scaleY(valY);
 
+        // Warna berbeda Indonesia vs Foreign
+        const country = (pemain["Birth country"] || "").toLowerCase();
+        const isLocal = country === "indonesia";
+        const dotColor = filterAktif === "all"
+          ? (isLocal ? "#4ade80" : "#60a5fa")
+          : "#4ade80";
+
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
         circle.setAttribute("r", "5");
-        circle.setAttribute("fill", "#4ade80");
+        circle.setAttribute("fill", dotColor);
         circle.setAttribute("opacity", "0.85");
         circle.setAttribute("stroke", "#0a0f0a");
         circle.setAttribute("stroke-width", "1");
@@ -444,7 +497,12 @@
 
         circle.addEventListener("click", function(e) {
           svg.querySelectorAll("circle").forEach(function(c) {
-            c.setAttribute("fill", "#4ade80");
+            const isLoc = (dataPemain.find(function(p) {
+              return p["Player"] === pemain["Player"];
+            }) || {})["Birth country"];
+            c.setAttribute("fill", filterAktif === "all"
+              ? (c === circle ? "#ffffff" : dotColor)
+              : "#4ade80");
             c.setAttribute("r", "5");
             c.setAttribute("opacity", "0.85");
           });
@@ -469,52 +527,10 @@
           if (ty < 0) ty = cy * scaleRatio + 10;
 
           document.getElementById("ttName").textContent = pemain["Player"];
-          document.getElementById("ttTeam").textContent = pemain["Team"] + " · " + (pemain["Position"] || "-");
+          document.getElementById("ttTeam").textContent =
+            pemain["Team"] + " · " + (pemain["Position"] || "-") +
+            " · " + (pemain["Birth country"] || "-");
           document.getElementById("ttStats").innerHTML =
             labelX + ": <b>" + Math.round(valX * 100) + "</b><br>" +
             labelY + ": <b>" + Math.round(valY * 100) + "</b><br><br>" +
-            "<span style='color:#4ade80; font-size:10px;'>" + kuadran + "</span>";
-
-          tt.style.left = tx + "px";
-          tt.style.top  = ty + "px";
-          tt.style.display = "block";
-          e.stopPropagation();
-        });
-
-        svg.appendChild(circle);
-
-        const namaBelakang = pemain["Player"].split(" ").slice(-1)[0].toUpperCase();
-        const namaLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        namaLabel.setAttribute("x", cx);
-        namaLabel.setAttribute("y", cy - 8);
-        namaLabel.setAttribute("text-anchor", "middle");
-        namaLabel.setAttribute("fill", "#6b7280");
-        namaLabel.setAttribute("font-size", "7");
-        namaLabel.setAttribute("font-family", "Barlow Condensed, sans-serif");
-        namaLabel.setAttribute("font-weight", "600");
-        namaLabel.textContent = namaBelakang;
-        svg.appendChild(namaLabel);
-      });
-
-      document.getElementById("svgWrap").addEventListener("click", function() {
-        document.getElementById("tooltip").style.display = "none";
-      });
-    }
-
-    function exportGambar() {
-      document.getElementById("tooltip").style.display = "none";
-      html2canvas(document.getElementById("cardExport"), {
-        backgroundColor: "#0f1a0f",
-        scale: 2,
-        useCORS: true
-      }).then(function(canvas) {
-        const link = document.createElement("a");
-        link.download = "scatter-plot.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      });
-    }
-
-  </script>
-</body>
-</html>
+            "<span style='color:#4ade80; font-
