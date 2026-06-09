@@ -3,561 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scatter Plot</title>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>THE FOOTYS · Scatter Plot</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0a0f0a;
-      color: white;
-      font-family: 'Barlow', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24px 16px;
-    }
-    .topbar {
-      width: 100%;
-      max-width: 680px;
-      border-left: 3px solid #4ade80;
-      padding: 12px 20px;
-      background: #0f1a0f;
-      letter-spacing: 2px;
-      font-size: 10px;
-      color: #6b7280;
-      font-weight: 600;
-      margin-bottom: 24px;
-      text-transform: uppercase;
-    }
-    #uploadScreen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      width: 100%;
-      max-width: 680px;
-    }
-    .upload-box {
-      border: 2px dashed #1f2d1f;
-      border-radius: 16px;
-      padding: 48px 32px;
-      text-align: center;
-      max-width: 400px;
-      width: 100%;
-    }
-    .upload-box p {
-      color: #4b5563;
-      letter-spacing: 1px;
-      font-size: 12px;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-    #mainScreen {
-      display: none;
-      width: 100%;
-      max-width: 680px;
-    }
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .control-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: #4b5563;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-    select {
-      width: 100%;
-      background: #161f16;
-      color: white;
-      border: 1px solid #2d4a2d;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 12px;
-      font-family: 'Barlow', sans-serif;
-    }
-    .filter-wrap {
-      margin-bottom: 16px;
-    }
-    .filter-btn {
-      background: #161f16;
-      color: #6b7280;
-      border: 1px solid #2d4a2d;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-family: 'Barlow', sans-serif;
-      margin-right: 6px;
-    }
-    .filter-btn.active {
-      background: #4ade80;
-      color: #0a0f0a;
-      border-color: #4ade80;
-    }
-    .card {
-      background: #0f1a0f;
-      border-radius: 20px;
-      padding: 24px;
-      width: 100%;
-    }
-    .chart-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #4b5563;
-      text-transform: uppercase;
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    .svg-wrap { position: relative; width: 100%; }
-    svg { width: 100%; display: block; }
-    .tooltip {
-      position: absolute;
-      padding: 8px 12px;
-      font-size: 12px;
-      pointer-events: none;
-      display: none;
-      z-index: 10;
-      min-width: 140px;
-      background: rgba(15, 26, 15, 0.85);
-      border: 1px solid #2d4a2d;
-      border-radius: 8px;
-      backdrop-filter: blur(4px);
-    }
-    .tooltip-name {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      color: #4ade80;
-      text-transform: uppercase;
-    }
-    .tooltip-team {
-      font-size: 11px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    .tooltip-stats {
-      font-size: 11px;
-      color: #e5e7eb;
-      line-height: 1.6;
-    }
-    .watermark {
-      margin-top: 16px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 4px;
-      color: #ffffff;
-      text-transform: uppercase;
-      text-align: center;
-    }
-    .btn-export {
-      margin-top: 20px;
-      background: #161f16;
-      color: #4ade80;
-      border: 1px solid #4ade80;
-      border-radius: 8px;
-      padding: 10px 24px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      width: 100%;
-    }
+    body { background: #0a0f0a; color: white; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    #mainScreen { display: none; width: 100%; max-width: 600px; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    select { width: 100%; background: #161f16; color: white; padding: 10px; border-radius: 8px; }
+    .card { background: #0f1a0f; padding: 20px; border-radius: 20px; }
+    svg { width: 100%; height: 400px; background: #0a0f0a; }
+    .btn-export { margin-top: 20px; background: #4ade80; color: #0a0f0a; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
   </style>
 </head>
 <body>
 
-  <div class="topbar">THE FOOTYS · SCATTER PLOT</div>
-
   <div id="uploadScreen">
-    <div class="upload-box">
-      <p>Upload CSV database</p>
-      <input type="file" id="inputCSV" accept=".csv">
-    </div>
+    <h3>Upload CSV Database</h3>
+    <input type="file" id="inputCSV" accept=".csv">
   </div>
 
   <div id="mainScreen">
-
     <div class="controls">
-      <div class="control-group">
-        <div class="control-label" style="color:#4ade80">X Axis</div>
-        <select id="selectX" onchange="updateChart()"></select>
-      </div>
-      <div class="control-group">
-        <div class="control-label" style="color:#60a5fa">Y Axis</div>
-        <select id="selectY" onchange="updateChart()"></select>
-      </div>
+      <select id="selectX" onchange="updateChart()"></select>
+      <select id="selectY" onchange="updateChart()"></select>
     </div>
-
-    <div class="filter-wrap">
-      <div class="control-label" style="color:#facc15; margin-bottom:8px;">Filter Players</div>
-      <button onclick="setFilter('all')"     id="btn-all"     class="filter-btn active">All</button>
-      <button onclick="setFilter('local')"   id="btn-local"   class="filter-btn">🇮🇩 Indonesia</button>
-      <button onclick="setFilter('foreign')" id="btn-foreign" class="filter-btn">🌍 Foreign</button>
-    </div>
-
     <div class="card" id="cardExport">
-      <div class="chart-title" id="chartTitle">-</div>
-      <div class="svg-wrap" id="svgWrap">
-        <svg id="scatterSVG" viewBox="0 0 600 500"></svg>
-        <div class="tooltip" id="tooltip">
-          <div class="tooltip-name" id="ttName">-</div>
-          <div class="tooltip-team" id="ttTeam">-</div>
-          <div class="tooltip-stats" id="ttStats">-</div>
-        </div>
-      </div>
-      <div class="watermark">THE FOOTYS</div>
+      <h3 id="chartTitle" style="text-align:center">Scatter Plot</h3>
+      <svg id="scatterSVG" viewBox="0 0 500 400"></svg>
     </div>
-
     <button class="btn-export" onclick="exportGambar()">💾 Save Image</button>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-
-    const AXIS_OPTIONS = [
-      // ATTACKING
-      { key: "Non-penalty goals per 90", label: "NP Goals per 90"    },
-      { key: "npxG per 90",              label: "npxG per 90"         },
-      { key: "Goal conversion, %",       label: "Goal Conversion %"   },
-      { key: "Touches in box per 90",    label: "Touches in Box"      },
-      // CREATIVITY
-      { key: "Shot assists per 90",      label: "Shot Assists per 90" },
-      { key: "xA per 90",                label: "xA per 90"           },
-      { key: "Assists per 90",           label: "Assists per 90"      },
-      { key: "Second assists per 90",    label: "Second Assists"      },
-      { key: "Third assists per 90",     label: "Third Assists"       },
-      { key: "Accurate crosses, %",      label: "Accurate Crosses %"  },
-      { key: "Crosses per 90",           label: "Crosses per 90"      },
-      // POSSESSION
-      { key: "Passes per 90",                     label: "Passes per 90"        },
-      { key: "Accurate short / medium passes, %", label: "Short/Med Pass Acc %" },
-      { key: "Successful dribbles, %",            label: "Dribbles %"           },
-      { key: "Accurate long passes, %",           label: "Long Pass Acc %"      },
-      // PROGRESSION
-      { key: "Progressive passes per 90", label: "Progressive Passes" },
-      { key: "Progressive runs per 90",   label: "Progressive Runs"   },
-      { key: "1st, 2nd, 3rd assists",     label: "1/2/3rd Assists"    },
-      // DEFENDING
-      { key: "Duels won, %",                        label: "Duels Won %"       },
-      { key: "Defensive duels won, %",              label: "Defensive Duels %" },
-      { key: "Aerial duels won, %",                 label: "Aerial Duels %"    },
-      { key: "pAdj Tkl+Int per 90",                 label: "Tkl+Int per 90"    },
-      { key: "Successful defensive actions per 90", label: "Def. Actions"      },
-      { key: "PAdj Sliding tackles",                label: "Sliding Tackles"   },
-      { key: "PAdj Interceptions",                  label: "Interceptions"     },
-      { key: "Fouls per 90",                        label: "Fouls per 90"      },
-      // GK
-      { key: "Save rate, %",           label: "Save Rate %"         },
-      { key: "Prevented goals per 90", label: "Prevented Goals p90" },
-      { key: "Exits per 90",           label: "Exits p90"           }
-    ];
-
     let dataPemain = [];
-    let filterAktif = "all";
 
-    function setFilter(filter) {
-      filterAktif = filter;
-      document.querySelectorAll(".filter-btn").forEach(function(btn) {
-        btn.classList.remove("active");
-      });
-      document.getElementById("btn-" + filter).classList.add("active");
-      updateChart();
-    }
-
-    function parseCSVLengkap(teks) {
-      const cleaned = teks.replace(/^\uFEFF/, "");
-      const rows = [];
-      let current = "";
-      let inQuote = false;
-      for (let i = 0; i < cleaned.length; i++) {
-        const char = cleaned[i];
-        if (char === '"') {
-          inQuote = !inQuote;
-          current += char;
-        } else if (char === '\n' && !inQuote) {
-          rows.push(current);
-          current = "";
-        } else {
-          current += char;
-        }
-      }
-      if (current.trim()) rows.push(current);
-      return rows;
-    }
-
-    function parseBaris(str) {
-      const hasil = [];
-      let current = "";
-      let inQuote = false;
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        if (char === '"') {
-          inQuote = !inQuote;
-        } else if (char === ',' && !inQuote) {
-          hasil.push(current.trim());
-          current = "";
-        } else if ((char === '\n' || char === '\r') && !inQuote) {
-          hasil.push(current.trim());
-          current = "";
-        } else {
-          if (inQuote && (char === '\n' || char === '\r')) {
-            current += " ";
-          } else {
-            current += char;
-          }
-        }
-      }
-      hasil.push(current.trim());
-      return hasil;
-    }
-
-    function prosesCSV(teks) {
-      const rows = parseCSVLengkap(teks);
-      const header = parseBaris(rows[0]);
-      const data = [];
-      for (let i = 1; i < rows.length; i++) {
-        const kolom = parseBaris(rows[i]);
-        if (kolom.length < 2) continue;
-        const p = {};
-        for (let j = 0; j < header.length; j++) {
-          p[header[j]] = kolom[j] || "";
-        }
-        data.push(p);
-      }
-      return data;
-    }
-
-        document.getElementById("inputCSV").onchange = function() {
-      const file = this.files[0];
-      if (!file) return;
-
+    document.getElementById("inputCSV").onchange = function(e) {
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const teks = e.target.result;
-        dataPemain = prosesCSV(teks);
-        
-        if (dataPemain.length > 0) {
-          // Ambil header dari kunci objek pertama
-          const headers = Object.keys(dataPemain[0]);
-          
-          const selX = document.getElementById("selectX");
-          const selY = document.getElementById("selectY");
-          selX.innerHTML = "";
-          selY.innerHTML = "";
-          
-          // Isi dropdown dengan header yang tersedia di CSV
-          headers.forEach(h => {
-            if (h !== "Player" && h !== "Team" && h !== "Pos" && h !== "Birth country") {
-              selX.appendChild(new Option(h, h));
-              selY.appendChild(new Option(h, h));
-            }
-          });
-
-          document.getElementById("uploadScreen").style.display = "none";
-          document.getElementById("mainScreen").style.display = "block";
-          updateChart();
-        }
-      };
-      reader.readAsText(file);
-    };
-
-    function prosesCSV(teks) {
-      const lines = teks.split(/\r?\n/);
-      const headers = lines[0].split(',').map(h => h.trim());
-      const result = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const currentLine = lines[i].split(',');
-        const obj = {};
-        headers.forEach((h, index) => {
-          obj[h] = currentLine[index] ? currentLine[index].trim() : "";
+      reader.onload = function(event) {
+        const rows = event.target.result.split('\n');
+        const headers = rows[0].split(',').map(h => h.trim());
+        dataPemain = rows.slice(1).filter(r => r.trim()).map(r => {
+          const vals = r.split(',');
+          let obj = {};
+          headers.forEach((h, i) => obj[h] = vals[i]);
+          return obj;
         });
-        result.push(obj);
-      }
-      return result;
-    }
+
+        const selX = document.getElementById("selectX");
+        const selY = document.getElementById("selectY");
+        headers.forEach(h => {
+          if (h !== "Player" && h !== "Team" && h !== "Pos") {
+            selX.appendChild(new Option(h, h));
+            selY.appendChild(new Option(h, h));
+          }
+        });
+        document.getElementById("uploadScreen").style.display = "none";
+        document.getElementById("mainScreen").style.display = "block";
+        updateChart();
+      };
+      reader.readAsText(e.target.files[0]);
+    };
 
     function updateChart() {
       const keyX = document.getElementById("selectX").value;
       const keyY = document.getElementById("selectY").value;
-      if (!keyX || !keyY) return;
-      
-      document.getElementById("chartTitle").textContent = keyX + "  ·  " + keyY;
-      gambarScatter(keyX, keyY, keyX, keyY);
-    }function gambarScatter(keyX, keyY, labelX, labelY) {
       const svg = document.getElementById("scatterSVG");
       svg.innerHTML = "";
-      const W = 600, H = 500;
-      const pad = { top: 20, right: 20, bottom: 50, left: 50 };
-      const plotW = W - pad.left - pad.right;
-      const plotH = H - pad.top - pad.bottom;
-
-      // Filter berdasarkan nationality
-      const valid = dataPemain.filter(function(p) {
-        const hasData = parseFloat(p[keyX]) > 0 || parseFloat(p[keyY]) > 0;
-        if (!hasData) return false;
-        const country = (p["Birth country"] || "").toLowerCase();
-        if (filterAktif === "local")   return country === "indonesia";
-        if (filterAktif === "foreign") return country !== "indonesia";
-        return true;
-      });
-
-      function scaleX(val) { return pad.left + val * plotW; }
-      function scaleY(val) { return pad.top + (1 - val) * plotH; }
-
-      [0.25, 0.5, 0.75].forEach(function(pct) {
-        const vl = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        vl.setAttribute("x1", scaleX(pct)); vl.setAttribute("y1", pad.top);
-        vl.setAttribute("x2", scaleX(pct)); vl.setAttribute("y2", pad.top + plotH);
-        vl.setAttribute("stroke", pct === 0.5 ? "#2d4a2d" : "#1a2e1a");
-        vl.setAttribute("stroke-width", pct === 0.5 ? "1.5" : "1");
-        vl.setAttribute("stroke-dasharray", pct === 0.5 ? "4,4" : "2,4");
-        svg.appendChild(vl);
-
-        const hl = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        hl.setAttribute("x1", pad.left); hl.setAttribute("y1", scaleY(pct));
-        hl.setAttribute("x2", pad.left + plotW); hl.setAttribute("y2", scaleY(pct));
-        hl.setAttribute("stroke", pct === 0.5 ? "#2d4a2d" : "#1a2e1a");
-        hl.setAttribute("stroke-width", pct === 0.5 ? "1.5" : "1");
-        hl.setAttribute("stroke-dasharray", pct === 0.5 ? "4,4" : "2,4");
-        svg.appendChild(hl);
-
-        const xl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        xl.setAttribute("x", scaleX(pct)); xl.setAttribute("y", pad.top + plotH + 16);
-        xl.setAttribute("text-anchor", "middle"); xl.setAttribute("fill", "#4b5563");
-        xl.setAttribute("font-size", "10"); xl.textContent = Math.round(pct * 100);
-        svg.appendChild(xl);
-
-        const yl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        yl.setAttribute("x", pad.left - 8); yl.setAttribute("y", scaleY(pct) + 4);
-        yl.setAttribute("text-anchor", "end"); yl.setAttribute("fill", "#4b5563");
-        yl.setAttribute("font-size", "10"); yl.textContent = Math.round(pct * 100);
-        svg.appendChild(yl);
-      });
-
-      const border = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      border.setAttribute("x", pad.left); border.setAttribute("y", pad.top);
-      border.setAttribute("width", plotW); border.setAttribute("height", plotH);
-      border.setAttribute("fill", "none"); border.setAttribute("stroke", "#1a2e1a");
-      border.setAttribute("stroke-width", "1");
-      svg.appendChild(border);
-
-      const xAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      xAxisLabel.setAttribute("x", pad.left + plotW / 2);
-      xAxisLabel.setAttribute("y", H - 5);
-      xAxisLabel.setAttribute("text-anchor", "middle");
-      xAxisLabel.setAttribute("fill", "#4ade80");
-      xAxisLabel.setAttribute("font-size", "11");
-      xAxisLabel.setAttribute("font-weight", "700");
-      xAxisLabel.setAttribute("letter-spacing", "1");
-      xAxisLabel.textContent = labelX.toUpperCase();
-      svg.appendChild(xAxisLabel);
-
-      const yAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      yAxisLabel.setAttribute("x", 12);
-      yAxisLabel.setAttribute("y", pad.top + plotH / 2);
-      yAxisLabel.setAttribute("text-anchor", "middle");
-      yAxisLabel.setAttribute("fill", "#60a5fa");
-      yAxisLabel.setAttribute("font-size", "11");
-      yAxisLabel.setAttribute("font-weight", "700");
-      yAxisLabel.setAttribute("transform", "rotate(-90, 12, " + (pad.top + plotH / 2) + ")");
-      yAxisLabel.textContent = labelY.toUpperCase();
-      svg.appendChild(yAxisLabel);
-
-      const quadrants = [
-        { x: pad.left + 8,         y: pad.top + 14,        text: "Low X · High Y", color: "#1e3a5f"           },
-        { x: pad.left + plotW - 8, y: pad.top + 14,        text: "High X · High Y",color: "#166534", anchor: "end" },
-        { x: pad.left + 8,         y: pad.top + plotH - 8, text: "Low X · Low Y",  color: "#374151"           },
-        { x: pad.left + plotW - 8, y: pad.top + plotH - 8, text: "High X · Low Y", color: "#374151", anchor: "end" }
-      ];
-      quadrants.forEach(function(q) {
-        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        t.setAttribute("x", q.x); t.setAttribute("y", q.y);
-        t.setAttribute("text-anchor", q.anchor || "start");
-        t.setAttribute("fill", q.color);
-        t.setAttribute("font-size", "9");
-        t.setAttribute("letter-spacing", "1");
-        t.textContent = q.text.toUpperCase();
-        svg.appendChild(t);
-      });
-
-      valid.forEach(function(pemain) {
-        const valX = parseFloat(pemain[keyX]) || 0;
-        const valY = parseFloat(pemain[keyY]) || 0;
-        const cx = scaleX(valX);
-        const cy = scaleY(valY);
-
-        // Warna berbeda Indonesia vs Foreign
-        const country = (pemain["Birth country"] || "").toLowerCase();
-        const isLocal = country === "indonesia";
-        const dotColor = filterAktif === "all"
-          ? (isLocal ? "#4ade80" : "#60a5fa")
-          : "#4ade80";
-
+      
+      dataPemain.forEach(p => {
+        const x = (parseFloat(p[keyX]) || 0) * 5; // Scale sederhana
+        const y = 400 - (parseFloat(p[keyY]) || 0) * 5;
+        
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
-        circle.setAttribute("r", "5");
-        circle.setAttribute("fill", dotColor);
-        circle.setAttribute("opacity", "0.85");
-        circle.setAttribute("stroke", "#0a0f0a");
-        circle.setAttribute("stroke-width", "1");
-        circle.style.cursor = "pointer";
+        circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+        circle.setAttribute("r", "5"); circle.setAttribute("fill", "#4ade80");
+        
+        // Menambahkan nama pemain saat diklik
+        circle.onclick = () => alert(p["Player"]); 
+        svg.appendChild(circle);
+      });
+      document.getElementById("chartTitle").textContent = keyX + " vs " + keyY;
+    }
 
-        circle.addEventListener("click", function(e) {
-          svg.querySelectorAll("circle").forEach(function(c) {
-            const isLoc = (dataPemain.find(function(p) {
-              return p["Player"] === pemain["Player"];
-            }) || {})["Birth country"];
-            c.setAttribute("fill", filterAktif === "all"
-              ? (c === circle ? "#ffffff" : dotColor)
-              : "#4ade80");
-            c.setAttribute("r", "5");
-            c.setAttribute("opacity", "0.85");
-          });
-          circle.setAttribute("fill", "#ffffff");
-          circle.setAttribute("r", "7");
-          circle.setAttribute("opacity", "1");
-
-          let kuadran;
-          if (valX >= 0.5 && valY >= 0.5)     kuadran = "⬆ High " + labelX + " · High " + labelY;
-          else if (valX < 0.5 && valY >= 0.5)  kuadran = "↖ Low " + labelX + " · High " + labelY;
-          else if (valX >= 0.5 && valY < 0.5)  kuadran = "↘ High " + labelX + " · Low " + labelY;
-          else                                  kuadran = "⬇ Low " + labelX + " · Low " + labelY;
-
-          const tt = document.getElementById("tooltip");
-          const wrap = document.getElementById("svgWrap");
-          const svgRect = svg.getBoundingClientRect();
-          const scaleRatio = svgRect.width / W;
-
-          let tx = cx * scaleRatio - 10;
-          let ty = cy * scaleRatio - 100;
-          if (tx + 160 > wrap.getBoundingClientRect().width) tx = tx - 150;
-          if (ty < 0) ty = cy * scaleRatio + 10;
-
-          document.getElementById("ttName").textContent = pemain["Player"];
-          document.getElementById("ttTeam").textContent =
-            pemain["Team"] + " · " + (pemain["Position"] || "-") +
-            " · " + (pemain["Birth country"] || "-");
-          document.getElementById("ttStats").innerHTML =
-            labelX + ": <b>" + Math.round(valX * 100) + "</b><br>" +
-            labelY + ": <b>" + Math.round(valY * 100) + "</b><br><br>" +
-            "<span style='color:#4ade80; font-
+    function exportGambar() {
+      html2canvas(document.getElementById("cardExport")).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "the-footys-chart.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
