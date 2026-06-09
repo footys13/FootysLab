@@ -81,14 +81,13 @@
     const statusText = document.getElementById('status');
 
     // State Management
-    let currentMode = 'nonton'; // Pilihan: 'nonton', 'segitiga', 'nama'
+    let currentMode = 'nonton'; 
     
     // Data Penyimpanan
     let currentPoints = []; 
     let savedTriangles = []; 
-    let savedNames = []; // Menyimpan data { text, x, y }
+    let savedNames = []; 
 
-    // Mengatur ukuran canvas agar pas dengan video
     function resizeCanvas() {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
@@ -97,24 +96,27 @@
     video.addEventListener('loadeddata', resizeCanvas);
     window.addEventListener('resize', resizeCanvas);
 
-    // Fungsi untuk ganti mode dan warna tombol
+    // FUNGSI UTAMA PERBAIKAN MODE
     function setMode(mode) {
         currentMode = mode;
         
-        // Reset warna tombol
+        // Reset tombol aktif
         btnPlay.classList.remove('active');
         btnSegitiga.classList.remove('active');
         btnName.classList.remove('active');
 
         if (mode === 'nonton') {
             btnPlay.classList.add('active');
-            canvas.style.pointerEvents = 'none';
-            statusText.innerText = "Status: Memutar Video (Canvas Nonaktif)";
-            currentPoints = []; // Batalkan titik segitiga yang belum selesai
+            canvas.style.pointerEvents = 'none'; // Canvas tembus pandang
+            statusText.innerText = "Status: Memutar Video";
+            currentPoints = []; 
             redraw();
+            
+            // PERBAIKAN: Jalankan kembali video secara otomatis saat tombol diklik
+            video.play().catch(err => console.log("Autoplay dicegah browser, silakan tekan play manual jika belum jalan"));
         } else {
-            video.pause();
-            canvas.style.pointerEvents = 'auto'; // Aktifkan sentuhan
+            video.pause(); // Otomatis pause saat masuk mode gambar/nama
+            canvas.style.pointerEvents = 'auto'; // Canvas bisa disentuh
             resizeCanvas();
             
             if (mode === 'segitiga') {
@@ -159,15 +161,14 @@
         } 
         
         else if (currentMode === 'nama') {
-            // Meminta input nama saat layar disentuh
-            // setTimeout digunakan agar sistem fokus merender titik terlebih dahulu
+            // Ditunda beberapa milidetik agar sentuhan di HP terproses sempurna sebelum pop-up muncul
             setTimeout(() => {
                 const playerName = prompt("Masukkan Nama Pemain:");
                 if (playerName && playerName.trim() !== "") {
                     savedNames.push({ text: playerName.trim(), x: x, y: y });
-                    redraw();
                 }
-            }, 10);
+                redraw();
+            }, 50);
         }
     });
 
@@ -185,7 +186,6 @@
         savedNames.forEach(nameObj => drawNameTag(nameObj));
     }
 
-    // Fungsi menggambar segitiga
     function drawTriangle(points, isComplete) {
         ctx.beginPath();
         ctx.strokeStyle = "white";
@@ -209,7 +209,6 @@
         ctx.stroke(); 
     }
 
-    // Fungsi menggambar label nama bergaya tombol
     function drawNameTag(nameObj) {
         ctx.font = "bold 14px sans-serif";
         const textWidth = ctx.measureText(nameObj.text).width;
@@ -217,18 +216,17 @@
         const boxWidth = textWidth + (paddingX * 2);
         const boxHeight = 26;
         
-        // Posisi kotak: di tengah X, dan sedikit di atas titik Y yang disentuh
         const boxX = nameObj.x - (boxWidth / 2);
         const boxY = nameObj.y - boxHeight - 15; 
 
-        // Gambar titik kuning kecil di pemainnya
+        // Titik Kuning
         ctx.beginPath();
         ctx.arc(nameObj.x, nameObj.y, 4, 0, Math.PI*2);
-        ctx.fillStyle = "#ffeb3b"; // Kuning
+        ctx.fillStyle = "#ffeb3b"; 
         ctx.fill();
         ctx.stroke();
 
-        // Tarik garis tipis dari titik ke kotak nama
+        // Garis penghubung
         ctx.beginPath();
         ctx.moveTo(nameObj.x, nameObj.y);
         ctx.lineTo(nameObj.x, boxY + boxHeight);
@@ -236,20 +234,19 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Gambar kotak background (Rounded Rectangle)
+        // Kotak Nama
         ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); // Radius lengkungan 6px
-        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; // Latar hitam transparan
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); 
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; 
         ctx.fill();
         ctx.strokeStyle = "#444";
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Tulis teks nama pemain
+        // Teks Nama
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        // Koordinat teks ada di tengah-tengah kotak
         ctx.fillText(nameObj.text, nameObj.x, boxY + (boxHeight / 2));
     }
 </script>
