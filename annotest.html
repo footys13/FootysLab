@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Football Tactics - Curved Arrow & Annotations</title>
+    <title>Taktik Bola - Panah 3 Titik + Anotasi</title>
     <style>
         * {
             user-select: none;
@@ -34,7 +34,7 @@
         video {
             width: 100%;
             display: block;
-            pointer-events: none;  /* forces all touches to canvas */
+            pointer-events: none;
         }
 
         #drawCanvas {
@@ -113,6 +113,14 @@
             margin: 8px auto 0;
         }
         .bottom-bar { text-align: center; }
+        .instruction-badge {
+            font-size: 11px;
+            background: #2d3e4b;
+            display: inline-block;
+            border-radius: 30px;
+            padding: 4px 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -128,9 +136,9 @@
     <button id="playBtn" class="active">📺 Nonton</button>
     <button id="triangleBtn">🔺 Segitiga</button>
     <button id="quadBtn">⬛ Segiempat</button>
-    <button id="arrowBtn">➡️ Panah Lengkung</button>
+    <button id="arrowBtn">➡️ Panah 3 Titik</button>
     <button id="nameBtn">🏷️ Nama</button>
-    <button id="clearBtn">🗑️ Hapus</button>
+    <button id="clearBtn">🗑️ Hapus Semua</button>
 </div>
 
 <div id="colorPalette" class="color-palette">
@@ -142,7 +150,8 @@
 </div>
 
 <div class="bottom-bar">
-    <div id="status">⚽ Mode: Nonton (Sentuh untuk menggambar)</div>
+    <div id="status">⚽ Mode: Nonton (sentuh layar untuk anotasi)</div>
+    <div class="instruction-badge" id="modeHint"></div>
 </div>
 
 <script>
@@ -151,7 +160,7 @@
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d');
 
-        // UI Buttons
+        // UI Elements
         const btnPlay = document.getElementById('playBtn');
         const btnTriangle = document.getElementById('triangleBtn');
         const btnQuad = document.getElementById('quadBtn');
@@ -159,18 +168,19 @@
         const btnName = document.getElementById('nameBtn');
         const btnClear = document.getElementById('clearBtn');
         const statusDiv = document.getElementById('status');
+        const modeHint = document.getElementById('modeHint');
         const colorPalette = document.getElementById('colorPalette');
 
-        // App state
-        let currentMode = 'nonton';    // nonton, segitiga, segiempat, panah, nama
+        // State
+        let currentMode = 'nonton';   // nonton, segitiga, segiempat, panah, nama
         let selectedColor = '#ef4444';
-        let currentPoints = [];         // temporary points for active drawing
-        let savedTriangles = [];         // array of 3-point arrays
-        let savedQuads = [];             // array of 4-point arrays
-        let savedArrows = [];            // array of [start, end]
-        let savedNames = [];             // array of {text, x, y, color}
+        let currentPoints = [];        // temporary points for active drawing
+        let savedTriangles = [];        // array of 3-point arrays
+        let savedQuads = [];            // array of 4-point arrays
+        let savedArrows = [];           // array of [start, control, end] (3 points)
+        let savedNames = [];            // array of {text, x, y, color}
 
-        // ----- RESIZE & CANVAS SYNC (critical for touch) -----
+        // ----- Helper: Canvas resize & coordinate sync (CRITICAL for touch) -----
         function resizeCanvasAndRedraw() {
             const container = document.querySelector('.video-container');
             if (!container) return;
@@ -178,12 +188,11 @@
             let w = rect.width;
             let h = rect.height;
             if (w === 0 || h === 0) {
-                // fallback: get from computed style
                 w = container.clientWidth;
                 h = container.clientHeight;
             }
             if (w === 0) w = window.innerWidth - 24;
-            if (h === 0) h = 300; // safe minimum
+            if (h === 0) h = 300;
             canvas.width = w;
             canvas.height = h;
             canvas.style.width = `${w}px`;
@@ -191,14 +200,13 @@
             redrawAll();
         }
 
-        // Force resize on load, metadata, and every possible event
-        window.addEventListener('load', () => { setTimeout(resizeCanvasAndRedraw, 50); });
+        window.addEventListener('load', () => setTimeout(resizeCanvasAndRedraw, 50));
         video.addEventListener('loadedmetadata', resizeCanvasAndRedraw);
         video.addEventListener('canplay', resizeCanvasAndRedraw);
-        window.addEventListener('resize', () => { setTimeout(resizeCanvasAndRedraw, 30); });
+        window.addEventListener('resize', () => setTimeout(resizeCanvasAndRedraw, 30));
         new ResizeObserver(() => resizeCanvasAndRedraw()).observe(document.querySelector('.video-container'));
 
-        // ----- helper: roundRect for name tags -----
+        // ----- roundRect polyfill -----
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
                 if (w < 2*r) r = w/2;
@@ -216,95 +224,8 @@
             };
         }
 
-        // ----- CURVED ARROW ENGINE (beautiful football pass) -----
-        function getCurveControl(p0, p1) {
-            const dx = p1.x - p0.x;
-            const dy = p1.y - p0.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist < 1) return { x: p0.x, y: p0.y };
-            const midX = (p0.x + p1.x) / 2;
-            const midY = (p0.y + p1.y) / 2;
-            let perpX = -dy;
-            let perpY = dx;
-            const perpLen = Math.hypot(perpX, perpY);
-            if (perpLen > 0.01) { perpX /= perpLen; perpY /= perpLen; }
-            let offset = Math.min(Math.max(dist * 0.32, 20), 60);
-            if (dist < 45) offset = dist * 0.42;
-            return { x: midX + perpX * offset, y: midY + perpY * offset };
-        }
-
-        function drawCurvedArrow(points, isPreview = false) {
-            if (!points || points.length === 0) return;
-            if (points.length === 1) {
-                ctx.beginPath();
-                ctx.arc(points[0].x, points[0].y, 7, 0, Math.PI*2);
-                ctx.fillStyle = "#FFC107";
-                ctx.shadowBlur = 3;
-                ctx.fill();
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 12px system-ui";
-                ctx.fillText("⬤", points[0].x-4, points[0].y-6);
-                return;
-            }
-            if (points.length < 2) return;
-            const start = points[0], end = points[1];
-            const control = getCurveControl(start, end);
-            ctx.save();
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "rgba(0,0,0,0.5)";
-            ctx.beginPath();
-            ctx.moveTo(start.x, start.y);
-            ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
-            ctx.strokeStyle = "#FFD966";
-            ctx.lineWidth = 4.5;
-            ctx.lineCap = "round";
-            ctx.stroke();
-            // start & end markers
-            ctx.beginPath();
-            ctx.arc(start.x, start.y, 5, 0, Math.PI*2);
-            ctx.fillStyle = "#FFA559";
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(end.x, end.y, 5, 0, Math.PI*2);
-            ctx.fillStyle = "#FF6F3C";
-            ctx.fill();
-            // arrowhead based on curve tangent at end
-            const tangentX = end.x - control.x;
-            const tangentY = end.y - control.y;
-            const len = Math.hypot(tangentX, tangentY);
-            if (len > 0.01) {
-                const angle = Math.atan2(tangentY, tangentX);
-                const headSize = 16;
-                const wing = Math.PI / 6;
-                const tipX = end.x, tipY = end.y;
-                const leftX = tipX - headSize * Math.cos(angle - wing);
-                const leftY = tipY - headSize * Math.sin(angle - wing);
-                const rightX = tipX - headSize * Math.cos(angle + wing);
-                const rightY = tipY - headSize * Math.sin(angle + wing);
-                ctx.beginPath();
-                ctx.moveTo(tipX, tipY);
-                ctx.lineTo(leftX, leftY);
-                ctx.lineTo(rightX, rightY);
-                ctx.closePath();
-                ctx.fillStyle = "#FFBF69";
-                ctx.fill();
-                ctx.strokeStyle = "#AA6F20";
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-            }
-            ctx.restore();
-            // subtle dashed overlay
-            ctx.beginPath();
-            ctx.moveTo(start.x, start.y);
-            ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
-            ctx.strokeStyle = "#ffffff80";
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([5, 7]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        // Draw polygon (triangle/quad)
+        // ---------- DRAWING PRIMITIVES ----------
+        // Draw polygon (triangle or quad)
         function drawPolygon(points, isComplete = true) {
             if (!points.length) return;
             ctx.beginPath();
@@ -323,6 +244,110 @@
                 ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
                 ctx.fillStyle = "#3b82f6";
                 ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "bold 10px monospace";
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Draw curved arrow using 3 points: start, control, end (quadratic bezier)
+        function draw3PointArrow(points, isPreview = false) {
+            if (!points || points.length === 0) return;
+            if (points.length === 1) {
+                ctx.beginPath();
+                ctx.arc(points[0].x, points[0].y, 7, 0, Math.PI*2);
+                ctx.fillStyle = "#FFC107";
+                ctx.shadowBlur = 3;
+                ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 11px system-ui";
+                ctx.fillText("⦿", points[0].x-3, points[0].y-5);
+                return;
+            }
+            if (points.length === 2) {
+                // preview: draw dotted line from start to control, and control point
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                ctx.lineTo(points[1].x, points[1].y);
+                ctx.strokeStyle = "#FFD966aa";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 8]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // draw control point hint
+                ctx.beginPath();
+                ctx.arc(points[1].x, points[1].y, 6, 0, Math.PI*2);
+                ctx.fillStyle = "#FFB347aa";
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillText("ctrl", points[1].x-10, points[1].y-6);
+                return;
+            }
+            if (points.length >= 3) {
+                const start = points[0];
+                const control = points[1];
+                const end = points[2];
+                ctx.save();
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = "rgba(0,0,0,0.5)";
+                // main curve
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+                ctx.strokeStyle = "#FFD966";
+                ctx.lineWidth = 5;
+                ctx.lineCap = "round";
+                ctx.stroke();
+                // draw start & end markers
+                ctx.beginPath();
+                ctx.arc(start.x, start.y, 6, 0, Math.PI*2);
+                ctx.fillStyle = "#FFA559";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(end.x, end.y, 6, 0, Math.PI*2);
+                ctx.fillStyle = "#FF6F3C";
+                ctx.fill();
+                // draw control point small indicator
+                ctx.beginPath();
+                ctx.arc(control.x, control.y, 5, 0, Math.PI*2);
+                ctx.fillStyle = "#F4D03F";
+                ctx.fill();
+                // arrowhead at end (tangent to quadratic curve at t=1)
+                // derivative at endpoint: B'(1) = 2*(end - control)
+                const tangentX = end.x - control.x;
+                const tangentY = end.y - control.y;
+                const len = Math.hypot(tangentX, tangentY);
+                if (len > 0.01) {
+                    const angle = Math.atan2(tangentY, tangentX);
+                    const headSize = 16;
+                    const wing = Math.PI / 6;
+                    const tipX = end.x, tipY = end.y;
+                    const leftX = tipX - headSize * Math.cos(angle - wing);
+                    const leftY = tipY - headSize * Math.sin(angle - wing);
+                    const rightX = tipX - headSize * Math.cos(angle + wing);
+                    const rightY = tipY - headSize * Math.sin(angle + wing);
+                    ctx.beginPath();
+                    ctx.moveTo(tipX, tipY);
+                    ctx.lineTo(leftX, leftY);
+                    ctx.lineTo(rightX, rightY);
+                    ctx.closePath();
+                    ctx.fillStyle = "#FFBF69";
+                    ctx.fill();
+                    ctx.strokeStyle = "#AA6F20";
+                    ctx.lineWidth = 1.8;
+                    ctx.stroke();
+                }
+                ctx.restore();
+                // extra white dashed outline for visibility
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+                ctx.strokeStyle = "#ffffffb3";
+                ctx.lineWidth = 1.8;
+                ctx.setLineDash([4, 6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
             }
         }
 
@@ -359,40 +384,46 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             savedTriangles.forEach(t => drawPolygon(t, true));
             savedQuads.forEach(q => drawPolygon(q, true));
-            savedArrows.forEach(a => drawCurvedArrow(a));
+            savedArrows.forEach(arr => draw3PointArrow(arr));
             savedNames.forEach(n => drawNameTag(n));
+            // draw current in-progress points
             if (currentPoints.length > 0) {
                 if (currentMode === 'segitiga' || currentMode === 'segiempat')
                     drawPolygon(currentPoints, false);
                 else if (currentMode === 'panah')
-                    drawCurvedArrow(currentPoints, true);
+                    draw3PointArrow(currentPoints, true);
             }
-            // extra info
+            // extra hint on canvas
+            if (currentMode === 'panah' && currentPoints.length === 1) {
+                ctx.font = "bold 12px monospace";
+                ctx.fillStyle = "#FFE484";
+                ctx.fillText("📍 Titik awal → tap titik lengkung (kontrol)", 12, 35);
+            } else if (currentMode === 'panah' && currentPoints.length === 2) {
+                ctx.fillStyle = "#FFE484";
+                ctx.fillText("🎯 Tap titik akhir (ujung panah)", 12, 35);
+            }
             if (currentMode === 'segitiga' && currentPoints.length>0 && currentPoints.length<3) {
-                ctx.font = "12px monospace";
-                ctx.fillStyle = "#ccccff";
+                ctx.fillStyle = "#aaaaff";
                 ctx.fillText(`${currentPoints.length}/3 titik`, 12, 30);
             }
             if (currentMode === 'segiempat' && currentPoints.length>0 && currentPoints.length<4) {
-                ctx.fillStyle = "#ccccff";
+                ctx.fillStyle = "#aaaaff";
                 ctx.fillText(`${currentPoints.length}/4 titik`, 12, 30);
-            }
-            if (currentMode === 'panah' && currentPoints.length === 1) {
-                ctx.fillStyle = "#FFE484";
-                ctx.fillText("➡️ tap tujuan untuk panah lengkung", 12, 30);
             }
         }
 
-        // ----- MODE SETUP (crucial for pointer events) -----
+        // ----- MODE MANAGEMENT -----
         function setMode(mode) {
             currentMode = mode;
             currentPoints = [];
             [btnPlay, btnTriangle, btnQuad, btnArrow, btnName].forEach(b => b.classList.remove('active'));
             colorPalette.style.display = 'none';
+            modeHint.innerText = '';
+            
             if (mode === 'nonton') {
                 btnPlay.classList.add('active');
                 canvas.style.pointerEvents = 'none';
-                statusDiv.innerText = "🎥 Mode Nonton (Video berjalan)";
+                statusDiv.innerText = "🎥 Mode Nonton | Video berjalan";
                 video.play().catch(e=>console.log);
                 redrawAll();
             } else {
@@ -401,28 +432,32 @@
                 if (mode === 'segitiga') {
                     btnTriangle.classList.add('active');
                     statusDiv.innerText = "🔺 Mode Segitiga: tap 3 titik";
+                    modeHint.innerText = "Tap 3 titik → bentuk segitiga";
                 } else if (mode === 'segiempat') {
                     btnQuad.classList.add('active');
                     statusDiv.innerText = "⬛ Mode Segiempat: tap 4 titik";
+                    modeHint.innerText = "Tap 4 titik → bentuk segiempat";
                 } else if (mode === 'panah') {
                     btnArrow.classList.add('active');
-                    statusDiv.innerText = "✨ Panah LENGKUNG: tap titik Awal → titik Akhir";
+                    statusDiv.innerText = "✨ Panah 3 Titik: Tentukan arah & lengkungan";
+                    modeHint.innerText = "1. Titik awal → 2. Titik lengkung (kontrol) → 3. Ujung panah";
                 } else if (mode === 'nama') {
                     btnName.classList.add('active');
                     colorPalette.style.display = 'flex';
-                    statusDiv.innerText = `🏷️ Mode Nama (warna aktif) → tap pemain & isi nama`;
+                    statusDiv.innerText = `🏷️ Mode Label (warna aktif) → tap pemain & isi nama`;
+                    modeHint.innerText = "Tap pemain, masukkan nama, warna bisa diganti";
                 }
                 redrawAll();
             }
         }
 
-        // ----- HANDLE TOUCH / CLICK (mobile first) -----
+        // ----- HANDLE CANVAS TOUCH/CLICK -----
         function onCanvasTap(e) {
             if (currentMode === 'nonton') return;
             e.preventDefault();
             e.stopPropagation();
-            // ensure canvas dimensions are correct before capturing coordinates
             if (canvas.width === 0 || canvas.height === 0) resizeCanvasAndRedraw();
+            
             let clientX, clientY;
             if (e.touches) {
                 clientX = e.touches[0].clientX;
@@ -458,61 +493,8 @@
             }
             else if (currentMode === 'panah') {
                 currentPoints.push(point);
-                if (currentPoints.length === 2) {
-                    savedArrows.push([{...currentPoints[0]}, {...currentPoints[1]}]);
+                if (currentPoints.length === 3) {
+                    // save arrow as 3 points
+                    savedArrows.push([{...currentPoints[0]}, {...currentPoints[1]}, {...currentPoints[2]}]);
                     currentPoints = [];
-                    statusDiv.innerText = "🏹 Panah lengkung tersimpan!";
-                } else statusDiv.innerText = "📍 Titik awal → sentuh tujuan";
-                redrawAll();
-            }
-            else if (currentMode === 'nama') {
-                setTimeout(() => {
-                    let name = prompt("Nama pemain / taktik:", "Pemain");
-                    if (name && name.trim() !== "") {
-                        savedNames.push({ text: name.trim(), x, y, color: selectedColor });
-                        statusDiv.innerText = `🏷️ "${name.trim()}" ditambahkan`;
-                        redrawAll();
-                    } else statusDiv.innerText = "Nama dibatalkan";
-                }, 20);
-            }
-        }
-
-        // Attach both mouse and touch events
-        canvas.addEventListener('pointerdown', onCanvasTap);
-        canvas.addEventListener('touchstart', onCanvasTap);
-        canvas.addEventListener('mousedown', onCanvasTap);
-        // prevent any context menu on canvas
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        // color picker
-        colorPalette.addEventListener('click', (e) => {
-            const btn = e.target.closest('.color-btn');
-            if (!btn) return;
-            selectedColor = btn.getAttribute('data-color');
-            document.querySelectorAll('.color-btn').forEach(c => c.classList.remove('active-color'));
-            btn.classList.add('active-color');
-            if (currentMode === 'nama') statusDiv.innerText = `🎨 Warna diubah → tap pemain untuk label`;
-        });
-
-        btnClear.addEventListener('click', () => {
-            savedTriangles = [];
-            savedQuads = [];
-            savedArrows = [];
-            savedNames = [];
-            currentPoints = [];
-            redrawAll();
-            statusDiv.innerText = "🗑️ Semua anotasi dihapus";
-        });
-        btnPlay.addEventListener('click', () => setMode('nonton'));
-        btnTriangle.addEventListener('click', () => setMode('segitiga'));
-        btnQuad.addEventListener('click', () => setMode('segiempat'));
-        btnArrow.addEventListener('click', () => setMode('panah'));
-        btnName.addEventListener('click', () => setMode('nama'));
-
-        // final initialisation
-        resizeCanvasAndRedraw();
-        setMode('nonton');
-    })();
-</script>
-</body>
-</html>
+             
