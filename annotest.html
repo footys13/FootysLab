@@ -46,6 +46,25 @@
             border-color: #0056b3;
             font-weight: bold;
         }
+        /* Palet Warna untuk Mode Nama */
+        .color-palette {
+            display: none; /* Sembunyikan secara default */
+            gap: 5px;
+            margin-top: 5px;
+            padding: 5px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .color-btn.active-color {
+            border-color: white; /* Tandai warna aktif */
+        }
         #clearBtn { background: #dc3545; border-color: #a71d2a; }
         #status { font-weight: bold; color: #ffeb3b; padding: 5px; background: #333; border-radius: 5px; display: inline-block; }
     </style>
@@ -64,6 +83,13 @@
     <button id="triangleBtn">Mode Segitiga</button>
     <button id="nameBtn">Mode Nama Pemain</button>
     <button id="clearBtn">Hapus Coretan</button>
+    
+    <div id="colorPalette" class="color-palette">
+        <div class="color-btn active-color" style="background: rgb(255, 0, 0);" data-color="rgb(255, 0, 0)"></div>
+        <div class="color-btn" style="background: rgb(0, 0, 255);" data-color="rgb(0, 0, 255)"></div>
+        <div class="color-btn" style="background: rgb(255, 255, 255);" data-color="rgb(255, 255, 255)"></div>
+        <div class="color-btn" style="background: rgb(255, 235, 59);" data-color="rgb(255, 235, 59)"></div>
+    </div>
 </div>
 
 <div id="status">Status: Memutar Video</div>
@@ -79,14 +105,16 @@
     const btnName = document.getElementById('nameBtn');
     const btnClear = document.getElementById('clearBtn');
     const statusText = document.getElementById('status');
+    const colorPalette = document.getElementById('colorPalette');
 
     // State Management
     let currentMode = 'nonton'; 
+    let selectedColor = 'rgb(255, 0, 0)'; // Default warna merah
     
     // Data Penyimpanan
     let currentPoints = []; 
     let savedTriangles = []; 
-    let savedNames = []; 
+    let savedNames = []; // Menyimpan data { text, x, y, color }
 
     function resizeCanvas() {
         canvas.width = canvas.clientWidth;
@@ -104,19 +132,18 @@
         btnPlay.classList.remove('active');
         btnSegitiga.classList.remove('active');
         btnName.classList.remove('active');
+        colorPalette.style.display = 'none'; // Sembunyikan palet warna
 
         if (mode === 'nonton') {
             btnPlay.classList.add('active');
-            canvas.style.pointerEvents = 'none'; // Canvas tembus pandang
+            canvas.style.pointerEvents = 'none'; 
             statusText.innerText = "Status: Memutar Video";
             currentPoints = []; 
             redraw();
-            
-            // PERBAIKAN: Jalankan kembali video secara otomatis saat tombol diklik
-            video.play().catch(err => console.log("Autoplay dicegah browser, silakan tekan play manual jika belum jalan"));
+            video.play();
         } else {
-            video.pause(); // Otomatis pause saat masuk mode gambar/nama
-            canvas.style.pointerEvents = 'auto'; // Canvas bisa disentuh
+            video.pause();
+            canvas.style.pointerEvents = 'auto'; 
             resizeCanvas();
             
             if (mode === 'segitiga') {
@@ -124,7 +151,8 @@
                 statusText.innerText = "Status: Mode Segitiga. Sentuh 3 titik!";
             } else if (mode === 'nama') {
                 btnName.classList.add('active');
-                statusText.innerText = "Status: Mode Nama. Sentuh pemain untuk beri label!";
+                colorPalette.style.display = 'flex'; // Tampilkan palet warna
+                statusText.innerText = "Status: Mode Nama. Pilih warna, lalu sentuh pemain!";
                 currentPoints = []; 
                 redraw();
             }
@@ -141,6 +169,17 @@
         savedNames = [];
         currentPoints = [];
         redraw();
+    });
+
+    // Event Listener Palet Warna
+    colorPalette.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-btn')) {
+            // Hapus tanda aktif dari warna sebelumnya
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active-color'));
+            // Tandai warna baru
+            e.target.classList.add('active-color');
+            selectedColor = e.target.getAttribute('data-color');
+        }
     });
 
     // Menangkap sentuhan di layar
@@ -161,11 +200,11 @@
         } 
         
         else if (currentMode === 'nama') {
-            // Ditunda beberapa milidetik agar sentuhan di HP terproses sempurna sebelum pop-up muncul
             setTimeout(() => {
                 const playerName = prompt("Masukkan Nama Pemain:");
                 if (playerName && playerName.trim() !== "") {
-                    savedNames.push({ text: playerName.trim(), x: x, y: y });
+                    // Masukkan teks, posisi, dan warna yang dipilih
+                    savedNames.push({ text: playerName.trim(), x: x, y: y, color: selectedColor });
                 }
                 redraw();
             }, 50);
@@ -209,6 +248,7 @@
         ctx.stroke(); 
     }
 
+    // FUNGSI UTAMA BARU UNTUK LABEL NAMA SOLID
     function drawNameTag(nameObj) {
         ctx.font = "bold 14px sans-serif";
         const textWidth = ctx.measureText(nameObj.text).width;
@@ -216,37 +256,30 @@
         const boxWidth = textWidth + (paddingX * 2);
         const boxHeight = 26;
         
+        // Posisi kotak: di tengah X, dan sedikit di atas titik Y yang disentuh
         const boxX = nameObj.x - (boxWidth / 2);
         const boxY = nameObj.y - boxHeight - 15; 
 
-        // Titik Kuning
+        // Menambahkan bayangan halus untuk efek menonjol
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+
+        // Gambar kotak background solid (Rounded Rectangle) dengan warna yang disimpan
         ctx.beginPath();
-        ctx.arc(nameObj.x, nameObj.y, 4, 0, Math.PI*2);
-        ctx.fillStyle = "#ffeb3b"; 
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); // Radius lengkungan 6px
+        ctx.fillStyle = nameObj.color; // Warna dinamis sesuai jersey
         ctx.fill();
-        ctx.stroke();
+        
+        // Matikan bayangan untuk teks agar teks tetap tajam
+        ctx.shadowColor = "transparent";
 
-        // Garis penghubung
-        ctx.beginPath();
-        ctx.moveTo(nameObj.x, nameObj.y);
-        ctx.lineTo(nameObj.x, boxY + boxHeight);
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Kotak Nama
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6); 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; 
-        ctx.fill();
-        ctx.strokeStyle = "#444";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Teks Nama
+        // Tulis teks nama pemain (selalu putih)
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        // Koordinat teks ada di tengah-tengah kotak
         ctx.fillText(nameObj.text, nameObj.x, boxY + (boxHeight / 2));
     }
 </script>
