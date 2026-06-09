@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Taktik Bola - Panah 3 Titik + Anotasi</title>
+    <title>Football Tactics - 3‑Point Arrow (Fully Touchable)</title>
     <style>
         * {
             user-select: none;
             touch-action: manipulation;
         }
-
         body {
             font-family: system-ui, 'Segoe UI', sans-serif;
             background: #0a0c12;
@@ -18,7 +17,6 @@
             margin: 0;
             min-height: 100vh;
         }
-
         .video-container {
             position: relative;
             width: 100%;
@@ -29,14 +27,14 @@
             overflow: hidden;
             background: #000;
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            /* ensure container has a height */
+            min-height: 200px;
         }
-
         video {
             width: 100%;
             display: block;
-            pointer-events: none;
+            pointer-events: none;  /* all touches go to canvas */
         }
-
         #drawCanvas {
             position: absolute;
             top: 0;
@@ -46,8 +44,9 @@
             z-index: 25;
             touch-action: none;
             background: transparent;
+            /* ensure canvas is visible for debugging (semi-transparent) */
+            background-color: rgba(0,0,0,0.02);
         }
-
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -59,7 +58,6 @@
             padding: 10px 12px;
             border-radius: 60px;
         }
-
         button {
             background: #242c38;
             border: none;
@@ -72,14 +70,12 @@
             transition: 0.2s ease;
             touch-action: manipulation;
         }
-
         button:active { transform: scale(0.96); }
         button.active {
             background: #2b7e3a;
             box-shadow: 0 0 0 2px #86efac;
         }
         #clearBtn { background: #9e2a2a; }
-
         .color-palette {
             display: none;
             justify-content: center;
@@ -90,7 +86,6 @@
             border-radius: 50px;
             margin-top: 5px;
         }
-
         .color-btn {
             width: 38px;
             height: 38px;
@@ -113,6 +108,15 @@
             margin: 8px auto 0;
         }
         .bottom-bar { text-align: center; }
+        .debug-panel {
+            background: #000000aa;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-top: 8px;
+            font-family: monospace;
+            color: #0f0;
+        }
         .instruction-badge {
             font-size: 11px;
             background: #2d3e4b;
@@ -138,7 +142,7 @@
     <button id="quadBtn">⬛ Segiempat</button>
     <button id="arrowBtn">➡️ Panah 3 Titik</button>
     <button id="nameBtn">🏷️ Nama</button>
-    <button id="clearBtn">🗑️ Hapus Semua</button>
+    <button id="clearBtn">🗑️ Hapus</button>
 </div>
 
 <div id="colorPalette" class="color-palette">
@@ -152,15 +156,26 @@
 <div class="bottom-bar">
     <div id="status">⚽ Mode: Nonton (sentuh layar untuk anotasi)</div>
     <div class="instruction-badge" id="modeHint"></div>
+    <div class="debug-panel" id="debugMsg">✅ Canvas siap. Sentuh area video untuk test.</div>
 </div>
 
 <script>
     (function(){
+        // ----- DOM elements -----
         const video = document.getElementById('myVideo');
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d');
+        const debugDiv = document.getElementById('debugMsg');
 
-        // UI Elements
+        function debugLog(msg) {
+            debugDiv.innerText = msg;
+            console.log(msg);
+            setTimeout(() => {
+                if (debugDiv.innerText === msg) debugDiv.innerText = "✅ Siap | sentuh canvas";
+            }, 2000);
+        }
+
+        // UI Buttons
         const btnPlay = document.getElementById('playBtn');
         const btnTriangle = document.getElementById('triangleBtn');
         const btnQuad = document.getElementById('quadBtn');
@@ -174,14 +189,14 @@
         // State
         let currentMode = 'nonton';   // nonton, segitiga, segiempat, panah, nama
         let selectedColor = '#ef4444';
-        let currentPoints = [];        // temporary points for active drawing
-        let savedTriangles = [];        // array of 3-point arrays
-        let savedQuads = [];            // array of 4-point arrays
-        let savedArrows = [];           // array of [start, control, end] (3 points)
-        let savedNames = [];            // array of {text, x, y, color}
+        let currentPoints = [];
+        let savedTriangles = [];
+        let savedQuads = [];
+        let savedArrows = [];   // each arrow: [start, control, end]
+        let savedNames = [];
 
-        // ----- Helper: Canvas resize & coordinate sync (CRITICAL for touch) -----
-        function resizeCanvasAndRedraw() {
+        // ----- FORCE CANVAS SIZE (critical for touch) -----
+        function updateCanvasSize() {
             const container = document.querySelector('.video-container');
             if (!container) return;
             const rect = container.getBoundingClientRect();
@@ -197,16 +212,19 @@
             canvas.height = h;
             canvas.style.width = `${w}px`;
             canvas.style.height = `${h}px`;
+            debugLog(`Canvas resized: ${w} x ${h}`);
             redrawAll();
         }
 
-        window.addEventListener('load', () => setTimeout(resizeCanvasAndRedraw, 50));
-        video.addEventListener('loadedmetadata', resizeCanvasAndRedraw);
-        video.addEventListener('canplay', resizeCanvasAndRedraw);
-        window.addEventListener('resize', () => setTimeout(resizeCanvasAndRedraw, 30));
-        new ResizeObserver(() => resizeCanvasAndRedraw()).observe(document.querySelector('.video-container'));
+        // run immediately and on all resize events
+        updateCanvasSize();
+        window.addEventListener('resize', () => { setTimeout(updateCanvasSize, 50); });
+        video.addEventListener('loadedmetadata', updateCanvasSize);
+        const resizeObserver = new ResizeObserver(() => updateCanvasSize());
+        const containerElem = document.querySelector('.video-container');
+        if (containerElem) resizeObserver.observe(containerElem);
 
-        // ----- roundRect polyfill -----
+        // ----- Drawing helpers -----
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
                 if (w < 2*r) r = w/2;
@@ -224,8 +242,6 @@
             };
         }
 
-        // ---------- DRAWING PRIMITIVES ----------
-        // Draw polygon (triangle or quad)
         function drawPolygon(points, isComplete = true) {
             if (!points.length) return;
             ctx.beginPath();
@@ -244,20 +260,16 @@
                 ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
                 ctx.fillStyle = "#3b82f6";
                 ctx.fill();
-                ctx.fillStyle = "white";
-                ctx.font = "bold 10px monospace";
-                ctx.shadowBlur = 0;
             }
         }
 
-        // Draw curved arrow using 3 points: start, control, end (quadratic bezier)
+        // 3-point arrow (start, control, end)
         function draw3PointArrow(points, isPreview = false) {
-            if (!points || points.length === 0) return;
+            if (!points.length) return;
             if (points.length === 1) {
                 ctx.beginPath();
                 ctx.arc(points[0].x, points[0].y, 7, 0, Math.PI*2);
                 ctx.fillStyle = "#FFC107";
-                ctx.shadowBlur = 3;
                 ctx.fill();
                 ctx.fillStyle = "#fff";
                 ctx.font = "bold 11px system-ui";
@@ -265,7 +277,7 @@
                 return;
             }
             if (points.length === 2) {
-                // preview: draw dotted line from start to control, and control point
+                // preview line + control point hint
                 ctx.beginPath();
                 ctx.moveTo(points[0].x, points[0].y);
                 ctx.lineTo(points[1].x, points[1].y);
@@ -274,13 +286,12 @@
                 ctx.setLineDash([6, 8]);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                // draw control point hint
                 ctx.beginPath();
                 ctx.arc(points[1].x, points[1].y, 6, 0, Math.PI*2);
                 ctx.fillStyle = "#FFB347aa";
                 ctx.fill();
                 ctx.fillStyle = "white";
-                ctx.font = "bold 10px sans-serif";
+                ctx.font = "bold 9px sans-serif";
                 ctx.fillText("ctrl", points[1].x-10, points[1].y-6);
                 return;
             }
@@ -291,15 +302,13 @@
                 ctx.save();
                 ctx.shadowBlur = 4;
                 ctx.shadowColor = "rgba(0,0,0,0.5)";
-                // main curve
                 ctx.beginPath();
                 ctx.moveTo(start.x, start.y);
                 ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
                 ctx.strokeStyle = "#FFD966";
                 ctx.lineWidth = 5;
-                ctx.lineCap = "round";
                 ctx.stroke();
-                // draw start & end markers
+                // start/end markers
                 ctx.beginPath();
                 ctx.arc(start.x, start.y, 6, 0, Math.PI*2);
                 ctx.fillStyle = "#FFA559";
@@ -308,13 +317,11 @@
                 ctx.arc(end.x, end.y, 6, 0, Math.PI*2);
                 ctx.fillStyle = "#FF6F3C";
                 ctx.fill();
-                // draw control point small indicator
                 ctx.beginPath();
                 ctx.arc(control.x, control.y, 5, 0, Math.PI*2);
                 ctx.fillStyle = "#F4D03F";
                 ctx.fill();
-                // arrowhead at end (tangent to quadratic curve at t=1)
-                // derivative at endpoint: B'(1) = 2*(end - control)
+                // arrowhead
                 const tangentX = end.x - control.x;
                 const tangentY = end.y - control.y;
                 const len = Math.hypot(tangentX, tangentY);
@@ -339,12 +346,12 @@
                     ctx.stroke();
                 }
                 ctx.restore();
-                // extra white dashed outline for visibility
+                // dashed outline
                 ctx.beginPath();
                 ctx.moveTo(start.x, start.y);
                 ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
                 ctx.strokeStyle = "#ffffffb3";
-                ctx.lineWidth = 1.8;
+                ctx.lineWidth = 1.5;
                 ctx.setLineDash([4, 6]);
                 ctx.stroke();
                 ctx.setLineDash([]);
@@ -380,20 +387,22 @@
         }
 
         function redrawAll() {
-            if (!ctx || canvas.width === 0 || canvas.height === 0) return;
+            if (!ctx || canvas.width === 0 || canvas.height === 0) {
+                updateCanvasSize();
+                return;
+            }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             savedTriangles.forEach(t => drawPolygon(t, true));
             savedQuads.forEach(q => drawPolygon(q, true));
             savedArrows.forEach(arr => draw3PointArrow(arr));
             savedNames.forEach(n => drawNameTag(n));
-            // draw current in-progress points
             if (currentPoints.length > 0) {
                 if (currentMode === 'segitiga' || currentMode === 'segiempat')
                     drawPolygon(currentPoints, false);
                 else if (currentMode === 'panah')
                     draw3PointArrow(currentPoints, true);
             }
-            // extra hint on canvas
+            // extra hints
             if (currentMode === 'panah' && currentPoints.length === 1) {
                 ctx.font = "bold 12px monospace";
                 ctx.fillStyle = "#FFE484";
@@ -419,7 +428,6 @@
             [btnPlay, btnTriangle, btnQuad, btnArrow, btnName].forEach(b => b.classList.remove('active'));
             colorPalette.style.display = 'none';
             modeHint.innerText = '';
-            
             if (mode === 'nonton') {
                 btnPlay.classList.add('active');
                 canvas.style.pointerEvents = 'none';
@@ -431,48 +439,49 @@
                 canvas.style.pointerEvents = 'auto';
                 if (mode === 'segitiga') {
                     btnTriangle.classList.add('active');
-                    statusDiv.innerText = "🔺 Mode Segitiga: tap 3 titik";
-                    modeHint.innerText = "Tap 3 titik → bentuk segitiga";
+                    statusDiv.innerText = "🔺 Segitiga: tap 3 titik";
+                    modeHint.innerText = "Tap 3 titik → segitiga";
                 } else if (mode === 'segiempat') {
                     btnQuad.classList.add('active');
-                    statusDiv.innerText = "⬛ Mode Segiempat: tap 4 titik";
-                    modeHint.innerText = "Tap 4 titik → bentuk segiempat";
+                    statusDiv.innerText = "⬛ Segiempat: tap 4 titik";
+                    modeHint.innerText = "Tap 4 titik → segiempat";
                 } else if (mode === 'panah') {
                     btnArrow.classList.add('active');
                     statusDiv.innerText = "✨ Panah 3 Titik: Tentukan arah & lengkungan";
-                    modeHint.innerText = "1. Titik awal → 2. Titik lengkung (kontrol) → 3. Ujung panah";
+                    modeHint.innerText = "1. Titik awal → 2. Titik kontrol → 3. Ujung panah";
                 } else if (mode === 'nama') {
                     btnName.classList.add('active');
                     colorPalette.style.display = 'flex';
-                    statusDiv.innerText = `🏷️ Mode Label (warna aktif) → tap pemain & isi nama`;
-                    modeHint.innerText = "Tap pemain, masukkan nama, warna bisa diganti";
+                    statusDiv.innerText = `🏷️ Label (warna aktif) → tap pemain & isi nama`;
+                    modeHint.innerText = "Tap pemain, masukkan nama";
                 }
                 redrawAll();
             }
         }
 
-        // ----- HANDLE CANVAS TOUCH/CLICK -----
-        function onCanvasTap(e) {
-            if (currentMode === 'nonton') return;
-            e.preventDefault();
-            e.stopPropagation();
-            if (canvas.width === 0 || canvas.height === 0) resizeCanvasAndRedraw();
-            
-            let clientX, clientY;
-            if (e.touches) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
+        // ----- TOUCH HANDLER (robust) -----
+        function handleTap(clientX, clientY) {
+            if (currentMode === 'nonton') {
+                debugLog("Mode nonton: sentuhan diabaikan");
+                return;
             }
             const rect = canvas.getBoundingClientRect();
             let x = clientX - rect.left;
             let y = clientY - rect.top;
-            x = Math.min(Math.max(x, 0), canvas.width);
-            y = Math.min(Math.max(y, 0), canvas.height);
+            if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) {
+                debugLog("Sentuhan di luar canvas");
+                return;
+            }
+            // visual feedback: flash canvas
+            ctx.save();
+            ctx.fillStyle = "rgba(0,255,0,0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            setTimeout(() => redrawAll(), 80);
+            
             const point = { x, y };
-
+            debugLog(`Tap di (${Math.round(x)},${Math.round(y)}) mode=${currentMode}`);
+            
             if (currentMode === 'segitiga') {
                 currentPoints.push(point);
                 if (currentPoints.length === 3) {
@@ -494,7 +503,4 @@
             else if (currentMode === 'panah') {
                 currentPoints.push(point);
                 if (currentPoints.length === 3) {
-                    // save arrow as 3 points
-                    savedArrows.push([{...currentPoints[0]}, {...currentPoints[1]}, {...currentPoints[2]}]);
-                    currentPoints = [];
-             
+                    saved
