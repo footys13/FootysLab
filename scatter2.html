@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Percentile Calculator - Bug Fix</title>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Football Scatterplot App</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -12,14 +18,14 @@
       color: white;
       font-family: 'Barlow', sans-serif;
       min-height: 100vh;
-      padding: 24px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 24px 16px;
     }
     .topbar {
       width: 100%;
-      max-width: 600px;
+      max-width: 680px;
       border-left: 3px solid #4ade80;
       padding: 12px 20px;
       background: #0f1a0f;
@@ -30,21 +36,48 @@
       margin-bottom: 24px;
       text-transform: uppercase;
     }
-    .card {
-      background: #0f1a0f;
-      border-radius: 16px;
-      padding: 20px;
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
       width: 100%;
-      max-width: 600px;
+      max-width: 680px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .upload-box:hover {
+      background: #121c12;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
       margin-bottom: 16px;
     }
-    .card-title {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: #4b5563;
-      text-transform: uppercase;
-      font-weight: 700;
-      margin-bottom: 14px;
+    #csvFileInput {
+      color: #4ade80;
+      font-family: 'Barlow', sans-serif;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
     }
     select {
       width: 100%;
@@ -55,131 +88,73 @@
       padding: 10px 14px;
       font-size: 13px;
       font-family: 'Barlow', sans-serif;
-      margin-bottom: 10px;
+      outline: none;
     }
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      width: 100%;
-    }
-    .btn-green { background: #4ade80; color: #0a0f0a; }
-    .btn-outline {
-      background: #161f16;
-      color: #4ade80;
-      border: 1px solid #4ade80;
-      margin-top: 12px;
-    }
-
-    /* Result */
-    .result-card {
+    .card {
       background: #0f1a0f;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 20px;
+      padding: 24px;
       width: 100%;
-      max-width: 600px;
-      display: none;
     }
-    .result-name {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 36px;
-      font-weight: 900;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .result-meta {
-      font-size: 11px;
-      color: #6b7280;
+    .card-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
       margin-bottom: 16px;
       padding-bottom: 14px;
       border-bottom: 1px solid #1a2e1a;
     }
-    .result-meta span { color: #e5e7eb; font-weight: 600; }
-    
-    /* Legend */
-    .legend-box {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-      font-size: 10px;
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
       text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .p1-name { color: #4ade80; }
+    .p2-name { color: #f87171; }
+    .player-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 3px;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+    .position-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .badge-p1 { background: #4ade80; color: #0a0f0a; }
+    .badge-p2 { background: #f87171; color: #0a0f0a; }
+    .legend-players {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 16px;
     }
     .legend-item {
       display: flex;
       align-items: center;
       gap: 6px;
-    }
-    .legend-color { width: 10px; height: 10px; border-radius: 2px; }
-
-    /* Grid */
-    .percentile-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .pct-item {
-      background: #161f16;
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .pct-bar-wrap { flex: 1; }
-    .pct-label {
-      font-size: 9px;
+      font-size: 11px;
       color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
+      font-weight: 600;
     }
-    .pct-raw {
-      font-size: 9px;
-      color: #6b7280;
-      margin-top: 4px;
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
     }
-    .pct-bar-bg {
-      background: #0a0f0a;
-      border-radius: 4px;
-      height: 5px;
-      overflow: hidden;
-    }
-    .pct-bar-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 1s ease;
-    }
-    .pct-num {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      flex-shrink: 0;
-      width: 36px;
-      text-align: center;
-      border-radius: 6px;
-      padding: 4px 0;
-      color: white; 
-    }
-
-    /* Category Colors */
-    .bg-attack { background-color: #f43f5e; }  
-    .bg-progress { background-color: #3b82f6; } 
-    .bg-possess { background-color: #eab308; color: #0a0f0a !important; } 
-    .bg-defend { background-color: #22c55e; }   
-
     .watermark {
       text-align: center;
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 4px;
       color: #ffffff;
@@ -188,376 +163,296 @@
       padding-top: 12px;
       border-top: 1px solid #1a2e1a;
     }
+    .btn-export {
+      margin-top: 16px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+      transition: 0.3s;
+    }
+    .btn-export:hover {
+      background: #4ade80;
+      color: #161f16;
+    }
+    #chartContainer {
+      position: relative;
+      width: 100%;
+      height: 350px;
+    }
   </style>
 </head>
 <body>
 
-  <div class="topbar">THE FOOTYS · COMPREHENSIVE PERCENTILE</div>
+  <div class="topbar">Data Scatterplot Generator</div>
 
-  <div class="card">
-    <div class="card-title">Upload CSV Raw Stats</div>
-    <input type="file" id="inputCSV" accept=".csv">
-    <p id="csvStatus" style="color:#4b5563; font-size:11px; margin-top:8px;"></p>
+  <div id="uploadScreen">
+    <div class="upload-box" onclick="document.getElementById('csvFileInput').click()">
+      <p>Upload CSV Data (GK, DEF, MID, FWD)</p>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+      <div style="font-size: 12px; color: #4ade80; font-weight: 600; margin-top: 10px;">Browse File</div>
+    </div>
   </div>
 
-  <div class="card" id="controlsCard" style="display:none;">
-    <div class="card-title">Pilih Template Posisi</div>
-    <select id="selectPosisi" onchange="gantiPosisi()">
-      <option value="all_stats">All-Round (17 Stats)</option>
-      <option value="fullback">Fullback / Wingback</option>
-      <option value="midfielder">Midfielder / CM</option>
-      <option value="winger">Winger / LW / RW</option>
-      <option value="striker">Striker / CF</option>
-      <option value="defender">Defender / CB</option>
-    </select>
-
-    <div class="card-title">Pilih Pemain</div>
-    <select id="selectPemain"></select>
-
-    <button class="btn btn-green" onclick="hitungPercentile()">
-      📊 Hitung Percentile
-    </button>
-  </div>
-
-  <div class="result-card" id="resultCard">
-    <div class="card-title">Hasil Percentile</div>
-    <div class="result-name" id="resultNama">-</div>
-    <div class="result-meta">
-      Club: <span id="resultKlub">-</span> ·
-      Pos: <span id="resultPosisi">-</span> ·
-      Min: <span id="resultMenit">-</span>
+  <div id="mainScreen">
+    <div class="controls">
+      <select id="xAxisSelect"><option value="">Sumbu X (Loading...)</option></select>
+      <select id="yAxisSelect"><option value="">Sumbu Y (Loading...)</option></select>
+      <select id="player1Select"><option value="">Pilih Player 1</option></select>
+      <select id="player2Select"><option value="">Pilih Player 2</option></select>
     </div>
 
-    <div class="legend-box">
-      <div class="legend-item"><div class="legend-color bg-attack"></div> Attacking</div>
-      <div class="legend-item"><div class="legend-color bg-progress"></div> Progression</div>
-      <div class="legend-item"><div class="legend-color bg-possess"></div> Possession</div>
-      <div class="legend-item"><div class="legend-color bg-defend"></div> Defending</div>
+    <div class="card" id="captureArea">
+      <div class="card-header">
+        <div>
+          <div class="player-name p1-name" id="p1Name">PLAYER 1</div>
+          <div class="player-meta">Tim: <span id="p1Team">-</span></div>
+          <div class="position-badge badge-p1" id="p1Pos">POS</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="player-name p2-name" id="p2Name">PLAYER 2</div>
+          <div class="player-meta">Tim: <span id="p2Team">-</span></div>
+          <div class="position-badge badge-p2" id="p2Pos">POS</div>
+        </div>
+      </div>
+
+      <div class="legend-players">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #4ade80;"></div> <span id="legP1">Player 1</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #f87171;"></div> <span id="legP2">Player 2</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #6b7280;"></div> <span>Lainnya</span>
+        </div>
+      </div>
+
+      <div id="chartContainer">
+        <canvas id="scatterChart"></canvas>
+      </div>
+
+      <div class="watermark">THE FOOTYS</div>
     </div>
 
-    <div class="percentile-grid" id="percentileGrid"></div>
-
-    <div class="card-title" style="margin-top:16px;">Pizza Chart</div>
-    <svg id="pizzaSVG" viewBox="0 0 450 450" width="100%" height="100%"></svg>
-
-    <div class="watermark">THE FOOTYS</div>
-
-    <button class="btn btn-outline" onclick="exportGambar()">
-      💾 Save Image
-    </button>
+    <button class="btn-export" id="exportBtn">Export as Image</button>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
+    let globalData = [];
+    let headers = [];
+    let scatterChart = null;
 
-    const STATS_MAP = {
-      all_stats: [
-        { key: "Goals", label: "Goals", cat: "attack" },
-        { key: "xG", label: "xG", cat: "attack" },
-        { key: "Shots on Target", label: "SoT", cat: "attack" },
-        { key: "Assists", label: "Assists", cat: "attack" },
-        { key: "xA", label: "xA", cat: "attack" },
-        { key: "Key Passes", label: "Key Pass", cat: "progress" },
-        { key: "Crosses", label: "Crosses", cat: "progress" },
-        { key: "Acc. Passes", label: "Acc Pass", cat: "possess" },
-        { key: "Acc. Opp Half Passes", label: "Opp Half Pass", cat: "progress" },
-        { key: "Acc. Long Balls", label: "Acc Long B", cat: "possess" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Aerial Duels Won", label: "Aerial Won", cat: "defend" },
-        { key: "Interceptions", label: "Intercept", cat: "defend" },
-        { key: "Tackles Won", label: "Tkl Won", cat: "defend" },
-        { key: "Clearances", label: "Clearances", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" }
-      ],
-      fullback: [
-        { key: "Assists", label: "Assists", cat: "attack" },
-        { key: "xA", label: "xA", cat: "attack" },
-        { key: "Key Passes", label: "Key Pass", cat: "progress" },
-        { key: "Crosses", label: "Crosses", cat: "progress" },
-        { key: "Acc. Crosses", label: "Acc Cross", cat: "progress" },
-        { key: "Acc. Opp Half Passes", label: "Opp Half Pass", cat: "progress" },
-        { key: "Contests Won", label: "Dribble Won", cat: "progress" },
-        { key: "Acc. Long Balls", label: "Acc Long B", cat: "possess" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Interceptions", label: "Intercept", cat: "defend" },
-        { key: "Tackles Won", label: "Tkl Won", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" },
-        { key: "Clearances", label: "Clearances", cat: "defend" }
-      ],
-      defender: [
-        { key: "Goals", label: "Goals", cat: "attack" },
-        { key: "Acc. Passes", label: "Acc Pass", cat: "possess" },
-        { key: "Acc. Long Balls", label: "Acc Long B", cat: "possess" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Aerial Duels Won", label: "Aerial Won", cat: "defend" },
-        { key: "Interceptions", label: "Intercept", cat: "defend" },
-        { key: "Tackles Won", label: "Tkl Won", cat: "defend" },
-        { key: "Clearances", label: "Clearances", cat: "defend" },
-        { key: "Blocked Shots", label: "Blocks", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" }
-      ],
-      midfielder: [
-        { key: "Goals", label: "Goals", cat: "attack" },
-        { key: "xG", label: "xG", cat: "attack" },
-        { key: "Assists", label: "Assists", cat: "attack" },
-        { key: "xA", label: "xA", cat: "attack" },
-        { key: "Key Passes", label: "Key Pass", cat: "progress" },
-        { key: "Acc. Passes", label: "Acc Pass", cat: "possess" },
-        { key: "Acc. Opp Half Passes", label: "Opp Half Pass", cat: "progress" },
-        { key: "Acc. Long Balls", label: "Acc Long B", cat: "possess" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Interceptions", label: "Intercept", cat: "defend" },
-        { key: "Tackles Won", label: "Tkl Won", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" }
-      ],
-      winger: [
-        { key: "Goals", label: "Goals", cat: "attack" },
-        { key: "xG", label: "xG", cat: "attack" },
-        { key: "Shots on Target", label: "SoT", cat: "attack" },
-        { key: "Assists", label: "Assists", cat: "attack" },
-        { key: "xA", label: "xA", cat: "attack" },
-        { key: "Key Passes", label: "Key Pass", cat: "progress" },
-        { key: "Crosses", label: "Crosses", cat: "progress" },
-        { key: "Contests Won", label: "Dribble Won", cat: "progress" },
-        { key: "Acc. Opp Half Passes", label: "Opp Half Pass", cat: "progress" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" }
-      ],
-      striker: [
-        { key: "Goals", label: "Goals", cat: "attack" },
-        { key: "xG", label: "xG", cat: "attack" },
-        { key: "Shots", label: "Shots", cat: "attack" },
-        { key: "Shots on Target", label: "SoT", cat: "attack" },
-        { key: "Assists", label: "Assists", cat: "attack" },
-        { key: "xA", label: "xA", cat: "attack" },
-        { key: "Key Passes", label: "Key Pass", cat: "progress" },
-        { key: "Touches", label: "Touches", cat: "possess" },
-        { key: "Duels Won", label: "Duels Won", cat: "defend" },
-        { key: "Aerial Duels Won", label: "Aerial Won", cat: "defend" },
-        { key: "Ball Recoveries", label: "Recoveries", cat: "defend" }
-      ]
-    };
-
-    let data = [];
-    let statsAktif = STATS_MAP["all_stats"];
-
-    // Parser CSV Super Kebal
-    function prosesCSV(teks) {
-      // Split regex biar \r di ujung (kalau ada) ikut ilang
-      const baris = teks.trim().split(/\r?\n/);
-      
-      let headerIndex = -1;
-      let pemisah = ",";
-      
-      // 1. Cari baris header yang sebenernya (buat skip baris error scraper di atas)
-      for (let i = 0; i < Math.min(15, baris.length); i++) {
-        if (baris[i].includes("Player") && (baris[i].includes("Team") || baris[i].includes("Klub"))) {
-          headerIndex = i;
-          // Deteksi pemisah koma vs titik koma
-          if (baris[i].includes(";")) pemisah = ";";
-          break;
-        }
-      }
-
-      if (headerIndex === -1) {
-        alert("Gagal membaca CSV! Pastikan ada kolom bernama 'Player' dan 'Team'.");
-        return [];
-      }
-
-      function splitBarisData(str) {
-        const hasil = [];
-        let current = "";
-        let dalamKutip = false;
-        for (let i = 0; i < str.length; i++) {
-          const char = str[i];
-          if (char === '"') {
-            dalamKutip = !dalamKutip;
-          } else if (char === pemisah && !dalamKutip) {
-            hasil.push(current.trim());
-            current = "";
-          } else {
-            current += char;
-          }
-        }
-        hasil.push(current.trim());
-        return hasil;
-      }
-
-      const header = splitBarisData(baris[headerIndex].replace(/^\uFEFF/, ""));
-      const result = [];
-      
-      for (let i = headerIndex + 1; i < baris.length; i++) {
-        const kolom = splitBarisData(baris[i]);
-        if (kolom.length < 5) continue; 
-        if (kolom[0].toLowerCase().includes("error")) continue; // Skip baris error lanjutan
-        
-        const p = {};
-        for (let j = 0; j < header.length; j++) {
-          let isi = kolom[j] || "0";
-          // Ubah angka pakai koma (23,77) jadi titik (23.77) biar ga NaN
-          if (/^-?\d+,\d+$/.test(isi)) {
-            isi = isi.replace(",", ".");
-          }
-          p[header[j]] = isi;
-        }
-        result.push(p);
-      }
-      return result;
-    }
-
-    document.getElementById("inputCSV").onchange = function() {
-      const file = this.files[0];
+    // Trigger saat file CSV dipilih
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
       if (!file) return;
-      fetch(URL.createObjectURL(file))
-        .then(function(r) {
-          r.text().then(function(teks) {
-            data = prosesCSV(teks);
-            isiDropdown();
-            document.getElementById("csvStatus").textContent =
-              "✅ " + data.length + " data pemain sukses dimuat";
-            document.getElementById("controlsCard").style.display = "block";
-          });
-        });
-    };
 
-    function isiDropdown() {
-      const sel = document.getElementById("selectPemain");
-      sel.innerHTML = "";
-      data.forEach(function(p, i) {
-        sel.appendChild(new Option(p["Player"] + " — " + p["Team"], i));
-      });
-    }
-
-    function gantiPosisi() {
-      statsAktif = STATS_MAP[document.getElementById("selectPosisi").value];
-    }
-
-    function hitungPercentile() {
-      const i = document.getElementById("selectPemain").value;
-      const pemain = data[i];
-      if (!pemain) return;
-
-      const hasil = statsAktif.map(function(stat) {
-        let valRawText = pemain[stat.key];
-        if (!valRawText) valRawText = "0";
-        if (typeof valRawText === "string") valRawText = valRawText.replace(",", ".");
-        
-        let nilaiPemain = parseFloat(valRawText);
-        if (isNaN(nilaiPemain)) nilaiPemain = 0; // Kuncian anti-NaN 
-
-        const semuaNilai = data
-          .map(function(p) { 
-             let v = p[stat.key] || "0";
-             if (typeof v === "string") v = v.replace(",", ".");
-             return parseFloat(v); 
-          })
-          .filter(function(v) { return !isNaN(v); })
-          .sort(function(a, b) { return a - b; });
-
-        let pct = 0;
-        if (semuaNilai.length > 0) {
-          const dibawah = semuaNilai.filter(function(v) { return v <= nilaiPemain; }).length;
-          pct = Math.round((dibawah / semuaNilai.length) * 100);
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          globalData = results.data;
+          headers = results.meta.fields;
+          initApp();
         }
+      });
+    });
 
-        return { stat: stat, raw: nilaiPemain, pct: pct };
+    // Inisialisasi Aplikasi setelah data terbaca
+    function initApp() {
+      document.getElementById('uploadScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+
+      const numericHeaders = [];
+      const playerNames = [];
+
+      // Memisahkan header angka (untuk X dan Y) dan mengumpulkan nama pemain
+      const firstRow = globalData[0];
+      headers.forEach(h => {
+        if (typeof firstRow[h] === 'number') {
+          numericHeaders.push(h);
+        }
       });
 
-      tampilkanHasil(pemain, hasil);
-    }
-
-    function tampilkanHasil(pemain, hasil) {
-      document.getElementById("resultNama").textContent = pemain["Player"];
-      document.getElementById("resultKlub").textContent = pemain["Team"];
-      document.getElementById("resultPosisi").textContent = pemain["Pos"] || "-";
-      document.getElementById("resultMenit").textContent = pemain["Min"] ? pemain["Min"] + " mins" : "-";
-
-      const grid = document.getElementById("percentileGrid");
-      grid.innerHTML = "";
-      hasil.forEach(function(h) {
-        const catClass = "bg-" + h.stat.cat;
-        const rawTampil = Number.isNaN(h.raw) ? 0 : h.raw;
-
-        const item = document.createElement("div");
-        item.className = "pct-item";
-        item.innerHTML = `
-          <div class="pct-bar-wrap">
-            <div class="pct-label">${h.stat.label}</div>
-            <div class="pct-bar-bg">
-              <div class="pct-bar-fill ${catClass}" id="pf_${h.stat.label.replace(/ /g,'_')}" style="width:0%"></div>
-            </div>
-            <div class="pct-raw">${rawTampil.toFixed(2)} per 90</div>
-          </div>
-          <div class="pct-num ${catClass}">${h.pct}</div>
-        `;
-        grid.appendChild(item);
+      globalData.forEach(row => {
+        if (row.Player) playerNames.push(row.Player);
       });
 
-      setTimeout(function() {
-        hasil.forEach(function(h) {
-          const bar = document.getElementById("pf_" + h.stat.label.replace(/ /g,'_'));
-          if (bar) bar.style.width = h.pct + "%";
-        });
-      }, 100);
+      const xSelect = document.getElementById('xAxisSelect');
+      const ySelect = document.getElementById('yAxisSelect');
+      const p1Select = document.getElementById('player1Select');
+      const p2Select = document.getElementById('player2Select');
 
-      gambarPizza(hasil);
+      // Kosongkan opsi bawaan
+      xSelect.innerHTML = ''; ySelect.innerHTML = '';
+      p1Select.innerHTML = ''; p2Select.innerHTML = '';
 
-      document.getElementById("resultCard").style.display = "block";
-      document.getElementById("resultCard").scrollIntoView({ behavior: "smooth" });
+      // Isi Dropdown Metric
+      numericHeaders.forEach(h => {
+        xSelect.add(new Option(h, h));
+        ySelect.add(new Option(h, h));
+      });
+
+      // Isi Dropdown Nama Pemain
+      playerNames.sort().forEach(p => {
+        p1Select.add(new Option(p, p));
+        p2Select.add(new Option(p, p));
+      });
+
+      // Set default awal
+      if (numericHeaders.includes('xG')) xSelect.value = 'xG';
+      if (numericHeaders.includes('Goals')) ySelect.value = 'Goals';
+      if (playerNames.length > 0) p1Select.selectedIndex = 0;
+      if (playerNames.length > 1) p2Select.selectedIndex = 1;
+
+      // Tambah Event Listener jika dropdown berubah
+      [xSelect, ySelect, p1Select, p2Select].forEach(el => {
+        el.addEventListener('change', updateChart);
+      });
+
+      // Gambar Chart Pertama Kali
+      updateChart();
     }
 
-    function dapatkanHexWarnaKategori(cat) {
-      if (cat === "attack") return "#f43f5e"; 
-      if (cat === "progress") return "#3b82f6"; 
-      if (cat === "possess") return "#eab308"; 
-      if (cat === "defend") return "#22c55e"; 
-      return "#4ade80";
-    }
+    // Fungsi Render / Update Chart dan DOM
+    function updateChart() {
+      const xCol = document.getElementById('xAxisSelect').value;
+      const yCol = document.getElementById('yAxisSelect').value;
+      const p1Name = document.getElementById('player1Select').value;
+      const p2Name = document.getElementById('player2Select').value;
 
-    function gambarPizza(hasil) {
-      const svg = document.getElementById("pizzaSVG");
-      svg.innerHTML = "";
-      const cx = 225, cy = 225;
-      const rMax = 160, rMin = 40;
-      const n = hasil.length;
-      const slice = (2 * Math.PI) / n;
+      let p1Data = [], p2Data = [], otherData = [];
+      let p1Info = null, p2Info = null;
 
-      [0.25, 0.5, 0.75, 1.0].forEach(function(pct) {
-        const r = rMin + (rMax - rMin) * pct;
-        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        c.setAttribute("cx", cx); c.setAttribute("cy", cy);
-        c.setAttribute("r", r); c.setAttribute("fill", "none");
-        c.setAttribute("stroke", "#1a2e1a"); c.setAttribute("stroke-width", "1");
-        svg.appendChild(c);
+      // Looping data CSV untuk menempatkan koordinat
+      globalData.forEach(row => {
+        const xVal = row[xCol];
+        const yVal = row[yCol];
         
-        const l = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        l.setAttribute("x", cx + 4); l.setAttribute("y", cy - r + 12);
-        l.setAttribute("fill", "#374151"); l.setAttribute("font-size", "9");
-        l.textContent = Math.round(pct * 100);
-        svg.appendChild(l);
+        if (xVal === null || xVal === undefined || yVal === null || yVal === undefined) return;
+
+        const point = { x: xVal, y: yVal, player: row.Player, team: row.Team, pos: row.Pos };
+
+        if (row.Player === p1Name) {
+          p1Data.push(point);
+          p1Info = point;
+        } else if (row.Player === p2Name) {
+          p2Data.push(point);
+          p2Info = point;
+        } else {
+          otherData.push(point);
+        }
       });
 
-      for (let i = 0; i < n; i++) {
-        const angle = slice * i - Math.PI / 2;
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", cx); line.setAttribute("y1", cy);
-        line.setAttribute("x2", cx + rMax * Math.cos(angle));
-        line.setAttribute("y2", cy + rMax * Math.sin(angle));
-        line.setAttribute("stroke", "#0a0f0a"); line.setAttribute("stroke-width", "1.5");
-        svg.appendChild(line);
+      // Update Teks Pemain di Card Header (Pemain 1)
+      if (p1Info) {
+        document.getElementById('p1Name').innerText = p1Info.player;
+        document.getElementById('p1Team').innerText = p1Info.team;
+        document.getElementById('p1Pos').innerText = p1Info.pos;
+        document.getElementById('legP1').innerText = p1Info.player;
+      }
+      
+      // Update Teks Pemain di Card Header (Pemain 2)
+      if (p2Info) {
+        document.getElementById('p2Name').innerText = p2Info.player;
+        document.getElementById('p2Team').innerText = p2Info.team;
+        document.getElementById('p2Pos').innerText = p2Info.pos;
+        document.getElementById('legP2').innerText = p2Info.player;
       }
 
-      hasil.forEach(function(h, i) {
-        if (isNaN(h.pct)) return; // Safety
+      // Konfigurasi Chart.js
+      const ctx = document.getElementById('scatterChart').getContext('2d');
+      if (scatterChart) scatterChart.destroy(); // Hapus chart lama sebelum buat baru
 
-        const val = h.pct / 100;
-        const r = rMin + (rMax - rMin) * val;
-        const startAngle = slice * i - Math.PI / 2;
-        const endAngle   = slice * (i + 1) - Math.PI / 2;
+      scatterChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Player 1',
+              data: p1Data,
+              backgroundColor: '#4ade80',
+              borderColor: '#0a0f0a',
+              borderWidth: 2,
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              order: 1 // Munculkan di atas titik lain
+            },
+            {
+              label: 'Player 2',
+              data: p2Data,
+              backgroundColor: '#f87171',
+              borderColor: '#0a0f0a',
+              borderWidth: 2,
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              order: 2
+            },
+            {
+              label: 'Lainnya',
+              data: otherData,
+              backgroundColor: '#374151',
+              borderColor: 'transparent',
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              order: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#161f16',
+              titleColor: '#e5e7eb',
+              bodyColor: '#9ca3af',
+              borderColor: '#2d4a2d',
+              borderWidth: 1,
+              callbacks: {
+                label: function(ctx) {
+                  const dataObj = ctx.raw;
+                  return `${dataObj.player} (${dataObj.team}) | ${xCol}: ${dataObj.x}, ${yCol}: ${dataObj.y}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: xCol, color: '#9ca3af', font: {family: 'Barlow', size: 12} },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#1a2e1a' }
+            },
+            y: {
+              title: { display: true, text: yCol, color: '#9ca3af', font: {family: 'Barlow', size: 12} },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#1a2e1a' }
+            }
+          }
+        }
+      });
+    }
 
-        const x1 = cx + rMin * Math.cos(startAngle); const
+    // Fitur Export menjadi gambar (PNG) menggunakan html2canvas
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const area = document.getElementById('captureArea');
+      html2canvas(area, { backgroundColor: '#0f1a0f', scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'the_footys_scatter.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    });
+  </script>
+</body>
+</html>
