@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Football Scatterplot App</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 680px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 680px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .upload-box:hover {
+      background: #121c12;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #csvFileInput {
+      color: #4ade80;
+      font-family: 'Barlow', sans-serif;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Barlow', sans-serif;
+      outline: none;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+    }
+    .card-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1a2e1a;
+    }
+    .player-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .p1-name { color: #4ade80; }
+    .p2-name { color: #f87171; }
+    .player-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 3px;
+    }
+    .player-meta span { color: #e5e7eb; font-weight: 600; }
+    .position-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .badge-p1 { background: #4ade80; color: #0a0f0a; }
+    .badge-p2 { background: #f87171; color: #0a0f0a; }
+    .legend-players {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .watermark {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #1a2e1a;
+    }
+    .btn-export {
+      margin-top: 16px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      width: 100%;
+      transition: 0.3s;
+    }
+    .btn-export:hover {
+      background: #4ade80;
+      color: #161f16;
+    }
+    #chartContainer {
+      position: relative;
+      width: 100%;
+      height: 350px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">Data Scatterplot Generator</div>
+
+  <div id="uploadScreen">
+    <div class="upload-box" onclick="document.getElementById('csvFileInput').click()">
+      <p>Upload CSV Data (GK, DEF, MID, FWD)</p>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+      <div style="font-size: 12px; color: #4ade80; font-weight: 600; margin-top: 10px;">Browse File</div>
+    </div>
+  </div>
+
+  <div id="mainScreen">
+    <div class="controls">
+      <select id="xAxisSelect"><option value="">Sumbu X (Loading...)</option></select>
+      <select id="yAxisSelect"><option value="">Sumbu Y (Loading...)</option></select>
+      <select id="player1Select"><option value="">Pilih Player 1</option></select>
+      <select id="player2Select"><option value="">Pilih Player 2</option></select>
+    </div>
+
+    <div class="card" id="captureArea">
+      <div class="card-header">
+        <div>
+          <div class="player-name p1-name" id="p1Name">PLAYER 1</div>
+          <div class="player-meta">Tim: <span id="p1Team">-</span></div>
+          <div class="position-badge badge-p1" id="p1Pos">POS</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="player-name p2-name" id="p2Name">PLAYER 2</div>
+          <div class="player-meta">Tim: <span id="p2Team">-</span></div>
+          <div class="position-badge badge-p2" id="p2Pos">POS</div>
+        </div>
+      </div>
+
+      <div class="legend-players">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #4ade80;"></div> <span id="legP1">Player 1</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #f87171;"></div> <span id="legP2">Player 2</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #6b7280;"></div> <span>Lainnya</span>
+        </div>
+      </div>
+
+      <div id="chartContainer">
+        <canvas id="scatterChart"></canvas>
+      </div>
+
+      <div class="watermark">FOOTBALL DATA SCATTERPLOT</div>
+    </div>
+
+    <button class="btn-export" id="exportBtn">Export as Image</button>
+  </div>
+
+  <script>
+    let globalData = [];
+    let headers = [];
+    let scatterChart = null;
+
+    // Trigger saat file CSV dipilih
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          globalData = results.data;
+          headers = results.meta.fields;
+          initApp();
+        }
+      });
+    });
+
+    // Inisialisasi Aplikasi setelah data terbaca
+    function initApp() {
+      document.getElementById('uploadScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+
+      const numericHeaders = [];
+      const playerNames = [];
+
+      // Memisahkan header angka (untuk X dan Y) dan mengumpulkan nama pemain
+      const firstRow = globalData[0];
+      headers.forEach(h => {
+        if (typeof firstRow[h] === 'number') {
+          numericHeaders.push(h);
+        }
+      });
+
+      globalData.forEach(row => {
+        if (row.Player) playerNames.push(row.Player);
+      });
+
+      const xSelect = document.getElementById('xAxisSelect');
+      const ySelect = document.getElementById('yAxisSelect');
+      const p1Select = document.getElementById('player1Select');
+      const p2Select = document.getElementById('player2Select');
+
+      // Kosongkan opsi bawaan
+      xSelect.innerHTML = ''; ySelect.innerHTML = '';
+      p1Select.innerHTML = ''; p2Select.innerHTML = '';
+
+      // Isi Dropdown Metric
+      numericHeaders.forEach(h => {
+        xSelect.add(new Option(h, h));
+        ySelect.add(new Option(h, h));
+      });
+
+      // Isi Dropdown Nama Pemain
+      playerNames.sort().forEach(p => {
+        p1Select.add(new Option(p, p));
+        p2Select.add(new Option(p, p));
+      });
+
+      // Set default awal
+      if (numericHeaders.includes('xG')) xSelect.value = 'xG';
+      if (numericHeaders.includes('Goals')) ySelect.value = 'Goals';
+      if (playerNames.length > 0) p1Select.selectedIndex = 0;
+      if (playerNames.length > 1) p2Select.selectedIndex = 1;
+
+      // Tambah Event Listener jika dropdown berubah
+      [xSelect, ySelect, p1Select, p2Select].forEach(el => {
+        el.addEventListener('change', updateChart);
+      });
+
+      // Gambar Chart Pertama Kali
+      updateChart();
+    }
+
+    // Fungsi Render / Update Chart dan DOM
+    function updateChart() {
+      const xCol = document.getElementById('xAxisSelect').value;
+      const yCol = document.getElementById('yAxisSelect').value;
+      const p1Name = document.getElementById('player1Select').value;
+      const p2Name = document.getElementById('player2Select').value;
+
+      let p1Data = [], p2Data = [], otherData = [];
+      let p1Info = null, p2Info = null;
+
+      // Looping data CSV untuk menempatkan koordinat
+      globalData.forEach(row => {
+        const xVal = row[xCol];
+        const yVal = row[yCol];
+        
+        if (xVal === null || xVal === undefined || yVal === null || yVal === undefined) return;
+
+        const point = { x: xVal, y: yVal, player: row.Player, team: row.Team, pos: row.Pos };
+
+        if (row.Player === p1Name) {
+          p1Data.push(point);
+          p1Info = point;
+        } else if (row.Player === p2Name) {
+          p2Data.push(point);
+          p2Info = point;
+        } else {
+          otherData.push(point);
+        }
+      });
+
+      // Update Teks Pemain di Card Header (Pemain 1)
+      if (p1Info) {
+        document.getElementById('p1Name').innerText = p1Info.player;
+        document.getElementById('p1Team').innerText = p1Info.team;
+        document.getElementById('p1Pos').innerText = p1Info.pos;
+        document.getElementById('legP1').innerText = p1Info.player;
+      }
+      
+      // Update Teks Pemain di Card Header (Pemain 2)
+      if (p2Info) {
+        document.getElementById('p2Name').innerText = p2Info.player;
+        document.getElementById('p2Team').innerText = p2Info.team;
+        document.getElementById('p2Pos').innerText = p2Info.pos;
+        document.getElementById('legP2').innerText = p2Info.player;
+      }
+
+      // Konfigurasi Chart.js
+      const ctx = document.getElementById('scatterChart').getContext('2d');
+      if (scatterChart) scatterChart.destroy(); // Hapus chart lama sebelum buat baru
+
+      scatterChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Player 1',
+              data: p1Data,
+              backgroundColor: '#4ade80',
+              borderColor: '#0a0f0a',
+              borderWidth: 2,
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              order: 1 // Munculkan di atas titik lain
+            },
+            {
+              label: 'Player 2',
+              data: p2Data,
+              backgroundColor: '#f87171',
+              borderColor: '#0a0f0a',
+              borderWidth: 2,
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              order: 2
+            },
+            {
+              label: 'Lainnya',
+              data: otherData,
+              backgroundColor: '#374151',
+              borderColor: 'transparent',
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              order: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#161f16',
+              titleColor: '#e5e7eb',
+              bodyColor: '#9ca3af',
+              borderColor: '#2d4a2d',
+              borderWidth: 1,
+              callbacks: {
+                label: function(ctx) {
+                  const dataObj = ctx.raw;
+                  return `${dataObj.player} (${dataObj.team}) | ${xCol}: ${dataObj.x}, ${yCol}: ${dataObj.y}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: xCol, color: '#9ca3af', font: {family: 'Barlow', size: 12} },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#1a2e1a' }
+            },
+            y: {
+              title: { display: true, text: yCol, color: '#9ca3af', font: {family: 'Barlow', size: 12} },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#1a2e1a' }
+            }
+          }
+        }
+      });
+    }
+
+    // Fitur Export menjadi gambar (PNG) menggunakan html2canvas
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const area = document.getElementById('captureArea');
+      html2canvas(area, { backgroundColor: '#0f1a0f', scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'player_comparison_scatter.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    });
+  </script>
+</body>
+</html>
