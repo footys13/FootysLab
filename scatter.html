@@ -2,129 +2,675 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Scatter Plot - The Footys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Footys · Fully Responsive Scatter Plot</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { background: #0a0f0a; color: white; font-family: 'Barlow', sans-serif; padding: 24px; }
-    #mainScreen { max-width: 900px; margin: 0 auto; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-    select { width: 100%; background: #161f16; color: white; border: 1px solid #2d4a2d; padding: 10px; border-radius: 8px; }
-    .svg-wrap { background: #0f1a0f; border-radius: 20px; padding: 20px; position: relative; }
-    svg { width: 100%; height: 500px; cursor: crosshair; }
-    .tooltip { position: absolute; background: rgba(0,0,0,0.9); border: 1px solid #4ade80; padding: 10px; border-radius: 5px; pointer-events: none; display: none; font-size: 12px; z-index: 10; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f0a;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .topbar {
+      width: 100%;
+      max-width: 780px;
+      border-left: 3px solid #4ade80;
+      padding: 12px 20px;
+      background: #0f1a0f;
+      letter-spacing: 2px;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    #uploadScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      width: 100%;
+      max-width: 680px;
+    }
+    .upload-box {
+      border: 2px dashed #1f2d1f;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .upload-box p {
+      color: #4b5563;
+      letter-spacing: 1px;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #mainScreen {
+      display: none;
+      width: 100%;
+      max-width: 780px;
+    }
+    .filter-row {
+      background: #0f1a0f;
+      border-radius: 20px;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #161f16;
+      padding: 6px 16px;
+      border-radius: 40px;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .filter-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: #1f2a1f;
+      border: none;
+      color: #d1d5db;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Barlow', sans-serif;
+    }
+    .filter-btn.active {
+      background: #4ade80;
+      color: #0a0f0a;
+      box-shadow: 0 0 6px #4ade80;
+    }
+    .debug-info {
+      font-size: 10px;
+      color: #86efac;
+      background: #0a120a;
+      padding: 8px 12px;
+      border-radius: 12px;
+      text-align: center;
+      font-family: monospace;
+      margin-bottom: 12px;
+      border-left: 2px solid #4ade80;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    select {
+      width: 100%;
+      background: #161f16;
+      color: white;
+      border: 1px solid #2d4a2d;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-family: 'Barlow', sans-serif;
+      cursor: pointer;
+    }
+    .card {
+      background: #0f1a0f;
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .chart-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #4b5563;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .svg-wrap { position: relative; width: 100%; }
+    svg { width: 100%; display: block; border-radius: 12px; background: #0a0f0a; }
+    .tooltip {
+      position: absolute;
+      padding: 10px 14px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 20;
+      min-width: 180px;
+      background: rgba(10, 15, 10, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid #4ade80;
+      border-radius: 12px;
+    }
+    .tooltip-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #4ade80;
+      text-transform: uppercase;
+    }
+    .tooltip-team {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+    .tooltip-stats {
+      font-size: 11px;
+      color: #e5e7eb;
+      line-height: 1.6;
+    }
+    .watermark {
+      margin-top: 18px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #2d4a2d;
+      text-align: center;
+    }
+    .btn-export {
+      margin-top: 20px;
+      background: #161f16;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      border-radius: 40px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-export:hover {
+      background: #1f311f;
+      border-color: #86efac;
+    }
+    .stats-count {
+      font-size: 10px;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <div id="uploadScreen" style="text-align:center; padding-top:100px;">
+<div class="topbar">⚡ THE FOOTYS · LIVE SCATTER PLOT</div>
+
+<div id="uploadScreen">
+  <div class="upload-box">
+    <p>📁 UPLOAD CSV DATABASE</p>
     <input type="file" id="inputCSV" accept=".csv">
+    <div class="debug-info" style="margin-top: 16px; background:#0a0f0a;">Waiting for CSV file...</div>
+  </div>
+</div>
+
+<div id="mainScreen">
+  <div class="filter-row">
+    <div class="filter-group">
+      <span class="filter-label">🌍 BIRTH COUNTRY</span>
+      <div class="filter-buttons" id="birthCountryFilterGroup">
+        <button data-filter="all" class="filter-btn active">🌐 ALL</button>
+        <button data-filter="indonesia" class="filter-btn">🇮🇩 INDONESIA</button>
+        <button data-filter="foreign" class="filter-btn">🌎 FOREIGN</button>
+      </div>
+    </div>
+    <div class="stats-count" id="playerCountBadge">👥 players: 0</div>
+  </div>
+  <div class="debug-info" id="debugInfo">‑</div>
+
+  <div class="controls">
+    <div class="control-group">
+      <div class="control-label" style="color:#4ade80">📊 X AXIS</div>
+      <select id="selectX" onchange="updateChart()"></select>
+    </div>
+    <div class="control-group">
+      <div class="control-label" style="color:#60a5fa">📈 Y AXIS</div>
+      <select id="selectY" onchange="updateChart()"></select>
+    </div>
   </div>
 
-  <div id="mainScreen" style="display:none;">
-    <div class="controls">
-      <div><label style="font-size:9px; color:#4ade80">X AXIS</label><select id="selectX" onchange="updateChart()"></select></div>
-      <div><label style="font-size:9px; color:#60a5fa">Y AXIS</label><select id="selectY" onchange="updateChart()"></select></div>
-      <div><label style="font-size:9px; color:#fbbf24">ORIGIN</label><select id="selectCountry" onchange="updateChart()">
-        <option value="all">Semua Pemain</option>
-        <option value="Indonesia">Indonesia Saja</option>
-        <option value="Luar">Luar Negeri Saja</option>
-      </select></div>
+  <div class="card" id="cardExport">
+    <div class="chart-title" id="chartTitle">— SELECT METRICS —</div>
+    <div class="svg-wrap" id="svgWrap">
+      <svg id="scatterSVG" viewBox="0 0 600 500"></svg>
+      <div class="tooltip" id="tooltip">
+        <div class="tooltip-name" id="ttName">-</div>
+        <div class="tooltip-team" id="ttTeam">-</div>
+        <div class="tooltip-stats" id="ttStats">-</div>
+      </div>
     </div>
-    <div class="svg-wrap" id="cardExport">
-      <svg id="scatterSVG" viewBox="0 0 700 500"></svg>
-      <div class="tooltip" id="tooltip"></div>
-    </div>
-    <button onclick="exportGambar()" style="margin-top:20px; width:100%; padding:10px; cursor:pointer;">💾 Save Image</button>
+    <div class="watermark">THE FOOTYS</div>
   </div>
+  <button class="btn-export" onclick="exportGambar()">💾 SAVE IMAGE (PNG)</button>
+</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script>
-    let dataPemain = [];
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  let rawData = [];
+  let currentBirthFilter = "all";
+  let availableNumericKeys = [];
+  let birthColumnName = null;
 
-    document.getElementById("inputCSV").onchange = function(e) {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const rows = event.target.result.split("\n").map(r => r.trim()).filter(r => r !== "");
-        // Regex untuk split CSV agar tanda koma di dalam kutip tidak terpecah
-        const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.replace(/["\r]/g, ""));
+  // CSV parser
+  function parseCSVLine(str) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  function processCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length === 0) return [];
+    let header = parseCSVLine(lines[0].replace(/^\uFEFF/, ""));
+    birthColumnName = header.find(col => col === "Birth country") || header.find(col => col.toLowerCase() === "birth country");
+    
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 2) continue;
+      const obj = {};
+      for (let j = 0; j < header.length; j++) {
+        obj[header[j]] = cols[j] || "";
+      }
+      rows.push(obj);
+    }
+    return rows;
+  }
+
+  // Extract numeric keys
+  function getNumericKeysFromData(dataSample) {
+    if (!dataSample || dataSample.length === 0) return [];
+    const excludePatterns = /player|team|birth country|position|league/i;
+    const keys = Object.keys(dataSample[0]);
+    const numericCandidates = [];
+    for (let k of keys) {
+      if (excludePatterns.test(k)) continue;
+      let isNumeric = true;
+      for (let i = 0; i < Math.min(5, dataSample.length); i++) {
+        let val = dataSample[i][k];
+        if (val === undefined || val === null || val === "") continue;
+        let num = parseFloat(val);
+        if (isNaN(num)) {
+          isNumeric = false;
+          break;
+        }
+      }
+      if (isNumeric) numericCandidates.push(k);
+    }
+    return [...new Set(numericCandidates)].sort();
+  }
+
+  function getBirthCountryValue(player) {
+    if (!birthColumnName) return "";
+    return player[birthColumnName] || "";
+  }
+
+  function filterByBirthCountry(players, filterType) {
+    if (filterType === "all") return players;
+    if (filterType === "indonesia") {
+      return players.filter(p => getBirthCountryValue(p) === "Indonesia");
+    }
+    if (filterType === "foreign") {
+      return players.filter(p => {
+        const val = getBirthCountryValue(p);
+        return val !== "" && val !== "Indonesia";
+      });
+    }
+    return players;
+  }
+
+  function populateSelectors() {
+    const selectX = document.getElementById("selectX");
+    const selectY = document.getElementById("selectY");
+    selectX.innerHTML = "";
+    selectY.innerHTML = "";
+    for (let key of availableNumericKeys) {
+      let label = key.replace(/ per 90/g, "/90").replace(/\, \%/, "%");
+      if (label.length > 35) label = label.slice(0, 32) + "…";
+      selectX.appendChild(new Option(label, key));
+      selectY.appendChild(new Option(label, key));
+    }
+    // Set reasonable defaults
+    if (availableNumericKeys.includes("Non-penalty goals per 90")) selectX.value = "Non-penalty goals per 90";
+    if (availableNumericKeys.includes("npxG per 90")) selectY.value = "npxG per 90";
+  }
+
+  // MAIN UPDATE FUNCTION - redraws everything based on current selections
+  function updateChart() {
+    const keyX = document.getElementById("selectX").value;
+    const keyY = document.getElementById("selectY").value;
+    if (!keyX || !keyY || !rawData.length) return;
+    
+    // Get filtered data
+    let filtered = filterByBirthCountry(rawData, currentBirthFilter);
+    
+    // Update debug info
+    const indoCount = filtered.filter(p => getBirthCountryValue(p) === "Indonesia").length;
+    const foreignCount = filtered.filter(p => {
+      const v = getBirthCountryValue(p);
+      return v !== "" && v !== "Indonesia";
+    }).length;
+    document.getElementById("debugInfo").innerHTML = `✅ Column: "${birthColumnName}" | 🇮🇩 Indonesia: ${indoCount} | 🌎 Foreign: ${foreignCount} | Total: ${filtered.length}`;
+    document.getElementById("playerCountBadge").innerHTML = `👥 ${filtered.length} players · ${currentBirthFilter === "all" ? "ALL" : (currentBirthFilter === "indonesia" ? "INDONESIA" : "FOREIGN")}`;
+    
+    // Draw the scatter plot
+    drawScatter(filtered, keyX, keyY);
+  }
+
+  function drawScatter(players, keyX, keyY) {
+    const svg = document.getElementById("scatterSVG");
+    svg.innerHTML = "";
+    const W = 600, H = 500;
+    const pad = { top: 28, right: 28, bottom: 52, left: 58 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    if (players.length === 0) {
+      drawEmptyState(svg, W, H, pad, plotW, plotH);
+      return;
+    }
+
+    // Prepare points with NORMALIZED values (0-1 scale)
+    const points = [];
+    let maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity, minY = Infinity;
+    
+    // First pass: find min/max for proper scaling
+    for (let p of players) {
+      let valX = parseFloat(p[keyX]);
+      let valY = parseFloat(p[keyY]);
+      if (isNaN(valX)) valX = 0;
+      if (isNaN(valY)) valY = 0;
+      if (valX > maxX) maxX = valX;
+      if (valY > maxY) maxY = valY;
+      if (valX < minX) minX = valX;
+      if (valY < minY) minY = valY;
+      points.push({ player: p, rawX: valX, rawY: valY });
+    }
+    
+    // Use 0-1 normalization (clamp to 0-1 range for percentages)
+    // For stats that can exceed 1 (like passes/90), we cap at 1 for visualization
+    function normalizeX(val) {
+      let norm = Math.min(1, Math.max(0, val));
+      return norm;
+    }
+    function normalizeY(val) {
+      let norm = Math.min(1, Math.max(0, val));
+      return norm;
+    }
+    
+    // Add normalized values
+    points.forEach(p => {
+      p.normX = normalizeX(p.rawX);
+      p.normY = normalizeY(p.rawY);
+    });
+    
+    function scaleX(v) { return pad.left + v * plotW; }
+    function scaleY(v) { return pad.top + (1 - v) * plotH; }
+    
+    // Draw grid lines
+    [0, 0.25, 0.5, 0.75, 1].forEach(pct => {
+      const isMid = pct === 0.5;
+      const strokeColor = isMid ? "#2d6a2d" : "#1e2a1e";
+      const dash = isMid ? "4,4" : "2,5";
+      const lineW = isMid ? 1.2 : 0.8;
+      
+      const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      vLine.setAttribute("x1", scaleX(pct)); vLine.setAttribute("y1", pad.top);
+      vLine.setAttribute("x2", scaleX(pct)); vLine.setAttribute("y2", pad.top + plotH);
+      vLine.setAttribute("stroke", strokeColor); vLine.setAttribute("stroke-width", lineW);
+      vLine.setAttribute("stroke-dasharray", dash);
+      svg.appendChild(vLine);
+      
+      const hLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      hLine.setAttribute("x1", pad.left); hLine.setAttribute("y1", scaleY(pct));
+      hLine.setAttribute("x2", pad.left + plotW); hLine.setAttribute("y2", scaleY(pct));
+      hLine.setAttribute("stroke", strokeColor); hLine.setAttribute("stroke-width", lineW);
+      hLine.setAttribute("stroke-dasharray", dash);
+      svg.appendChild(hLine);
+      
+      const labelVal = Math.round(pct * 100);
+      const xNum = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      xNum.setAttribute("x", scaleX(pct)); xNum.setAttribute("y", pad.top + plotH + 16);
+      xNum.setAttribute("text-anchor", "middle"); xNum.setAttribute("fill", "#6b7280");
+      xNum.setAttribute("font-size", "9"); xNum.textContent = labelVal;
+      svg.appendChild(xNum);
+      
+      const yNum = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      yNum.setAttribute("x", pad.left - 8); yNum.setAttribute("y", scaleY(pct) + 4);
+      yNum.setAttribute("text-anchor", "end"); yNum.setAttribute("fill", "#6b7280");
+      yNum.setAttribute("font-size", "9"); yNum.textContent = labelVal;
+      svg.appendChild(yNum);
+    });
+    
+    // Border
+    const border = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    border.setAttribute("x", pad.left); border.setAttribute("y", pad.top);
+    border.setAttribute("width", plotW); border.setAttribute("height", plotH);
+    border.setAttribute("fill", "none"); border.setAttribute("stroke", "#2d4a2d");
+    border.setAttribute("stroke-width", "1.5");
+    svg.appendChild(border);
+    
+    // Axis labels (use current selected metrics)
+    let labelX = keyX.replace(/ per 90/g, "/90").replace(/\, \%/, "%");
+    let labelY = keyY.replace(/ per 90/g, "/90").replace(/\, \%/, "%");
+    document.getElementById("chartTitle").innerHTML = `${labelX.toUpperCase()}  ⇄  ${labelY.toUpperCase()}`;
+    
+    const xAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xAxisLabel.setAttribute("x", pad.left + plotW / 2);
+    xAxisLabel.setAttribute("y", H - 8);
+    xAxisLabel.setAttribute("text-anchor", "middle");
+    xAxisLabel.setAttribute("fill", "#4ade80");
+    xAxisLabel.setAttribute("font-size", "11");
+    xAxisLabel.setAttribute("font-weight", "700");
+    xAxisLabel.textContent = labelX.toUpperCase();
+    svg.appendChild(xAxisLabel);
+    
+    const yAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yAxisLabel.setAttribute("x", 14);
+    yAxisLabel.setAttribute("y", pad.top + plotH / 2);
+    yAxisLabel.setAttribute("text-anchor", "middle");
+    yAxisLabel.setAttribute("fill", "#60a5fa");
+    yAxisLabel.setAttribute("font-weight", "700");
+    yAxisLabel.setAttribute("font-size", "11");
+    yAxisLabel.setAttribute("transform", `rotate(-90, 14, ${pad.top + plotH / 2})`);
+    yAxisLabel.textContent = labelY.toUpperCase();
+    svg.appendChild(yAxisLabel);
+    
+    // Quadrant labels
+    const quadrants = [
+      { x: pad.left + 12, y: pad.top + 20, text: "LOW X · HIGH Y", color: "#1e3a5f", anchor: "start" },
+      { x: pad.left + plotW - 12, y: pad.top + 20, text: "HIGH X · HIGH Y", color: "#166534", anchor: "end" },
+      { x: pad.left + 12, y: pad.top + plotH - 12, text: "LOW X · LOW Y", color: "#374151", anchor: "start" },
+      { x: pad.left + plotW - 12, y: pad.top + plotH - 12, text: "HIGH X · LOW Y", color: "#374151", anchor: "end" }
+    ];
+    quadrants.forEach(q => {
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("x", q.x); t.setAttribute("y", q.y);
+      t.setAttribute("text-anchor", q.anchor);
+      t.setAttribute("fill", q.color);
+      t.setAttribute("font-size", "8");
+      t.setAttribute("font-weight", "600");
+      t.textContent = q.text;
+      svg.appendChild(t);
+    });
+    
+    // Draw points and labels
+    points.forEach(point => {
+      const cx = scaleX(point.normX);
+      const cy = scaleY(point.normY);
+      
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
+      circle.setAttribute("r", "5");
+      circle.setAttribute("fill", "#4ade80");
+      circle.setAttribute("opacity", "0.85");
+      circle.setAttribute("stroke", "#0a0f0a");
+      circle.setAttribute("stroke-width", "1.2");
+      circle.style.cursor = "pointer";
+      
+      circle.addEventListener("click", (e) => {
+        svg.querySelectorAll("circle").forEach(c => {
+          c.setAttribute("fill", "#4ade80");
+          c.setAttribute("r", "5");
+        });
+        circle.setAttribute("fill", "#facc15");
+        circle.setAttribute("r", "7");
         
-        dataPemain = rows.slice(1).map(row => {
-          const vals = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/["\r]/g, ""));
-          let obj = {};
-          headers.forEach((h, i) => obj[h] = vals[i]);
-          return obj;
-        });
-
-        // Masukkan semua kolom angka ke dropdown
-        const numericCols = headers.filter(h => !["Player", "Team", "Position", "League", "Birth country"].includes(h));
-        const selX = document.getElementById("selectX");
-        const selY = document.getElementById("selectY");
-        numericCols.forEach(col => {
-          selX.add(new Option(col, col));
-          selY.add(new Option(col, col));
-        });
-        selY.selectedIndex = 1;
-
-        document.getElementById("uploadScreen").style.display = "none";
-        document.getElementById("mainScreen").style.display = "block";
-        updateChart();
-      };
-      reader.readAsText(e.target.files[0]);
+        const playerObj = point.player;
+        const birthRaw = getBirthCountryValue(playerObj) || "?";
+        const flag = birthRaw === "Indonesia" ? "🇮🇩" : "🌍";
+        const tt = document.getElementById("tooltip");
+        const wrap = document.getElementById("svgWrap");
+        const svgRect = svg.getBoundingClientRect();
+        const scaleRatio = svgRect.width / W;
+        let tx = cx * scaleRatio - 20;
+        let ty = cy * scaleRatio - 95;
+        if (tx + 190 > wrap.getBoundingClientRect().width) tx = tx - 160;
+        if (ty < 10) ty = cy * scaleRatio + 15;
+        
+        document.getElementById("ttName").textContent = playerObj["Player"] || "Unknown";
+        document.getElementById("ttTeam").innerHTML = `${playerObj["Team"] || "-"} · ${playerObj["Position"] || "-"}  ${flag} ${birthRaw}`;
+        document.getElementById("ttStats").innerHTML = `${labelX}: <b>${(point.rawX * 100).toFixed(1)}</b><br>${labelY}: <b>${(point.rawY * 100).toFixed(1)}</b>`;
+        tt.style.left = tx + "px";
+        tt.style.top = ty + "px";
+        tt.style.display = "block";
+        e.stopPropagation();
+      });
+      svg.appendChild(circle);
+      
+      // Player name label (last name)
+      const shortName = (point.player["Player"] || "").split(" ").slice(-1)[0].toUpperCase();
+      const nameLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      nameLabel.setAttribute("x", cx); nameLabel.setAttribute("y", cy - 8);
+      nameLabel.setAttribute("text-anchor", "middle");
+      nameLabel.setAttribute("fill", "#9ca3af");
+      nameLabel.setAttribute("font-size", "7");
+      nameLabel.setAttribute("font-family", "Barlow Condensed, sans-serif");
+      nameLabel.setAttribute("font-weight", "600");
+      nameLabel.textContent = shortName.substring(0, 12);
+      svg.appendChild(nameLabel);
+    });
+    
+    // Hide tooltip on canvas click
+    document.getElementById("svgWrap").addEventListener("click", function(e) {
+      if (e.target.tagName !== "circle") document.getElementById("tooltip").style.display = "none";
+    });
+  }
+  
+  function drawEmptyState(svg, W, H, pad, plotW, plotH) {
+    const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    msg.setAttribute("x", W/2); msg.setAttribute("y", H/2 - 10);
+    msg.setAttribute("text-anchor", "middle"); msg.setAttribute("fill", "#ef4444");
+    msg.setAttribute("font-size", "13");
+    msg.textContent = "⚠️ No players match the selected filter";
+    svg.appendChild(msg);
+    const border = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    border.setAttribute("x", pad.left); border.setAttribute("y", pad.top);
+    border.setAttribute("width", plotW); border.setAttribute("height", plotH);
+    border.setAttribute("fill", "none"); border.setAttribute("stroke", "#2d4a2d");
+    svg.appendChild(border);
+  }
+  
+  function setupFilters() {
+    const btns = document.querySelectorAll("#birthCountryFilterGroup .filter-btn");
+    btns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        btns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentBirthFilter = btn.getAttribute("data-filter");
+        updateChart();  // Redraw with new filter
+      });
+    });
+  }
+  
+  function exportGambar() {
+    document.getElementById("tooltip").style.display = "none";
+    html2canvas(document.getElementById("cardExport"), {
+      backgroundColor: "#0f1a0f", scale: 2.5, logging: false
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "footys-scatter.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }).catch(console.warn);
+  }
+  
+  // Load CSV
+  document.getElementById("inputCSV").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const csvText = ev.target.result;
+      rawData = processCSV(csvText);
+      if (rawData.length === 0) {
+        alert("CSV empty or invalid format.");
+        return;
+      }
+      availableNumericKeys = getNumericKeysFromData(rawData);
+      populateSelectors();
+      document.getElementById("uploadScreen").style.display = "none";
+      document.getElementById("mainScreen").style.display = "block";
+      setupFilters();
+      updateChart();
     };
-
-    function updateChart() {
-      const keyX = document.getElementById("selectX").value;
-      const keyY = document.getElementById("selectY").value;
-      const filter = document.getElementById("selectCountry").value;
-      const svg = document.getElementById("scatterSVG");
-      svg.innerHTML = "";
-
-      const filtered = dataPemain.filter(p => {
-        const country = (p["Birth country"] || "").toLowerCase();
-        if (filter === "Indonesia") return country === "indonesia";
-        if (filter === "Luar") return country !== "indonesia" && country !== "";
-        return true;
-      });
-
-      filtered.forEach(p => {
-        const valX = parseFloat(p[keyX]) || 0;
-        const valY = parseFloat(p[keyY]) || 0;
-        const x = 50 + (valX * 500); // Skala bisa disesuaikan
-        const y = 450 - (valY * 400);
-
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", "5");
-        circle.setAttribute("fill", "#4ade80");
-
-        circle.onmouseover = () => {
-          const tt = document.getElementById("tooltip");
-          tt.style.display = "block";
-          tt.style.left = (x + 20) + "px";
-          tt.style.top = (y + 20) + "px";
-          tt.innerHTML = `<strong>${p.Player}</strong><br>${keyX}: ${valX}<br>${keyY}: ${valY}`;
-        };
-        circle.onmouseout = () => document.getElementById("tooltip").style.display = "none";
-
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", x); text.setAttribute("y", y - 10);
-        text.setAttribute("text-anchor", "middle"); text.setAttribute("fill", "#6b7280");
-        text.setAttribute("font-size", "8px");
-        text.textContent = p.Player ? p.Player.split(" ").pop() : "";
-
-        g.appendChild(circle); g.appendChild(text);
-        svg.appendChild(g);
-      });
-    }
-
-    function exportGambar() {
-      html2canvas(document.getElementById("cardExport")).then(canvas => {
-        const link = document.createElement("a");
-        link.download = "scatter.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      });
-    }
-  </script>
+    reader.readAsText(file, "UTF-8");
+  });
+  
+  window.updateChart = updateChart;
+  window.exportGambar = exportGambar;
+</script>
 </body>
 </html>
