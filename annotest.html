@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; padding: 10px; }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 10px;
+        }
+        video {
+            width: 100%;
+            display: block;
+        }
+        #drawCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10; 
+            pointer-events: none; /* Awalnya tidak bisa disentuh */
+        }
+        button {
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #status { margin-top: 10px; color: #ffeb3b; }
+    </style>
+</head>
+<body>
+
+<div class="video-container">
+    <video id="myVideo" controls>
+        <source src="video-pertandingan.mp4" type="video/mp4">
+    </video>
+    <canvas id="drawCanvas"></canvas>
+</div>
+
+<button id="triangleBtn">Mode Segitiga (Pause)</button>
+<button id="clearBtn">Hapus Semua Garis</button>
+<div id="status">Status: Mode Nonton</div>
+
+<script>
+    const video = document.getElementById('myVideo');
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    const btnSegitiga = document.getElementById('triangleBtn');
+    const btnClear = document.getElementById('clearBtn');
+    const statusText = document.getElementById('status');
+
+    let isDrawMode = false;
+    let currentPoints = []; // Menyimpan 1, 2, atau 3 titik sementara
+    let savedTriangles = []; // Menyimpan semua segitiga yang sudah selesai
+
+    // Menyesuaikan ukuran canvas internal dengan ukuran tampilan di layar
+    function resizeCanvas() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+    }
+    // Panggil saat video diputar atau jendela berubah ukuran
+    video.addEventListener('loadeddata', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tombol aktifkan mode segitiga
+    btnSegitiga.addEventListener('click', () => {
+        isDrawMode = !isDrawMode; // Tombol on/off toggle
+        
+        if (isDrawMode) {
+            video.pause();
+            canvas.style.pointerEvents = 'auto'; // Canvas bisa disentuh
+            statusText.innerText = "Status: Mode Menggambar. Sentuh 3 titik di layar!";
+            btnSegitiga.innerText = "Kembali Nonton (Play)";
+            resizeCanvas(); // Pastikan ukuran presisi sebelum menggambar
+            redraw();
+        } else {
+            canvas.style.pointerEvents = 'none'; // Canvas tembus pandang lagi
+            statusText.innerText = "Status: Mode Nonton";
+            btnSegitiga.innerText = "Mode Segitiga (Pause)";
+        }
+    });
+
+    // Tombol hapus layar
+    btnClear.addEventListener('click', () => {
+        savedTriangles = [];
+        currentPoints = [];
+        redraw();
+    });
+
+    // Menangkap sentuhan di layar
+    canvas.addEventListener('pointerdown', (e) => {
+        if (!isDrawMode) return;
+
+        // Mencari posisi sentuhan yang akurat di atas canvas
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Masukkan titik baru
+        currentPoints.push({ x: x, y: y });
+
+        // Jika sudah 3 titik, simpan sebagai 1 segitiga utuh, lalu reset
+        if (currentPoints.length === 3) {
+            savedTriangles.push([...currentPoints]);
+            currentPoints = []; 
+        }
+
+        redraw(); // Gambar ulang setiap kali ada sentuhan
+    });
+
+    // Fungsi utama untuk menggambar grafis
+    function redraw() {
+        // Bersihkan layar sebelum menggambar ulang
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Gambar semua segitiga yang sudah selesai
+        savedTriangles.forEach(tri => drawTriangle(tri, true));
+
+        // Gambar titik-titik yang sedang proses (belum jadi 3)
+        if (currentPoints.length > 0) {
+            drawTriangle(currentPoints, false);
+        }
+    }
+
+    function drawTriangle(points, isComplete) {
+        ctx.beginPath();
+        ctx.strokeStyle = "white"; // Warna garis
+        ctx.lineWidth = 3;
+        
+        // Pindah ke titik pertama
+        ctx.moveTo(points[0].x, points[0].y);
+
+        // Gambar lingkaran kecil penanda titik
+        ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2); 
+
+        // Jika ada titik kedua, tarik garis
+        if (points.length > 1) {
+            ctx.lineTo(points[1].x, points[1].y);
+            ctx.arc(points[1].x, points[1].y, 4, 0, Math.PI*2);
+        }
+
+        // Jika ada titik ketiga, tarik garis dan tutup bentuknya
+        if (points.length > 2) {
+            ctx.lineTo(points[2].x, points[2].y);
+            ctx.closePath(); // Otomatis menyambung titik 3 ke titik 1
+            
+            // Beri warna latar transparan jika segitiga sudah jadi
+            if (isComplete) {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
+                ctx.fill();
+            }
+        }
+        
+        ctx.stroke(); // Eksekusi gambar garisnya
+    }
+</script>
+
+</body>
+</html>
