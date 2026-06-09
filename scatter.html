@@ -345,38 +345,65 @@
       return data;
     }
 
-    document.getElementById("inputCSV").onchange = function() {
+        document.getElementById("inputCSV").onchange = function() {
       const file = this.files[0];
       if (!file) return;
-      fetch(URL.createObjectURL(file))
-        .then(function(r) {
-          r.text().then(function(teks) {
-            dataPemain = prosesCSV(teks);
-            ["selectX", "selectY"].forEach(function(id, idx) {
-              const sel = document.getElementById(id);
-              sel.innerHTML = "";
-              AXIS_OPTIONS.forEach(function(opt) {
-                sel.appendChild(new Option(opt.label, opt.key));
-              });
-              sel.selectedIndex = idx;
-            });
-            document.getElementById("uploadScreen").style.display = "none";
-            document.getElementById("mainScreen").style.display = "block";
-            updateChart();
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const teks = e.target.result;
+        dataPemain = prosesCSV(teks);
+        
+        if (dataPemain.length > 0) {
+          // Ambil header dari kunci objek pertama
+          const headers = Object.keys(dataPemain[0]);
+          
+          const selX = document.getElementById("selectX");
+          const selY = document.getElementById("selectY");
+          selX.innerHTML = "";
+          selY.innerHTML = "";
+          
+          // Isi dropdown dengan header yang tersedia di CSV
+          headers.forEach(h => {
+            if (h !== "Player" && h !== "Team" && h !== "Pos" && h !== "Birth country") {
+              selX.appendChild(new Option(h, h));
+              selY.appendChild(new Option(h, h));
+            }
           });
-        });
+
+          document.getElementById("uploadScreen").style.display = "none";
+          document.getElementById("mainScreen").style.display = "block";
+          updateChart();
+        }
+      };
+      reader.readAsText(file);
     };
+
+    function prosesCSV(teks) {
+      const lines = teks.split(/\r?\n/);
+      const headers = lines[0].split(',').map(h => h.trim());
+      const result = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const currentLine = lines[i].split(',');
+        const obj = {};
+        headers.forEach((h, index) => {
+          obj[h] = currentLine[index] ? currentLine[index].trim() : "";
+        });
+        result.push(obj);
+      }
+      return result;
+    }
 
     function updateChart() {
       const keyX = document.getElementById("selectX").value;
       const keyY = document.getElementById("selectY").value;
-      const labelX = AXIS_OPTIONS.find(function(o) { return o.key === keyX; }).label;
-      const labelY = AXIS_OPTIONS.find(function(o) { return o.key === keyY; }).label;
-      document.getElementById("chartTitle").textContent = labelX + "  ·  " + labelY;
-      gambarScatter(keyX, keyY, labelX, labelY);
-    }
-
-    function gambarScatter(keyX, keyY, labelX, labelY) {
+      if (!keyX || !keyY) return;
+      
+      document.getElementById("chartTitle").textContent = keyX + "  ·  " + keyY;
+      gambarScatter(keyX, keyY, keyX, keyY);
+    }function gambarScatter(keyX, keyY, labelX, labelY) {
       const svg = document.getElementById("scatterSVG");
       svg.innerHTML = "";
       const W = 600, H = 500;
