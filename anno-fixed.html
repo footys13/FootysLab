@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The Footys - Anotasi Taktik</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0f0a; color: white; font-family: system-ui; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+        .topbar { width: 100%; max-width: 680px; border-left: 3px solid #4ade80; padding: 12px 20px; background: #0f1a0f; letter-spacing: 2px; font-size: 10px; color: #6b7280; font-weight: 600; margin-bottom: 24px; text-transform: uppercase; }
+        #uploadScreen { display: flex; align-items: center; justify-content: center; min-height: 60vh; width: 100%; max-width: 680px; }
+        .upload-box { border: 2px dashed #1f2d1f; border-radius: 16px; padding: 48px 32px; text-align: center; max-width: 400px; width: 100%; cursor: pointer; }
+        .upload-box p { color: #4b5563; letter-spacing: 1px; font-size: 12px; text-transform: uppercase; margin-bottom: 16px; }
+        #mainScreen { display: none; width: 100%; max-width: 680px; }
+        .card { background: #0f1a0f; border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 20px; }
+        .stage-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #0f2d1f; border-radius: 16px; overflow: hidden; margin: 16px 0; border: 1px solid #2d4a2d; }
+        .stage { position: relative; width: 100%; height: 100%; }
+        .pitch-bg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.25; pointer-events: none; z-index: 1; }
+        video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; display: none; background: #000; }
+        #drawCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
+        .toolbar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+        .btn { background: #1e2d3d; border: 1.5px solid #2c4054; color: #cdd9e5; font-weight: 600; font-size: 11px; padding: 8px 6px; border-radius: 999px; cursor: pointer; text-align: center; white-space: nowrap; }
+        .btn:active { transform: scale(0.96); }
+        .btn.active  { background: #166534; border-color: #4ade80; color: #bbf7d0; }
+        .btn.danger  { background: #7f1d1d; border-color: #ef4444; color: #fecaca; }
+        .btn.purple  { background: #2d1f4e; border-color: #7c3aed; color: #c4b5fd; }
+        .btn.purple:disabled { opacity: 0.3; cursor: default; }
+        #selectBar { display: none; align-items: center; justify-content: center; gap: 8px; margin: 6px 0; background: #0f1a1f; border: 1px solid #1e3a4a; border-radius: 999px; padding: 6px 14px; }
+        #selectBar.visible { display: flex; }
+        .palette { display: flex; justify-content: center; gap: 10px; margin: 12px 0; }
+        .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; }
+        .swatch.active { border-color: #facc15; transform: scale(1.2); }
+        .step-dots { display: flex; justify-content: center; gap: 6px; margin: 6px 0; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; }
+        .step-dot.filled { background: #4ade80; }
+        .step-dot.current { background: #facc15; }
+        .status { text-align: center; font-size: 11px; background: #111827; border-radius: 999px; padding: 6px 12px; margin: 8px 0; color: #9ca3af; }
+        .action-buttons { display: flex; gap: 10px; margin-top: 12px; }
+        .btn-export { flex: 1; background: #161f16; color: #4ade80; border: 1px solid #4ade80; border-radius: 8px; padding: 10px 8px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+        .watermark { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 4px; color: #ffffff; text-transform: uppercase; margin-top: 20px; padding-top: 12px; border-top: 1px solid #1a2e1a; }
+        .video-controls { display: flex; align-items: center; gap: 8px; background: #111827; border-radius: 999px; padding: 6px 12px; margin: 8px 0; }
+        .video-controls button { background: #1e2d3d; border: none; color: white; padding: 4px 8px; border-radius: 40px; font-size: 11px; cursor: pointer; }
+        .video-controls input { flex: 1; accent-color: #4ade80; background: transparent; border: none; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">⚽ THE FOOTYS TACTICS</div>
+
+<div id="uploadScreen">
+    <div class="upload-box" id="uploadBox">
+        <p>📁 ADD MEDIA</p>
+        <div style="font-size:10px;color:#6b7280;">Tap untuk pilih video dari galeri</div>
+    </div>
+</div>
+
+<div id="mainScreen">
+    <div class="card">
+        <div class="stage-wrapper">
+            <div class="stage" id="stage">
+                <svg class="pitch-bg" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice">
+                    <rect width="160" height="90" fill="#14532d"/>
+                    <line x1="80" y1="0" x2="80" y2="90" stroke="white" stroke-width="0.8"/>
+                    <circle cx="80" cy="45" r="12" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="4" y="4" width="152" height="82" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="4" y="22" width="22" height="46" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="134" y="22" width="22" height="46" fill="none" stroke="white" stroke-width="0.8"/>
+                    <circle cx="18" cy="45" r="0.8" fill="white"/>
+                    <circle cx="142" cy="45" r="0.8" fill="white"/>
+                </svg>
+                <video id="myVideo" playsinline disablePictureInPicture></video>
+                <canvas id="drawCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="toolbar-grid">
+            <button class="btn active" id="btnWatch">📺 Nonton</button>
+            <button class="btn" id="btnSelect">🖱️ Pilih</button>
+            <button class="btn" id="btnLine">📏 Garis</button>
+            <button class="btn" id="btnTriangle">🔺 Segitiga</button>
+            <button class="btn" id="btnQuad">⬛ Segiempat</button>
+            <button class="btn" id="btnCircle">⭕ Elips</button>
+            <button class="btn" id="btnArrow">➡️ Panah</button>
+            <button class="btn" id="btnName">🏷️ Teks</button>
+            <button class="btn purple" id="btnUndo" disabled>↩️ Undo</button>
+            <button class="btn purple" id="btnRedo" disabled>↪️ Redo</button>
+            <button class="btn danger" id="btnClear">🗑️ Hapus Semua</button>
+        </div>
+
+        <div id="selectBar">
+            <span style="font-size:10px;color:#6b7280;">Dipilih ▸</span>
+            <button class="btn" id="btnCopy" style="padding:5px 10px;">📋 Copy</button>
+            <button class="btn" id="btnPaste" disabled style="padding:5px 10px;">📌 Paste</button>
+            <button class="btn danger" id="btnDeleteSel" style="padding:5px 10px;">🗑️ Hapus</button>
+        </div>
+
+        <div class="palette" id="palette">
+            <div class="swatch active" style="background:#ef4444" data-color="#ef4444"></div>
+            <div class="swatch" style="background:#3b82f6" data-color="#3b82f6"></div>
+            <div class="swatch" style="background:#facc15" data-color="#facc15"></div>
+            <div class="swatch" style="background:#10b981" data-color="#10b981"></div>
+            <div class="swatch" style="background:#f97316" data-color="#f97316"></div>
+            <div class="swatch" style="background:#ffffff" data-color="#ffffff"></div>
+        </div>
+
+        <div class="step-dots" id="stepDots"></div>
+        <div class="status" id="status">Mode: Nonton</div>
+
+        <div class="video-controls" id="videoControls" style="display:none;">
+            <button id="btnPlayPause">▶️</button>
+            <span id="timeDisplay" style="font-size:11px;min-width:72px;color:#94a3b8;">0:00 / 0:00</span>
+            <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1">
+            <button id="btnMute">🔊</button>
+        </div>
+
+        <div class="action-buttons">
+            <div class="btn-export" id="saveMediaBtn">💾 SAVE MEDIA</div>
+            <div class="btn-export" id="exportMediaBtn">📤 EXPORT</div>
+            <div class="btn-export" id="publishMediaBtn">🌐 PUBLISH</div>
+        </div>
+    </div>
+    <div class="watermark">⚡ THE FOOTYS ⚡</div>
+</div>
+
+<input type="file" id="fileInput" accept="video/*" style="display:none;">
+
+<script>
+(function(){
+    const video         = document.getElementById('myVideo');
+    const canvas        = document.getElementById('drawCanvas');
+    const ctx           = canvas.getContext('2d');
+    const stage         = document.getElementById('stage');
+    const statusEl      = document.getElementById('status');
+    const stepDotsEl    = document.getElementById('stepDots');
+    const paletteEl     = document.getElementById('palette');
+    const videoControls = document.getElementById('videoControls');
+    const selectBar     = document.getElementById('selectBar');
+    const fileInput     = document.getElementById('fileInput');
+    const btnPlayPause  = document.getElementById('btnPlayPause');
+    const btnMute       = document.getElementById('btnMute');
+    const seekBar       = document.getElementById('seekBar');
+    const timeDisplay   = document.getElementById('timeDisplay');
+    const btnWatch      = document.getElementById('btnWatch');
+    const btnSelect     = document.getElementById('btnSelect');
+    const btnLine       = document.getElementById('btnLine');
+    const btnTriangle   = document.getElementById('btnTriangle');
+    const btnQuad       = document.getElementById('btnQuad');
+    const btnCircle     = document.getElementById('btnCircle');
+    const btnArrow      = document.getElementById('btnArrow');
+    const btnName       = document.getElementById('btnName');
+    const btnClear      = document.getElementById('btnClear');
+    const btnUndo       = document.getElementById('btnUndo');
+    const btnRedo       = document.getElementById('btnRedo');
+    const btnCopy       = document.getElementById('btnCopy');
+    const btnPaste      = document.getElementById('btnPaste');
+    const btnDeleteSel  = document.getElementById('btnDeleteSel');
+
+    let mode = 'watch', currentColor = '#ef4444', tempPts = [];
+    let shapes = [], selectedIdx = -1, clipboard = null;
+    let undoStack = [], redoStack = [];
+    let isDragging = false, isPointerDown = false, dragOffX = 0, dragOffY = 0;
+
+    // ── Canvas sizing ──
+    function resizeCanvas() {
+        const w = stage.offsetWidth, h = stage.offsetHeight;
+        if (!w || !h) { requestAnimationFrame(resizeCanvas); return; }
+        canvas.width = w; canvas.height = h;
+        canvas.style.width = w+'px'; canvas.style.height = h+'px';
+        redrawAll();
+    }
+    new ResizeObserver(resizeCanvas).observe(stage);
+    requestAnimationFrame(resizeCanvas);
+
+    // ── Coords ──
+    function getPoint(e) {
+        const r = canvas.getBoundingClientRect();
+        const sx = canvas.width/r.width, sy = canvas.height/r.height;
+        const src = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+        return { x: Math.min(Math.max(0,(src.clientX-r.left)*sx),canvas.width), y: Math.min(Math.max(0,(src.clientY-r.top)*sy),canvas.height) };
+    }
+
+    // ── Undo/Redo ──
+    function snapshot() {
+        undoStack.push(JSON.parse(JSON.stringify(shapes)));
+        redoStack = [];
+        if (undoStack.length > 60) undoStack.shift();
+        syncUndoBtn();
+    }
+    function syncUndoBtn() { btnUndo.disabled = !undoStack.length; btnRedo.disabled = !redoStack.length; }
+    btnUndo.addEventListener('click', () => { if(!undoStack.length)return; redoStack.push(JSON.parse(JSON.stringify(shapes))); shapes=undoStack.pop(); selectedIdx=-1; syncSelectBar(); syncUndoBtn(); redrawAll(); flash('↩️ Undo'); });
+    btnRedo.addEventListener('click', () => { if(!redoStack.length)return; undoStack.push(JSON.parse(JSON.stringify(shapes))); shapes=redoStack.pop(); selectedIdx=-1; syncSelectBar(); syncUndoBtn(); redrawAll(); flash('↪️ Redo'); });
+
+    // ── Shape helpers ──
+    function shapeAnchor(s) {
+        if (s.type==='circle') return {x:s.cx,y:s.cy};
+        if (s.type==='name')   return {x:s.x,y:s.y};
+        return {x:s.pts[0].x,y:s.pts[0].y};
+    }
+    function moveShape(s,dx,dy) {
+        if (s.type==='circle')    { s.cx+=dx; s.cy+=dy; }
+        else if (s.type==='name') { s.x+=dx; s.y+=dy; }
+        else s.pts = s.pts.map(p=>({x:p.x+dx,y:p.y+dy}));
+    }
+    const HIT = 32;
+    function hitTest(p) {
+        for (let i=shapes.length-1;i>=0;i--) {
+            const s=shapes[i];
+            if (s.type==='circle') { if(Math.sqrt(((p.x-s.cx)/s.rx)**2+((p.y-s.cy)/s.ry)**2)<1.3) return i; }
+            else if (s.type==='name') { if(Math.hypot(p.x-s.x,p.y-s.y)<HIT) return i; }
+            else { for(const pt of(s.pts||[])) if(Math.hypot(p.x-pt.x,p.y-pt.y)<HIT) return i; if(s.type==='line'&&s.pts.length===2){const mx=(s.pts[0].x+s.pts[1].x)/2,my=(s.pts[0].y+s.pts[1].y)/2;if(Math.hypot(p.x-mx,p.y-my)<HIT)return i;} }
+        }
+        return -1;
+    }
+    function syncSelectBar() {
+        selectBar.classList.toggle('visible', selectedIdx>=0);
+        btnPaste.disabled = !clipboard;
+    }
+
+    // ── Snap ──
+    const SNAP = 28;
+    function snapToEllipse(p) {
+        let best=null, bestD=SNAP;
+        for(const s of shapes) {
+            if(s.type!=='circle') continue;
+            const dx=p.x-s.cx,dy=p.y-s.cy,angle=Math.atan2(dy/s.ry,dx/s.rx);
+            const d=Math.hypot(p.x-(s.cx+s.rx*Math.cos(angle)),p.y-(s.cy+s.ry*Math.sin(angle)));
+            if(d<bestD){bestD=d;best=s;}
+        }
+        if(!best) return {point:p,snapped:false};
+        const dx=p.x-best.cx,dy=p.y-best.cy,angle=Math.atan2(dy/best.ry,dx/best.rx);
+        return {point:{x:best.cx+best.rx*Math.cos(angle),y:best.cy+best.ry*Math.sin(angle)},snapped:true};
+    }
+
+    // ── Tap feedback ──
+    function tapFeedback(e) {
+        const src=e.touches?e.touches[0]:e;
+        const d=document.createElement('div');
+        d.style.cssText=`position:fixed;width:20px;height:20px;background:#facc15;border-radius:50%;left:${src.clientX}px;top:${src.clientY}px;pointer-events:none;transform:translate(-50%,-50%);z-index:9999;animation:tapF .3s forwards;`;
+        document.body.appendChild(d); setTimeout(()=>d.remove(),300);
+    }
+    const _ts=document.createElement('style'); _ts.textContent='@keyframes tapF{to{transform:translate(-50%,-50%) scale(2);opacity:0}}'; document.head.appendChild(_ts);
+
+    // ── Pointer events ──
+    canvas.addEventListener('touchstart', onPointerDown, {passive:false});
+    canvas.addEventListener('mousedown',  onPointerDown);
+    canvas.addEventListener('touchmove',  onPointerMove, {passive:false});
+    canvas.addEventListener('mousemove',  onPointerMove);
+    window.addEventListener('touchend',   onPointerUp,   {passive:false});
+    window.addEventListener('mouseup',    onPointerUp);
+    canvas.addEventListener('contextmenu', e=>e.preventDefault());
+
+    // Double-tap edit name
+    let _lastTap=0,_lastTapP=null;
+    canvas.addEventListener('touchend',e=>{
+        const now=Date.now(),p=getPoint(e);
+        if(_lastTap&&(now-_lastTap)<300&&_lastTapP&&Math.hypot(p.x-_lastTapP.x,p.y-_lastTapP.y)<20){
+            if(mode==='select'){const hit=hitTest(p);if(hit>=0&&shapes[hit].type==='name'){e.preventDefault();const t=prompt('Edit teks:',shapes[hit].text);if(t&&t.trim()){snapshot();shapes[hit].text=t.trim();redrawAll();flash(`✏️ "${t.trim()}"`);}}}
+            _lastTap=0;_lastTapP=null;return;
+        }
+        _lastTap=now;_lastTapP=p;setTimeout(()=>{_lastTap=0;_lastTapP=null;},300);
+    });
+
+    function onPointerDown(e) {
+        if (mode==='watch') return;
+        e.preventDefault();
+        isPointerDown = true;
+        const p = getPoint(e);
+
+        if (mode==='select') {
+            const hit=hitTest(p);
+            if(hit>=0){ selectedIdx=hit; const a=shapeAnchor(shapes[hit]); dragOffX=p.x-a.x; dragOffY=p.y-a.y; isDragging=false; }
+            else selectedIdx=-1;
+            syncSelectBar(); redrawAll(); return;
+        }
+
+        tapFeedback(e);
+        let pt=p;
+        if(mode==='line'){
+            const res=snapToEllipse(pt); if(res.snapped) pt=res.point;
+            tempPts.push(pt);
+            if(tempPts.length===2){ snapshot(); shapes.push({type:'line',pts:[...tempPts],color:currentColor}); tempPts=[]; flash('📏 Garis'); }
+        } else if(mode==='triangle'){
+            tempPts.push(pt);
+            if(tempPts.length===3){ snapshot(); shapes.push({type:'triangle',pts:[...tempPts],color:currentColor}); tempPts=[]; flash('🔺 Segitiga'); }
+        } else if(mode==='quad'){
+            tempPts.push(pt);
+            if(tempPts.length===4){ snapshot(); shapes.push({type:'quad',pts:[...tempPts],color:currentColor}); tempPts=[]; flash('⬛ Segiempat'); }
+        } else if(mode==='arrow'){
+            tempPts.push(pt);
+            if(tempPts.length===3){ snapshot(); shapes.push({type:'arrow',pts:[...tempPts],color:currentColor}); tempPts=[]; flash('🏹 Panah'); }
+        } else if(mode==='circle'){
+            tempPts.push(pt);
+            if(tempPts.length===3){ snapshot(); shapes.push({type:'circle',cx:tempPts[0].x,cy:tempPts[0].y,rx:Math.abs(tempPts[1].x-tempPts[0].x),ry:Math.abs(tempPts[2].y-tempPts[0].y),color:currentColor}); tempPts=[]; flash('⭕ Elips'); }
+        } else if(mode==='name'){
+            const x=pt.x,y=pt.y;
+            setTimeout(()=>{ const t=prompt('Masukkan teks:'); if(t&&t.trim()){ snapshot(); shapes.push({type:'name',text:t.trim(),x,y,color:currentColor}); flash(`📝 "${t.trim()}"`); redrawAll(); } },30);
+            return;
+        }
+        updateDots(); redrawAll();
+    }
+
+    function onPointerMove(e) {
+        if(mode!=='select'||selectedIdx<0||!isPointerDown) return;
+        e.preventDefault();
+        const p=getPoint(e);
+        const a=shapeAnchor(shapes[selectedIdx]);
+        const dx=(p.x-dragOffX)-a.x, dy=(p.y-dragOffY)-a.y;
+        if(!isDragging&&Math.hypot(dx,dy)>4) isDragging=true;
+        if(isDragging){ moveShape(shapes[selectedIdx],dx,dy); redrawAll(); }
+    }
+    
+    function onPointerUp() { 
+        if(isDragging&&selectedIdx>=0) snapshot(); 
+        isDragging=false; 
+        isPointerDown=false;
+    }
+
+    // ── Copy/Paste/Delete ──
+    btnCopy.addEventListener('click',()=>{ if(selectedIdx<0)return; clipboard=JSON.parse(JSON.stringify(shapes[selectedIdx])); btnPaste.disabled=false; flash('📋 Disalin!'); });
+    btnPaste.addEventListener('click',()=>{ if(!clipboard)return; const c=JSON.parse(JSON.stringify(clipboard)); moveShape(c,20,20); snapshot(); shapes.push(c); selectedIdx=shapes.length-1; syncSelectBar(); redrawAll(); flash('📌 Ditempel!'); });
+    btnDeleteSel.addEventListener('click',()=>{ if(selectedIdx<0)return; snapshot(); shapes.splice(selectedIdx,1); selectedIdx=-1; syncSelectBar(); redrawAll(); flash('🗑️ Dihapus'); });
+
+    // ── Drawing ──
+    function drawShape(s,sel) {
+        switch(s.type){
+            case 'line':     drawLine(s.pts,s.color,false,sel); break;
+            case 'triangle': drawPolygon(s.pts,true,s.color,sel); break;
+            case 'quad':     drawPolygon(s.pts,true,s.color,sel); break;
+            case 'circle':   drawEllipse(s,false,sel); break;
+            case 'arrow':    drawArrow(s.pts,s.color,sel); break;
+            case 'name':     drawNameTag(s,sel); break;
+        }
+    }
+    function sg(){ ctx.shadowColor='#4ade80'; ctx.shadowBlur=12; }
+    function cg(){ ctx.shadowColor='transparent'; ctx.shadowBlur=0; }
+
+    function drawLine(pts,color,preview,sel){
+        if(!pts.length)return;
+        if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,4,0,Math.PI*2);ctx.fillStyle=color||'#a78bfa';ctx.fill();return;}
+        ctx.save();if(sel)sg();
+        ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[1].x,pts[1].y);
+        ctx.strokeStyle=preview?'rgba(167,139,250,0.5)':(color||'#a78bfa');ctx.lineWidth=2.5;ctx.lineCap='round';if(preview)ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
+        pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle=color||'#a78bfa';ctx.fill();});
+        cg();ctx.restore();
+    }
+    function drawPolygon(pts,closed,color,sel){
+        if(pts.length<2)return;
+        ctx.save();if(sel)sg();
+        ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+        for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+        if(closed){ctx.closePath();ctx.fillStyle=color+'44';ctx.fill();}
+        ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+        pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});
+        cg();ctx.restore();
+    }
+    function drawEllipse(item,preview,sel){
+        if(!item.rx||!item.ry||item.rx<1||item.ry<1)return;
+        ctx.save();if(sel)sg();
+        ctx.beginPath();ctx.ellipse(item.cx,item.cy,item.rx,item.ry,0,0,Math.PI*2);
+        ctx.strokeStyle=preview?'rgba(250,204,21,0.7)':(item.color||'#facc15');ctx.lineWidth=2.5;if(preview)ctx.setLineDash([6,8]);ctx.stroke();ctx.setLineDash([]);
+        ctx.beginPath();ctx.arc(item.cx,item.cy,3,0,Math.PI*2);ctx.fillStyle=item.color||'#facc15';ctx.fill();
+        cg();ctx.restore();
+    }
+    function drawArrow(pts,color,sel){
+        color=color||'#fbbf24';if(!pts.length)return;
+        ctx.save();if(sel)sg();
+        if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,7,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.restore();return;}
+        if(pts.length===2){ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[1].x,pts[1].y);ctx.strokeStyle=color+'80';ctx.lineWidth=2;ctx.setLineDash([5,7]);ctx.stroke();ctx.setLineDash([]);[[pts[0],6],[pts[1],5]].forEach(([p,r])=>{ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});ctx.restore();return;}
+        const[s,c,e]=pts;ctx.shadowBlur=6;ctx.shadowColor=color;
+        ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.quadraticCurveTo(c.x,c.y,e.x,e.y);ctx.strokeStyle='#fde68a';ctx.lineWidth=4;ctx.lineCap='round';ctx.stroke();
+        const dx=e.x-c.x,dy=e.y-c.y;
+        if(Math.hypot(dx,dy)>0.01){const ang=Math.atan2(dy,dx),L=15,W=Math.PI/6;ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(e.x-L*Math.cos(ang-W),e.y-L*Math.sin(ang-W));ctx.lineTo(e.x-L*Math.cos(ang+W),e.y-L*Math.sin(ang+W));ctx.fillStyle=color;ctx.fill();}
+        [s,e].forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});
+        ctx.beginPath();ctx.arc(c.x,c.y,4,0,Math.PI*2);ctx.fillStyle='#facc15';ctx.fill();
+        cg();ctx.restore();
+    }
+    if(!ctx.roundRect){ctx.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);};}
+    function drawNameTag(item,sel){
+        ctx.save();ctx.font='bold 13px system-ui';if(sel)sg();
+        const tw=ctx.measureText(item.text).width,bw=tw+18,bh=24,bx=item.x-bw/2,by=item.y-bh-8;
+        ctx.beginPath();ctx.roundRect(bx,by,bw,bh,8);ctx.fillStyle=item.color;ctx.fill();
+        ctx.fillStyle='white';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(item.text,item.x,by+bh/2);
+        ctx.beginPath();ctx.arc(item.x,item.y,4,0,Math.PI*2);ctx.fillStyle='#fff8';ctx.fill();
+        cg();ctx.restore();
+    }
+
+    function redrawAll(){
+        if(!ctx||canvas.width===0)return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        shapes.forEach((s,i)=>drawShape(s,i===selectedIdx));
+        if(tempPts.length){
+            if(mode==='line'&&tempPts.length===1){ctx.beginPath();ctx.arc(tempPts[0].x,tempPts[0].y,4,0,Math.PI*2);ctx.fillStyle='#a78bfa';ctx.fill();}
+            else if(mode==='triangle'||mode==='quad') drawPolygon(tempPts,false,currentColor,false);
+            else if(mode==='arrow') drawArrow(tempPts,currentColor,false);
+            else if(mode==='circle'){
+                if(tempPts.length===1){ctx.beginPath();ctx.arc(tempPts[0].x,tempPts[0].y,4,0,Math.PI*2);ctx.fillStyle='#facc15';ctx.fill();}
+                else{drawEllipse({cx:tempPts[0].x,cy:tempPts[0].y,rx:Math.abs(tempPts[1].x-tempPts[0].x),ry:tempPts.length===3?Math.abs(tempPts[2].y-tempPts[0].y):Math.abs(tempPts[1].x-tempPts[0].x)*0.45,color:currentColor},true,false);}
+            }
+        }
+        const hints={line:['Tap awal','Tap akhir'],triangle:['Tap 1','Tap 2','Tap 3'],quad:['Tap 1','Tap 2','Tap 3','Tap 4'],arrow:['Awal','Kontrol','Akhir'],circle:['Tengah','Kanan','Bawah']};
+        if(hints[mode]&&tempPts.length<hints[mode].length){const h=hints[mode][tempPts.length];ctx.save();ctx.font='bold 12px system-ui';ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillText(h,13,25);ctx.fillStyle='#facc15';ctx.fillText(h,12,24);ctx.restore();}
+        if(mode==='select'&&selectedIdx>=0){ctx.save();ctx.font='bold 12px system-ui';ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillText('Drag untuk geser',13,25);ctx.fillStyle='#4ade80';ctx.fillText('Drag untuk geser',12,24);ctx.restore();}
+    }
+
+    function updateDots(){
+        const total={line:2,triangle:3,quad:4,arrow:3,circle:3,name:1,watch:0,select:0}[mode]||0;
+        stepDotsEl.innerHTML='';
+        for(let i=0;i<total;i++){const d=document.createElement('div');d.className='step-dot'+(i<tempPts.length?' filled':'')+(i===tempPts.length&&i<total?' current':'');stepDotsEl.appendChild(d);}
+    }
+
+    const modeLabel={watch:'Nonton',select:'Pilih',line:'Garis',triangle:'Segitiga',quad:'Segiempat',circle:'Elips',arrow:'Panah',name:'Teks'};
+    function flash(msg){statusEl.innerHTML=msg;setTimeout(()=>{if(statusEl.innerHTML===msg)statusEl.innerHTML=`Mode: ${modeLabel[mode]}`;},2000);}
+
+    function setMode(m){
+        mode=m;tempPts=[];
+        if(m!=='select'){selectedIdx=-1;syncSelectBar();}
+        const map={watch:btnWatch,select:btnSelect,line:btnLine,triangle:btnTriangle,quad:btnQuad,circle:btnCircle,arrow:btnArrow,name:btnName};
+        Object.entries(map).forEach(([k,b])=>b&&b.classList.toggle('active',k===m));
+        canvas.style.pointerEvents=m==='watch'?'none':'auto';
+        if(m==='watch') video.play().catch(()=>{});
+        else video.pause();
+        updateDots();redrawAll();
+        statusEl.innerHTML=`Mode: ${modeLabel[m]}`;
+    }
+
+    // ── Export ──
+    function saveScreenshot(){
+        const cw=canvas.width,ch=canvas.height;
+        if(!cw||!ch){flash('Canvas belum siap');return;}
+        const vw=video.videoWidth>0?video.videoWidth:cw;
+        const vh=video.videoHeight>0?video.videoHeight:ch;
+        const out=document.createElement('canvas');
+        out.width=vw;out.height=vh;
+        const octx=out.getContext('2d');
+        if(video.readyState>=2&&video.videoWidth>0)octx.drawImage(video,0,0,vw,vh);
+        else{octx.fillStyle='#0a0f0a';octx.fillRect(0,0,vw,vh);}
+        octx.drawImage(canvas,0,0,vw,vh);
+        const link=document.createElement('a');link.download=`thefootys_${Date.now()}.png`;link.href=out.toDataURL('image/png');link.click();
+        flash('💾 Tersimpan!');
+    }
+    document.getElementById('saveMediaBtn').addEventListener('click',saveScreenshot);
+    document.getElementById('exportMediaBtn').addEventListener('click',saveScreenshot);
+    document.getElementById('publishMediaBtn').addEventListener('click',saveScreenshot);
+
+    // ── Upload ──
+    const uploadScreen=document.getElementById('uploadScreen');
+    const mainScreen=document.getElementById('mainScreen');
+    document.getElementById('uploadBox').addEventListener('click',()=>fileInput.click());
+    fileInput.addEventListener('change',function(){
+        const file=this.files[0];if(!file)return;
+        if(video.src&&video.src.startsWith('blob:'))URL.revokeObjectURL(video.src);
+        video.src=URL.createObjectURL(file);
+        video.style.display='block';videoControls.style.display='flex';
+        video.load();
+        video.addEventListener('canplay',function onCP(){
+            video.removeEventListener('canplay',onCP);
+            video.play().catch(()=>{});
+            uploadScreen.style.display='none';mainScreen.style.display='block';
+            resizeCanvas();flash(`Video: ${file.name}`);
+        });
+        video.onerror=()=>alert('Gagal memuat video');
+    });
+
+    // ── Video controls ──
+    btnPlayPause.addEventListener('click',()=>video.paused?video.play():video.pause());
+    btnMute.addEventListener('click',()=>{video.muted=!video.muted;btnMute.textContent=video.muted?'🔇':'🔊';});
+    video.addEventListener('play',()=>btnPlayPause.textContent='⏸️');
+    video.addEventListener('pause',()=>btnPlayPause.textContent='▶️');
+    video.addEventListener('timeupdate',()=>{
+        if(!video.duration)return;
+        seekBar.value=(video.currentTime/video.duration)*100;
+        const f=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+        timeDisplay.textContent=f(video.currentTime)+' / '+f(video.duration);
+    });
+    seekBar.addEventListener('input',()=>{if(video.duration)video.currentTime=(seekBar.value/100)*video.duration;});
+
+    // ── Toolbar ──
+    btnWatch.addEventListener('click',()=>setMode('watch'));
+    btnSelect.addEventListener('click',()=>setMode('select'));
+    btnLine.addEventListener('click',()=>setMode('line'));
+    btnTriangle.addEventListener('click',()=>setMode('triangle'));
+    btnQuad.addEventListener('click',()=>setMode('quad'));
+    btnCircle.addEventListener('click',()=>setMode('circle'));
+    btnArrow.addEventListener('click',()=>setMode('arrow'));
+    btnName.addEventListener('click',()=>setMode('name'));
+    btnClear.addEventListener('click',()=>{snapshot();shapes=[];tempPts=[];selectedIdx=-1;syncSelectBar();redrawAll();updateDots();flash('Semua dihapus');});
+    paletteEl.addEventListener('click',e=>{const sw=e.target.closest('.swatch');if(!sw)return;currentColor=sw.dataset.color;document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));sw.classList.add('active');});
+
+    setMode('watch');syncUndoBtn();syncSelectBar();resizeCanvas();
+})();
+</script>
+</body>
+</html>
