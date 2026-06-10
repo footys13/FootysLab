@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The Footys - HD Tactics</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0f0a;
+            color: white;
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+        .topbar {
+            width: 100%;
+            max-width: 680px;
+            border-left: 3px solid #4ade80;
+            padding: 12px 20px;
+            background: #0f1a0f;
+            letter-spacing: 2px;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+        #uploadScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            width: 100%;
+            max-width: 680px;
+        }
+        .upload-box {
+            border: 2px dashed #1f2d1f;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-box:hover {
+            background: #0f1a0f;
+        }
+        .upload-box p {
+            color: #4b5563;
+            letter-spacing: 1px;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        .storage-info {
+            font-size: 10px;
+            color: #4b5563;
+            margin-top: 12px;
+        }
+        #mainScreen {
+            display: none;
+            width: 100%;
+            max-width: 680px;
+        }
+        .card {
+            background: #0f1a0f;
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .stage-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #0f2d1f;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 16px 0;
+            border: 1px solid #2d4a2d;
+        }
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .pitch-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: 1;
+        }
+        video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 5;
+            display: none;
+            background: #000;
+        }
+        #drawCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            touch-action: none;
+        }
+        .toolbar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .btn {
+            background: #1e2d3d;
+            border: 1.5px solid #2c4054;
+            color: #cdd9e5;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 8px 6px;
+            border-radius: 999px;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn.active  { background: #166534; border-color: #4ade80; color: #bbf7d0; }
+        .btn.danger  { background: #7f1d1d; border-color: #ef4444; color: #fecaca; }
+        .btn.purple  { background: #2d1f4e; border-color: #7c3aed; color: #c4b5fd; }
+        .palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 12px 0;
+        }
+        .swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+        }
+        .swatch.active { border-color: #facc15; transform: scale(1.2); }
+        .step-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin: 6px 0;
+        }
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #334155;
+        }
+        .step-dot.filled { background: #4ade80; }
+        .step-dot.current { background: #facc15; }
+        .status {
+            text-align: center;
+            font-size: 11px;
+            background: #111827;
+            border-radius: 999px;
+            padding: 6px 12px;
+            margin: 8px 0;
+            color: #9ca3af;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .btn-export {
+            flex: 1;
+            background: #161f16;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+            border-radius: 8px;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .watermark {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-transform: uppercase;
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #1a2e1a;
+        }
+        .video-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #111827;
+            border-radius: 999px;
+            padding: 6px 12px;
+            margin: 8px 0;
+        }
+        .video-controls button, .video-controls input {
+            background: #1e2d3d;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 40px;
+            font-size: 11px;
+        }
+        .video-controls input {
+            flex: 1;
+            accent-color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">⚽ THE FOOTYS TACTICS</div>
+
+<div id="uploadScreen">
+    <div class="upload-box" id="uploadBox">
+        <p>📁 ADD MEDIA</p>
+        <div style="font-size: 10px; color: #6b7280;">Drag and drop media, or click here to upload to the carousel.</div>
+        <div class="storage-info">Used: 14.2 MB &nbsp;|&nbsp; Total: 10 GB &nbsp;|&nbsp; Available: 10 GB</div>
+    </div>
+</div>
+
+<div id="mainScreen">
+    <div class="card">
+        <div class="stage-wrapper">
+            <div class="stage" id="stage">
+                <svg class="pitch-bg" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice">
+                    <rect width="160" height="90" fill="#14532d"/>
+                    <line x1="80" y1="0" x2="80" y2="90" stroke="white" stroke-width="0.8"/>
+                    <circle cx="80" cy="45" r="12" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="4" y="4" width="152" height="82" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="4" y="22" width="22" height="46" fill="none" stroke="white" stroke-width="0.8"/>
+                    <rect x="134" y="22" width="22" height="46" fill="none" stroke="white" stroke-width="0.8"/>
+                    <circle cx="18" cy="45" r="0.8" fill="white"/>
+                    <circle cx="142" cy="45" r="0.8" fill="white"/>
+                </svg>
+                <video id="myVideo" playsinline disablePictureInPicture></video>
+                <canvas id="drawCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="toolbar-grid">
+            <button class="btn active" id="btnWatch">📺 Nonton</button>
+            <button class="btn" id="btnSelect">🖱️ Pilih</button>
+            <button class="btn" id="btnLine">📏 Garis</button>
+            <button class="btn" id="btnTriangle">🔺 Segitiga</button>
+            <button class="btn" id="btnQuad">⬛ Segiempat</button>
+            <button class="btn" id="btnCircle">⭕ Elips</button>
+            <button class="btn" id="btnArrow">➡️ Panah</button>
+            <button class="btn" id="btnName">🏷️ Nama</button>
+            <button class="btn purple" id="btnUndo" disabled>↩️ Undo</button>
+            <button class="btn purple" id="btnRedo" disabled>↪️ Redo</button>
+            <button class="btn danger" id="btnClear">🗑️ Hapus Semua</button>
+        </div>
+
+        <div class="palette" id="palette">
+            <div class="swatch active" style="background:#ef4444" data-color="#ef4444"></div>
+            <div class="swatch" style="background:#3b82f6" data-color="#3b82f6"></div>
+            <div class="swatch" style="background:#facc15" data-color="#facc15"></div>
+            <div class="swatch" style="background:#10b981" data-color="#10b981"></div>
+            <div class="swatch" style="background:#f97316" data-color="#f97316"></div>
+            <div class="swatch" style="background:#ffffff" data-color="#ffffff"></div>
+        </div>
+
+        <div class="step-dots" id="stepDots"></div>
+        <div class="status" id="status">Mode: Nonton</div>
+
+        <div class="video-controls" id="videoControls" style="display: none;">
+            <button id="btnPlayPause">▶️</button>
+            <span id="timeDisplay">0:00 / 0:00</span>
+            <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1">
+            <button id="btnMute">🔊</button>
+        </div>
+
+        <div class="action-buttons">
+            <div class="btn-export" id="saveMediaBtn">💾 SAVE MEDIA</div>
+            <div class="btn-export" id="exportMediaBtn">📤 EXPORT MEDIA</div>
+            <div class="btn-export" id="publishMediaBtn">🌐 PUBLISH MEDIA</div>
+        </div>
+    </div>
+    <div class="watermark">⚡ THE FOOTYS ⚡</div>
+</div>
+
+<input type="file" id="fileInput" accept="video/*" style="display: none;">
+
+<script>
+(function(){
+    // DOM elements
+    const video = document.getElementById('myVideo');
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+    const statusEl = document.getElementById('status');
+    const stepDotsEl = document.getElementById('stepDots');
+    const paletteEl = document.getElementById('palette');
+    const videoControls = document.getElementById('videoControls');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const btnMute = document.getElementById('btnMute');
+    const seekBar = document.getElementById('seekBar');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const fileInput = document.getElementById('fileInput');
+    const btnWatch = document.getElementById('btnWatch');
+    const btnSelect = document.getElementById('btnSelect');
+    const btnLine = document.getElementById('btnLine');
+    const btnTriangle = document.getElementById('btnTriangle');
+    const btnQuad = document.getElementById('btnQuad');
+    const btnCircle = document.getElementById('btnCircle');
+    const btnArrow = document.getElementById('btnArrow');
+    const btnName = document.getElementById('btnName');
+    const btnClear = document.getElementById('btnClear');
+    const btnUndo = document.getElementById('btnUndo');
+    const btnRedo = document.getElementById('btnRedo');
+
+    // State
+    let mode = 'watch';
+    let currentColor = '#ef4444';
+    let tempPts = [];
+    let shapes = [];
+    let selectedIdx = -1;
+    let clipboard = null;
+    let undoStack = [];
+    let redoStack = [];
+    let isDragging = false;
+    let dragOffX = 0, dragOffY = 0;
+
+    // Resize canvas HD (2x)
+    function resizeCanvas() {
+        const w = stage.offsetWidth;
+        const h = stage.offsetHeight;
+        if (!w || !h) { requestAnimationFrame(resizeCanvas); return; }
+        const scale = 2;
+        canvas.width = w * scale;
+        canvas.height = h * scale;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        redrawAll();
+    }
+    new ResizeObserver(resizeCanvas).observe(stage);
+    requestAnimationFrame(resizeCanvas);
+
+    // Koordinat touch
+    function getPoint(e) {
+        const r = canvas.getBoundingClientRect();
+        const sx = canvas.width / r.width;
+        const sy = canvas.height / r.height;
+        const src = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+        return {
+            x: Math.min(Math.max(0, (src.clientX - r.left) * sx), canvas.width),
+            y: Math.min(Math.max(0, (src.clientY - r.top) * sy), canvas.height)
+        };
+    }
+
+    // Undo/Redo
+    function snapshot() {
+        undoStack.push(JSON.parse(JSON.stringify(shapes)));
+        redoStack = [];
+        if (undoStack.length > 60) undoStack.shift();
+        syncUndoBtn();
+    }
+    function syncUndoBtn() {
+        btnUndo.disabled = undoStack.length === 0;
+        btnRedo.disabled = redoStack.length === 0;
+    }
+    btnUndo.addEventListener('click', () => {
+        if (!undoStack.length) return;
+        redoStack.push(JSON.parse(JSON.stringify(shapes)));
+        shapes = undoStack.pop();
+        selectedIdx = -1; syncSelectBar(); syncUndoBtn(); redrawAll(); flash('↩️ Undo');
+    });
+    btnRedo.addEventListener('click', () => {
+        if (!redoStack.length) return;
+        undoStack.push(JSON.parse(JSON.stringify(shapes)));
+        shapes = redoStack.pop();
+        selectedIdx = -1; syncSelectBar(); syncUndoBtn(); redrawAll(); flash('↪️ Redo');
+    });
+
+    // Shape helpers
+    function shapeAnchor(s) {
+        if (s.type === 'circle') return { x: s.cx, y: s.cy };
+        if (s.type === 'name') return { x: s.x, y: s.y };
+        return { x: s.pts[0].x, y: s.pts[0].y };
+    }
+    function moveShape(s, dx, dy) {
+        if (s.type === 'circle') { s.cx += dx; s.cy += dy; }
+        else if (s.type === 'name') { s.x += dx; s.y += dy; }
+        else { s.pts = s.pts.map(p => ({ x: p.x + dx, y: p.y + dy })); }
+    }
+    const HIT_RADIUS = 30;
+    function hitTest(p) {
+        for (let i = shapes.length - 1; i >= 0; i--) {
+            const s = shapes[i];
+            if (s.type === 'circle') {
+                const dx = p.x - s.cx, dy = p.y - s.cy;
+                const dist = Math.sqrt((dx/s.rx)**2 + (dy/s.ry)**2);
+                if (dist < 1.3) return i;
+            } else if (s.type === 'name') {
+                if (Math.hypot(p.x - s.x, p.y - s.y) < HIT_RADIUS) return i;
+            } else {
+                const pts = s.pts || [];
+                for (const pt of pts) if (Math.hypot(p.x - pt.x, p.y - pt.y) < HIT_RADIUS) return i;
+                if (s.type === 'line' && pts.length === 2) {
+                    const mx = (pts[0].x + pts[1].x)/2, my = (pts[0].y + pts[1].y)/2;
+                    if (Math.hypot(p.x - mx, p.y - my) < HIT_RADIUS) return i;
+                }
+            }
+        }
+        return -1;
+    }
+    function syncSelectBar() {}
+
+    // ========== DRAWING FUNCTIONS (dengan warna untuk segitiga & segiempat) ==========
+    function drawShape(s, isSelected) {
+        switch(s.type) {
+            case 'line': drawLine(s.pts, s.color, false, isSelected); break;
+            case 'triangle': drawPolygon(s.pts, true, s.color, isSelected); break;
+            case 'quad': drawPolygon(s.pts, true, s.color, isSelected); break;
+            case 'circle': drawEllipse(s, false, isSelected); break;
+            case 'arrow': drawArrow(s.pts, s.color, isSelected); break;
+            case 'name': drawNameTag(s, isSelected); break;
+        }
+    }
+
+    function selectionGlow() { ctx.shadowColor = '#4ade80'; ctx.shadowBlur = 12; }
+    function clearGlow() { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
+
+    function drawLine(pts, color, preview, selected) {
+        if (pts.length < 1) return;
+        if (pts.length === 1) { ctx.beginPath(); ctx.arc(pts[0].x,pts[0].y,4,0,Math.PI*2); ctx.fillStyle=color||'#a78bfa'; ctx.fill(); return; }
+        ctx.save(); if (selected) selectionGlow();
+        ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(pts[1].x,pts[1].y);
+        ctx.strokeStyle = preview ? 'rgba(167,139,250,0.5)' : (color||'#a78bfa');
+        ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        if (preview) ctx.setLineDash([6,6]);
+        ctx.stroke(); ctx.setLineDash([]);
+        pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle=color||'#a78bfa'; ctx.fill(); });
+        clearGlow(); ctx.restore();
+    }
+
+    // ⭐ PERUBAHAN UTAMA: drawPolygon dengan fill warna solid (opacity 0.4) dan stroke warna solid
+    function drawPolygon(pts, closed, color, selected) {
+        if (pts.length < 2) return;
+        ctx.save();
+        if (selected) selectionGlow();
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        if (closed) {
+            ctx.closePath();
+            // Fill dengan warna shape + opacity 0.4
+            ctx.fillStyle = color + '66'; // 66 = 0.4 opacity (hex 40% = 66)
+            ctx.fill();
+        }
+        // Stroke dengan warna shape solid
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        // Titik sudut
+        pts.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+        clearGlow();
+        ctx.restore();
+    }
+
+    function drawEllipse(item, preview, selected) {
+        if (!item.rx||!item.ry||item.rx<1||item.ry<1) return;
+        ctx.save();
+        if (selected) selectionGlow();
+        ctx.beginPath();
+        ctx.ellipse(item.cx, item.cy, item.rx, item.ry, 0, 0, Math.PI*2);
+        ctx.strokeStyle = preview ? 'rgba(250,204,21,0.7)' : (item.color||'#facc15');
+        ctx.lineWidth = 2.5;
+        if (preview) ctx.setLineDash([6,8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(item.cx, item.cy, 3, 0, Math.PI*2);
+        ctx.fillStyle = item.color||'#facc15';
+        ctx.fill();
+        clearGlow();
+        ctx.restore();
+    }
+
+    function drawArrow(pts, color, selected) {
+        color = color||'#fbbf24';
+        if (!pts.length) return;
+        ctx.save();
+        if (selected) selectionGlow();
+        if (pts.length===1) { ctx.beginPath(); ctx.arc(pts[0].x,pts[0].y,7,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); ctx.restore(); return; }
+        if (pts.length===2) {
+            ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(pts[1].x,pts[1].y);
+            ctx.strokeStyle=color+'80'; ctx.lineWidth=2; ctx.setLineDash([5,7]); ctx.stroke(); ctx.setLineDash([]);
+            [[pts[0],6],[pts[1],5]].forEach(([p,r])=>{ ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); });
+            ctx.restore(); return;
+        }
+        const [s,c,e]=pts;
+        ctx.shadowBlur=6; ctx.shadowColor=color;
+        ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.quadraticCurveTo(c.x,c.y,e.x,e.y);
+        ctx.strokeStyle='#fde68a'; ctx.lineWidth=4; ctx.lineCap='round'; ctx.stroke();
+        const dx=e.x-c.x,dy=e.y-c.y;
+        if (Math.hypot(dx,dy)>0.01) {
+            const ang=Math.atan2(dy,dx),L=15,W=Math.PI/6;
+            ctx.beginPath(); ctx.moveTo(e.x,e.y);
+            ctx.lineTo(e.x-L*Math.cos(ang-W),e.y-L*Math.sin(ang-W));
+            ctx.lineTo(e.x-L*Math.cos(ang+W),e.y-L*Math.sin(ang+W));
+            ctx.fillStyle=color; ctx.fill();
+        }
+        [s,e].forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); });
+        ctx.beginPath(); ctx.arc(c.x,c.y,4,0,Math.PI*2); ctx.fillStyle='#facc15'; ctx.fill();
+        clearGlow(); ctx.restore();
+    }
+
+    if (!ctx.roundRect) {
+        ctx.roundRect = function(x,y,w,h,r) {
+            r=Math.min(r,w/2,h/2);
+            this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r);
+            this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+            this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r);
+            this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y);
+        };
+    }
+
+    function drawNameTag(item, selected) {
+        ctx.save(); ctx.font='bold 13px system-ui';
+        if (selected) selectionGlow();
+        const tw=ctx.measureText(item.text).width, bw=tw+18, bh=24, bx=item.x-bw/2, by=item.y-bh-8;
+        ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,8); ctx.fillStyle=item.color; ctx.fill();
+        ctx.fillStyle='white'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(item.text,item.x,by+bh/2);
+        ctx.beginPath(); ctx.arc(item.x,item.y,4,0,Math.PI*2); ctx.fillStyle='#fff8'; ctx.fill();
+        clearGlow(); ctx.restore();
+    }
+
+    function redrawAll() {
+        if (!ctx||canvas.width===0) return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        shapes.forEach((s,i) => drawShape(s, i === selectedIdx));
+        if (tempPts.length) {
+            if (mode==='line' && tempPts.length===1) { ctx.beginPath(); ctx.arc(tempPts[0].x,tempPts[0].y,4,0,Math.PI*2); ctx.fillStyle='#a78bfa'; ctx.fill(); }
+            else if (mode==='triangle'||mode==='quad') drawPolygon(tempPts, false, currentColor, false);
+            else if (mode==='arrow') drawArrow(tempPts, currentColor, false);
+            else if (mode==='circle') {
+                if (tempPts.length===1) { ctx.beginPath(); ctx.arc(tempPts[0].x,tempPts[0].y,4,0,Math.PI*2); ctx.fillStyle='#facc15'; ctx.fill(); }
+                else { drawEllipse({cx:tempPts[0].x,cy:tempPts[0].y,rx:Math.abs(tempPts[1].x-tempPts[0].x),ry:tempPts.length===3?Math.abs(tempPts[2].y-tempPts[0].y):Math.abs(tempPts[1].x-tempPts[0].x)*0.45,color:currentColor},true,false); }
+            }
+        }
+        const hints = { line:['Tap awal','Tap akhir'], triangle:['Tap 1','Tap 2','Tap 3'], quad:['Tap 1','Tap 2','Tap 3','Tap 4'], arrow:['Awal','Kontrol','Akhir'], circle:['Tengah','Kanan','Bawah'] };
+        if (hints[mode] && tempPts.length < hints[mode].length) {
+            ctx.save(); ctx.font='bold 12px system-ui'; ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(hints[mode][tempPts.length],13,25);
+            ctx.fillStyle='#facc15'; ctx.fillText(hints[mode][tempPts.length],12,24); ctx.restore();
+        }
+    }
+
+    function updateDots() {
+        const total={line:2,triangle:3,quad:4,arrow:3,circle:3,name:1,watch:0,select:0}[mode]||0;
+        stepDotsEl.innerHTML='';
+        for(let i=0;i<total;i++){
+            const d=document.createElement('div');
+            d.className='step-dot'+(i<tempPts.length?' filled':'')+(i===tempPts.length&&i<total?' current':'');
+            stepDotsEl.appendChild(d);
+        }
+    }
+    function flash(msg) { statusEl.innerHTML=msg; setTimeout(()=>{ if(statusEl.innerHTML===msg) statusEl.innerHTML=`Mode: ${modeLabel[mode]}`; },2000); }
+    const modeLabel={watch:'Nonton',select:'Pilih',line:'Garis',triangle:'Segitiga',quad:'Segiempat',circle:'Elips',arrow:'Panah',name:'Nama'};
+
+    // Pointer events
+    canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('touchend', onPointerUp, { passive: false });
+    canvas.addEventListener('mouseup', onPointerUp);
+
+    function onPointerDown(e) {
+        if (mode === 'watch') return;
+        e.preventDefault();
+        const p = getPoint(e);
+        if (mode === 'select') {
+            const hit = hitTest(p);
+            if (hit >= 0) { selectedIdx = hit; const anchor = shapeAnchor(shapes[hit]); dragOffX = p.x - anchor.x; dragOffY = p.y - anchor.y; isDragging = false; redrawAll(); }
+            else { selectedIdx = -1; redrawAll(); }
+            return;
+        }
+        tapFeedback(e);
+        let pt = p;
+        if (mode === 'line') { tempPts.push(pt); if (tempPts.length===2) { snapshot(); shapes.push({ type:'line', pts:[...tempPts], color:currentColor }); tempPts=[]; flash('📏 Garis'); } }
+        else if (mode === 'triangle') { tempPts.push(pt); if (tempPts.length===3) { snapshot(); shapes.push({ type:'triangle', pts:[...tempPts], color:currentColor }); tempPts=[]; flash('🔺 Segitiga'); } }
+        else if (mode === 'quad') { tempPts.push(pt); if (tempPts.length===4) { snapshot(); shapes.push({ type:'quad', pts:[...tempPts], color:currentColor }); tempPts=[]; flash('⬛ Segiempat'); } }
+        else if (mode === 'arrow') { tempPts.push(pt); if (tempPts.length===3) { snapshot(); shapes.push({ type:'arrow', pts:[...tempPts], color:currentColor }); tempPts=[]; flash('🏹 Panah'); } }
+        else if (mode === 'circle') { tempPts.push(pt); if (tempPts.length===3) { snapshot(); shapes.push({ type:'circle', cx:tempPts[0].x, cy:tempPts[0].y, rx:Math.abs(tempPts[1].x-tempPts[0].x), ry:Math.abs(tempPts[2].y-tempPts[0].y), color:currentColor }); tempPts=[]; flash('⭕ Elips'); } }
+        else if (mode === 'name') { setTimeout(()=>{ const txt=prompt('Nama:'); if(txt) { snapshot(); shapes.push({ type:'name', text:txt, x:pt.x, y:pt.y, color:currentColor }); flash(`🏷️ ${txt}`); redrawAll(); } },30); return; }
+        updateDots(); redrawAll();
+    }
+
+    function onPointerMove(e) {
+        if (mode !== 'select' || selectedIdx < 0) return;
+        e.preventDefault();
+        const p = getPoint(e);
+        const anchor = shapeAnchor(shapes[selectedIdx]);
+        const dx = (p.x - dragOffX) - anchor.x, dy = (p.y - dragOffY) - anchor.y;
+        if (!isDragging && Math.hypot(dx, dy) > 4) isDragging = true;
+        if (isDragging) { moveShape(shapes[selectedIdx], dx, dy); redrawAll(); }
+    }
+    function onPointerUp(e) { if (isDragging && selectedIdx >= 0) snapshot(); isDragging = false; }
+    function tapFeedback(e) { const src=e.touches?e.touches[0]:e; const d=document.createElement('div'); d.className='tap-dot'; d.style.cssText=`position:fixed; width:20px; height:20px; background:#facc15; border-radius:50%; left:${src.clientX}px; top:${src.clientY}px; pointer-events:none; transform:translate(-50%,-50%); z-index:9999; transition:opacity 0.3s;`; document.body.appendChild(d); setTimeout(()=>d.remove(),300); }
+
+    function setMode(m) {
+        mode=m; tempPts=[];
+        if (m !== 'select') selectedIdx=-1;
+        const map={watch:btnWatch,select:btnSelect,line:btnLine,triangle:btnTriangle,quad:btnQuad,circle:btnCircle,arrow:btnArrow,name:btnName};
+        Object.entries(map).forEach(([k,b])=>b&&b.classList.toggle('active',k===m));
+        canvas.style.pointerEvents=m==='watch'?'none':'auto';
+        if (m==='watch') video.play().catch(()=>{});
+        else video.pause();
+        updateDots(); redrawAll();
+        statusEl.innerHTML=`Mode: ${modeLabel[m]}`;
+    }
+
+    btnWatch.addEventListener('click',()=>setMode('watch'));
+    btnSelect.addEventListener('click',()=>setMode('select'));
+    btnLine.addEventListener('click',()=>setMode('line'));
+    btnTriangle.addEventListener('click',()=>setMode('triangle'));
+    btnQuad.addEventListener('click',()=>setMode('quad'));
+    btnCircle.addEventListener('click',()=>setMode('circle'));
+    btnArrow.addEventListener('click',()=>setMode('arrow'));
+    btnName.addEventListener('click',()=>setMode('name'));
+    btnClear.addEventListener('click',()=>{ snapshot(); shapes=[]; tempPts=[]; selectedIdx=-1; redrawAll(); updateDots(); flash('Semua dihapus'); });
+
+    paletteEl.addEventListener('click',e=>{
+        const sw=e.target.closest('.swatch'); if(!sw) return;
+        currentColor=sw.dataset.color;
+        document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+        sw.classList.add('active');
+    });
+
+    // Video controls
+    btnPlayPause.addEventListener('click',()=>video.paused?video.play():video.pause());
+    btnMute.addEventListener('click',()=>{ video.muted=!video.muted; btnMute.textContent=video.muted?'🔇':'🔊'; });
+    video.addEventListener('play',()=>btnPlayPause.textContent='⏸️');
+    video.addEventListener('pause',()=>btnPlayPause.textContent='▶️');
+    video.addEventListener('timeupdate',()=>{
+        if(!video.duration) return;
+        seekBar.value=(video.currentTime/video.duration)*100;
+        const f=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+        timeDisplay.textContent=f(video.currentTime)+' / '+f(video.duration);
+    });
+    seekBar.addEventListener('input',()=>{ if(video.duration) video.currentTime=(seekBar.value/100)*video.duration; });
+
+    // Screenshot HD
+    function saveScreenshot() {
+        const w = canvas.width, h = canvas.height;
+        if (!w || !h) { flash('Canvas belum siap'); return; }
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w; tempCanvas.height = h;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (video.readyState >= 2 && video.videoWidth > 0) tempCtx.drawImage(video, 0, 0, w, h);
+        else { tempCtx.fillStyle = '#0a0f0a'; tempCtx.fillRect(0,0,w,h); tempCtx.fillStyle='#fff'; tempCtx.fillText('Video belum siap',20,40); }
+        tempCtx.drawImage(canvas, 0, 0);
+        const link = document.createElement('a');
+        link.download = `thefootys_${Date.now()}.png`;
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+        flash('💾 Gambar HD tersimpan!');
+    }
+
+    document.getElementById('saveMediaBtn').addEventListener('click', saveScreenshot);
+    document.getElementById('exportMediaBtn').addEventListener('click', saveScreenshot);
+    document.getElementById('publishMediaBtn').addEventListener('click', saveScreenshot);
+
+    // Upload video
+    const uploadScreen = document.getElementById('uploadScreen');
+    const mainScreen = document.getElementById('mainScreen');
+    const uploadBox = document.getElementById('uploadBox');
+    uploadBox.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (video.src && video.src.startsWith('blob:')) URL.revokeObjectURL(video.src);
+        video.src = URL.createObjectURL(file);
+        video.style.display = 'block';
+        videoControls.style.display = 'flex';
+        video.load();
+        video.addEventListener('canplay', function onCP() {
+            video.removeEventListener('canplay', onCP);
+            video.play().catch(()=>{});
+            uploadScreen.style.display = 'none';
+            mainScreen.style.display = 'block';
+            resizeCanvas();
+            flash(`Video: ${file.name}`);
+        });
+        video.onerror = () => { alert('Gagal memuat video'); };
+    });
+
+    setMode('watch');
+    syncUndoBtn();
+    resizeCanvas();
+})();
+</script>
+</body>
+</html>
