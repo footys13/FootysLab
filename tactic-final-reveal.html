@@ -119,7 +119,7 @@
         <div class="status" id="status">Mode: Pilih / Edit</div>
 
         <div class="action-buttons">
-            <div class="btn-export" id="exportVideoBtn">🎥 RECORD & SAVE ANIMATION (VIDEO)</div>
+            <div class="btn-export" id="exportVideoBtn">🎥 RECORD & SAVE HD VIDEO (1280×720)</div>
             <div class="btn-export secondary" id="exportImageBtn">📸 SAVE AS STATIC IMAGE</div>
         </div>
     </div>
@@ -438,29 +438,63 @@
         bgImage.src = URL.createObjectURL(file);
     });
 
-    // --- EXPORT AS VIDEO (MediaRecorder) ---
+    // --- EXPORT AS VIDEO HD (MediaRecorder) ---
     let isRecording = false;
     document.getElementById('exportVideoBtn').addEventListener('click', () => {
         if (isRecording) return;
         isRecording = true;
-        
+
         selectedIdx = -1; selectBar.style.display = 'none';
-        flash('🔴 MEREKAM ANIMASI (4 DETIK)...', true);
-        
-        const stream = canvas.captureStream(30);
-        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        flash('🔴 MEREKAM HD (4 DETIK)...', true);
+
+        // Buat offscreen canvas HD 1280x720
+        const HD_W = 1280, HD_H = 720;
+        const hdCanvas = document.createElement('canvas');
+        hdCanvas.width = HD_W; hdCanvas.height = HD_H;
+        const hdCtx = hdCanvas.getContext('2d');
+
+        // Fungsi render frame ke HD canvas (scale dari canvas utama)
+        function renderHDFrame() {
+            hdCtx.clearRect(0, 0, HD_W, HD_H);
+            hdCtx.drawImage(canvas, 0, 0, HD_W, HD_H);
+        }
+
+        // Pilih mimeType terbaik yang didukung browser
+        const mimeTypes = [
+            'video/mp4;codecs=avc1',
+            'video/webm;codecs=vp9',
+            'video/webm;codecs=vp8',
+            'video/webm'
+        ];
+        const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+        const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+        const stream = hdCanvas.captureStream(60);
+        const recorder = new MediaRecorder(stream, {
+            mimeType,
+            videoBitsPerSecond: 8_000_000 // 8 Mbps HD
+        });
         const chunks = [];
-        
+
+        // Loop render frame HD selama recording
+        let rafId;
+        function hdLoop() {
+            renderHDFrame();
+            rafId = requestAnimationFrame(hdLoop);
+        }
+        hdLoop();
+
         recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
+            cancelAnimationFrame(rafId);
+            const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = `TheFootys_Taktik_${Date.now()}.webm`; a.click();
-            isRecording = false; flash('✅ VIDEO TERSIMPAN!');
+            a.href = url; a.download = `TheFootys_Taktik_HD_${Date.now()}.${ext}`; a.click();
+            isRecording = false; flash('✅ VIDEO HD TERSIMPAN!');
         };
-        
-        recorder.start();
+
+        recorder.start(100); // collect data setiap 100ms
         setTimeout(() => recorder.stop(), 4000);
     });
 
