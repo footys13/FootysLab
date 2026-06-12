@@ -7,20 +7,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background: #0a0f0a;
       color: white;
       font-family: 'Barlow', sans-serif;
       min-height: 100vh;
     }
-
     .hero {
       padding: 60px 24px 40px;
       max-width: 700px;
       margin: 0 auto;
     }
-
     .hero-tag {
       font-size: 10px;
       letter-spacing: 3px;
@@ -29,7 +26,6 @@
       font-weight: 700;
       margin-bottom: 16px;
     }
-
     .hero-title {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 72px;
@@ -39,11 +35,7 @@
       margin-bottom: 20px;
       letter-spacing: -1px;
     }
-
-    .hero-title span {
-      color: #4ade80;
-    }
-
+    .hero-title span { color: #4ade80; }
     .hero-sub {
       font-size: 14px;
       color: #6b7280;
@@ -51,14 +43,12 @@
       line-height: 1.6;
       margin-bottom: 32px;
     }
-
     .hero-divider {
       width: 48px;
       height: 3px;
       background: #4ade80;
       margin-bottom: 48px;
     }
-
     .section-label {
       font-size: 9px;
       letter-spacing: 3px;
@@ -69,7 +59,6 @@
       max-width: 700px;
       margin: 0 auto 16px;
     }
-
     .tools-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -78,7 +67,6 @@
       max-width: 700px;
       margin: 0 auto 1px;
     }
-
     .tool-card {
       background: #0a0f0a;
       padding: 24px;
@@ -89,13 +77,9 @@
       transition: background 0.2s;
       position: relative;
       overflow: hidden;
-      min-height: 200px;
+      min-height: 140px;
     }
-
-    .tool-card:hover {
-      background: #0f1a0f;
-    }
-
+    .tool-card:hover { background: #0f1a0f; }
     .tool-card::before {
       content: '';
       position: absolute;
@@ -106,16 +90,8 @@
       opacity: 0;
       transition: opacity 0.2s;
     }
-
-    .tool-card:hover::before {
-      opacity: 1;
-    }
-
-    .tool-icon {
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
-
+    .tool-card:hover::before { opacity: 1; }
+    .tool-icon { font-size: 24px; margin-bottom: 12px; }
     .tool-type {
       font-size: 9px;
       letter-spacing: 2px;
@@ -124,7 +100,6 @@
       font-weight: 700;
       margin-bottom: 6px;
     }
-
     .tool-name {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 22px;
@@ -133,13 +108,7 @@
       letter-spacing: 0.5px;
       margin-bottom: 8px;
     }
-
-    .tool-desc {
-      font-size: 11px;
-      color: #6b7280;
-      line-height: 1.5;
-    }
-
+    .tool-desc { font-size: 11px; color: #6b7280; line-height: 1.5; }
     .tool-arrow {
       position: absolute;
       bottom: 20px;
@@ -148,16 +117,16 @@
       color: #2d4a2d;
       transition: color 0.2s, transform 0.2s;
     }
-
     .tool-card:hover .tool-arrow {
       color: #4ade80;
       transform: translate(3px, -3px);
     }
-
     .tool-card.scouting .tool-name { color: #4ade80; }
     .tool-card.pizza .tool-name    { color: #86efac; }
+    .tool-card.radar .tool-name    { color: #c084fc; }
     .tool-card.scatter .tool-name  { color: #60a5fa; }
-
+    .tool-card.bar .tool-name      { color: #facc15; }
+    .tool-card.tactic .tool-name   { color: #f87171; }
     .footer {
       max-width: 700px;
       margin: 40px auto 0;
@@ -167,7 +136,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .footer-brand {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 16px;
@@ -176,13 +144,7 @@
       color: #2d4a2d;
       text-transform: uppercase;
     }
-
-    .footer-note {
-      font-size: 10px;
-      color: #374151;
-      letter-spacing: 1px;
-    }
-
+    .footer-note { font-size: 10px; color: #374151; letter-spacing: 1px; }
     @media (max-width: 500px) {
       .hero-title { font-size: 52px; }
       .tools-grid { grid-template-columns: 1fr; }
@@ -199,61 +161,7 @@
     <div class="hero-divider"></div>
   </div>
 
-    <!-- RADAR -->
-<div class="section-label" style="margin-top:1px;">Radar Charts</div>
-<div class="tools-grid">
-
-  <a href="radar-full.html" class="tool-card scatter">
-    <div class="tool-icon">🕸️</div>
-    <div class="tool-type">Radar Chart</div>
-    <div class="tool-name">Full Radar</div>
-    <div class="tool-desc">21 stats color coded per kategori — attacking, possession, progression, defending.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-  <a href="radar-compare.html" class="tool-card scatter">
-    <div class="tool-icon">🕸️🕸️</div>
-    <div class="tool-type">Radar Chart</div>
-    <div class="tool-name">Radar Compare</div>
-    <div class="tool-desc">Overlay 2 pemain dalam 1 radar chart — hijau vs merah.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-</div>
-
-<!-- ANALYSIS -->
-<div class="section-label" style="margin-top:1px;">Analysis</div>
-<div class="tools-grid">
-
-  <a href="scatter.html" class="tool-card scatter">
-    <div class="tool-icon">📊</div>
-    <div class="tool-type">Analysis</div>
-    <div class="tool-name">Scatter Plot</div>
-    <div class="tool-desc">Plot semua pemain di dua axis. Klik titik untuk info lengkap.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-  <a href="scatter-compare.html" class="tool-card scatter">
-    <div class="tool-icon">📊📊</div>
-    <div class="tool-type">Analysis</div>
-    <div class="tool-name">Scatter Compare</div>
-    <div class="tool-desc">Highlight 2 pemain di scatter plot — bandingkan posisi mereka.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-  <a href="percentile-calc.html" class="tool-card scatter">
-    <div class="tool-icon">🔢</div>
-    <div class="tool-type">Analysis</div>
-    <div class="tool-name">Percentile Calc</div>
-    <div class="tool-desc">Hitung percentile pemain vs seluruh liga dari CSV raw stats.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-</div>
-
-  </div>
-
-  <!-- PIZZA CHARTS (3 card = 3 kolom, RAPI!) -->
+  <!-- PIZZA CHARTS -->
   <div class="section-label" style="margin-top:1px;">Pizza Charts</div>
   <div class="tools-grid" style="grid-template-columns: 1fr 1fr 1fr;">
 
@@ -280,7 +188,96 @@
       <div class="tool-desc">Compare players from different leagues using raw stats.</div>
       <div class="tool-arrow">↗</div>
     </a>
-    
+
+  </div>
+
+  <!-- RADAR CHARTS -->
+  <div class="section-label" style="margin-top:1px;">Radar Charts</div>
+  <div class="tools-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+
+    <a href="radar-full.html" class="tool-card radar">
+      <div class="tool-icon">🕸️</div>
+      <div class="tool-type">Radar Chart</div>
+      <div class="tool-name">Full Radar</div>
+      <div class="tool-desc">21 stats color coded per kategori — attacking, possession, progression, defending.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="radar-compare.html" class="tool-card radar">
+      <div class="tool-icon">🕸️🕸️</div>
+      <div class="tool-type">Radar Chart</div>
+      <div class="tool-name">Radar Compare</div>
+      <div class="tool-desc">Overlay 2 pemain dalam 1 radar chart — hijau vs merah.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="Radar-Compare-3Players.html" class="tool-card radar">
+      <div class="tool-icon">🕸️🕸️🕸️</div>
+      <div class="tool-type">Radar Chart</div>
+      <div class="tool-name">3 Players</div>
+      <div class="tool-desc">Overlay 3 pemain dalam 1 radar chart sekaligus.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+  </div>
+
+  <!-- ANALYSIS -->
+  <div class="section-label" style="margin-top:1px;">Analysis</div>
+  <div class="tools-grid">
+
+    <a href="scatter.html" class="tool-card scatter">
+      <div class="tool-icon">📊</div>
+      <div class="tool-type">Analysis</div>
+      <div class="tool-name">Scatter Plot</div>
+      <div class="tool-desc">Plot semua pemain di dua axis. Filter Indonesia vs Foreign.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="scatter-compare.html" class="tool-card scatter">
+      <div class="tool-icon">📊📊</div>
+      <div class="tool-type">Analysis</div>
+      <div class="tool-name">Scatter Compare</div>
+      <div class="tool-desc">Highlight 2 pemain di scatter plot — bandingkan posisi mereka.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="scatter2.html" class="tool-card scatter">
+      <div class="tool-icon">📈</div>
+      <div class="tool-type">Analysis</div>
+      <div class="tool-name">Scatter 2</div>
+      <div class="tool-desc">Versi scatter plot alternatif.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="bar-chart.html" class="tool-card bar">
+      <div class="tool-icon">📋</div>
+      <div class="tool-type">Analysis</div>
+      <div class="tool-name">Percentile Bar</div>
+      <div class="tool-desc">Horizontal bar chart lengkap per kategori — attacking, creativity, possession, defending.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+    <a href="percentile-calc.html" class="tool-card bar">
+      <div class="tool-icon">🔢</div>
+      <div class="tool-type">Analysis</div>
+      <div class="tool-name">Percentile Calc</div>
+      <div class="tool-desc">Hitung percentile pemain vs seluruh liga dari CSV raw stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+
+  </div>
+
+  <!-- TACTICS -->
+  <div class="section-label" style="margin-top:1px;">Tactics</div>
+  <div class="tools-grid">
+
+    <a href="footys-tactico.html" class="tool-card tactic">
+      <div class="tool-icon">🗺️</div>
+      <div class="tool-type">Tactics</div>
+      <div class="tool-name">Tactico</div>
+      <div class="tool-desc">Visualisasi taktik dan formasi tim.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
 
   </div>
 
