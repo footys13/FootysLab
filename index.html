@@ -121,12 +121,12 @@
       color: #4ade80;
       transform: translate(3px, -3px);
     }
-    .tool-card.scouting .tool-name { color: #4ade80; }
     .tool-card.pizza .tool-name    { color: #86efac; }
     .tool-card.radar .tool-name    { color: #c084fc; }
     .tool-card.scatter .tool-name  { color: #60a5fa; }
     .tool-card.bar .tool-name      { color: #facc15; }
     .tool-card.tactic .tool-name   { color: #f87171; }
+    .tool-card.dataset .tool-name  { color: #4ade80; }
     .footer {
       max-width: 700px;
       margin: 40px auto 0;
@@ -164,7 +164,6 @@
   <!-- PIZZA CHARTS -->
   <div class="section-label" style="margin-top:1px;">Pizza Charts</div>
   <div class="tools-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-
     <a href="pizza.html" class="tool-card pizza">
       <div class="tool-icon">🍕</div>
       <div class="tool-type">Pizza Chart</div>
@@ -172,7 +171,6 @@
       <div class="tool-desc">Visualize one player's percentile stats in a pizza chart.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="pizza-compare.html" class="tool-card pizza">
       <div class="tool-icon">🍕🍕</div>
       <div class="tool-type">Pizza Chart</div>
@@ -180,7 +178,6 @@
       <div class="tool-desc">Overlay two players in one chart. See who dominates.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="pizza-crossleague.html" class="tool-card pizza">
       <div class="tool-icon">🌍</div>
       <div class="tool-type">Pizza Chart</div>
@@ -188,13 +185,11 @@
       <div class="tool-desc">Compare players from different leagues using raw stats.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
   </div>
 
   <!-- RADAR CHARTS -->
   <div class="section-label" style="margin-top:1px;">Radar Charts</div>
   <div class="tools-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-
     <a href="radar-full.html" class="tool-card radar">
       <div class="tool-icon">🕸️</div>
       <div class="tool-type">Radar Chart</div>
@@ -202,7 +197,6 @@
       <div class="tool-desc">21 stats color coded per kategori — attacking, possession, progression, defending.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="radar-compare.html" class="tool-card radar">
       <div class="tool-icon">🕸️🕸️</div>
       <div class="tool-type">Radar Chart</div>
@@ -210,7 +204,6 @@
       <div class="tool-desc">Overlay 2 pemain dalam 1 radar chart — hijau vs merah.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="Radar-Compare-3Players.html" class="tool-card radar">
       <div class="tool-icon">🕸️🕸️🕸️</div>
       <div class="tool-type">Radar Chart</div>
@@ -218,13 +211,11 @@
       <div class="tool-desc">Overlay 3 pemain dalam 1 radar chart sekaligus.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
   </div>
 
   <!-- ANALYSIS -->
   <div class="section-label" style="margin-top:1px;">Analysis</div>
-  <div class="tools-grid">
-
+  <div class="tools-grid" style="grid-template-columns: 1fr 1fr;">
     <a href="scatter.html" class="tool-card scatter">
       <div class="tool-icon">📊</div>
       <div class="tool-type">Analysis</div>
@@ -232,7 +223,6 @@
       <div class="tool-desc">Plot semua pemain di dua axis. Filter Indonesia vs Foreign.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="scatter-compare.html" class="tool-card scatter">
       <div class="tool-icon">📊📊</div>
       <div class="tool-type">Analysis</div>
@@ -240,7 +230,6 @@
       <div class="tool-desc">Highlight 2 pemain di scatter plot — bandingkan posisi mereka.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="scatter2.html" class="tool-card scatter">
       <div class="tool-icon">📈</div>
       <div class="tool-type">Analysis</div>
@@ -248,7 +237,6 @@
       <div class="tool-desc">Versi scatter plot alternatif.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="bar-chart.html" class="tool-card bar">
       <div class="tool-icon">📋</div>
       <div class="tool-type">Analysis</div>
@@ -256,7 +244,6 @@
       <div class="tool-desc">Horizontal bar chart lengkap per kategori — attacking, creativity, possession, defending.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
     <a href="percentile-calc.html" class="tool-card bar">
       <div class="tool-icon">🔢</div>
       <div class="tool-type">Analysis</div>
@@ -264,13 +251,11 @@
       <div class="tool-desc">Hitung percentile pemain vs seluruh liga dari CSV raw stats.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
   </div>
 
   <!-- TACTICS -->
   <div class="section-label" style="margin-top:1px;">Tactics</div>
-  <div class="tools-grid">
-
+  <div class="tools-grid" style="grid-template-columns: 1fr;">
     <a href="footys-tactico.html" class="tool-card tactic">
       <div class="tool-icon">🗺️</div>
       <div class="tool-type">Tactics</div>
@@ -278,45 +263,41 @@
       <div class="tool-desc">Visualisasi taktik dan formasi tim.</div>
       <div class="tool-arrow">↗</div>
     </a>
-
   </div>
-<!-- DATASETS -->
-<div class="section-label" style="margin-top:1px;">Download Datasets</div>
-<div class="tools-grid">
 
-  <a href="FORWARDISL2526.csv" download class="tool-card bar">
-    <div class="tool-icon">📥</div>
-    <div class="tool-type">Dataset · Percentile</div>
-    <div class="tool-name">Forward ISL</div>
-    <div class="tool-desc">Forward BRI Liga 1 2025/26 — percentile stats.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
+  <!-- DOWNLOAD DATASETS -->
+  <div class="section-label" style="margin-top:1px;">Download Datasets</div>
+  <div class="tools-grid" style="grid-template-columns: 1fr 1fr;">
+    <a href="FORWARDISL2526.csv" download class="tool-card dataset">
+      <div class="tool-icon">📥</div>
+      <div class="tool-type">Dataset · Percentile</div>
+      <div class="tool-name">Forward ISL</div>
+      <div class="tool-desc">Forward BRI Liga 1 2025/26 — percentile stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+    <a href="MIDISL2526.csv" download class="tool-card dataset">
+      <div class="tool-icon">📥</div>
+      <div class="tool-type">Dataset · Percentile</div>
+      <div class="tool-name">Midfielder ISL</div>
+      <div class="tool-desc">Midfielder BRI Liga 1 2025/26 — percentile stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+    <a href="FBWBISL2526.csv" download class="tool-card dataset">
+      <div class="tool-icon">📥</div>
+      <div class="tool-type">Dataset · Percentile</div>
+      <div class="tool-name">FB/WB ISL</div>
+      <div class="tool-desc">Fullback & Wingback BRI Liga 1 2025/26 — percentile stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+    <a href="DEFISL2526.csv" download class="tool-card dataset">
+      <div class="tool-icon">📥</div>
+      <div class="tool-type">Dataset · Percentile</div>
+      <div class="tool-name">Defender ISL</div>
+      <div class="tool-desc">Defender BRI Liga 1 2025/26 — percentile stats.</div>
+      <div class="tool-arrow">↗</div>
+    </a>
+  </div>
 
-  <a href="MIDISL2526.csv" download class="tool-card bar">
-    <div class="tool-icon">📥</div>
-    <div class="tool-type">Dataset · Percentile</div>
-    <div class="tool-name">Midfielder ISL</div>
-    <div class="tool-desc">Midfielder BRI Liga 1 2025/26 — percentile stats.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-  <a href="FBWBISL2526.csv" download class="tool-card bar">
-    <div class="tool-icon">📥</div>
-    <div class="tool-type">Dataset · Percentile</div>
-    <div class="tool-name">FB/WB ISL</div>
-    <div class="tool-desc">Fullback & Wingback BRI Liga 1 2025/26 — percentile stats.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-  <a href="DEFISL2526.csv" download class="tool-card bar">
-    <div class="tool-icon">📥</div>
-    <div class="tool-type">Dataset · Percentile</div>
-    <div class="tool-name">Defender ISL</div>
-    <div class="tool-desc">Defender BRI Liga 1 2025/26 — percentile stats.</div>
-    <div class="tool-arrow">↗</div>
-  </a>
-
-</div>
   <!-- FOOTER -->
   <div class="footer">
     <div class="footer-brand">The Footys</div>
