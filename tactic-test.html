@@ -138,12 +138,14 @@
     let hasVideo = false;
     let bgImage = new Image();
 
+    // --- Resize ---
     function resizeCanvas() {
         canvas.width = stage.offsetWidth; canvas.height = stage.offsetHeight;
         redrawAll();
     }
     new ResizeObserver(resizeCanvas).observe(stage);
 
+    // --- Helper ---
     function getPoint(e) {
         const r = canvas.getBoundingClientRect();
         const sx = canvas.width / r.width, sy = canvas.height / r.height;
@@ -263,10 +265,10 @@
         ctx.restore();
     }
 
-    // --- DRAW BACKGROUND (FIX: video tetap tampil saat pause) ---
+    // --- BACKGROUND (FIX: video tetap muncul meski pause) ---
     function drawBackgroundOn(ctx, w, h) {
         if (hasVideo && bgVideo.readyState >= 2) {
-            // Gambar video meskipun paused — frame terakhir tetap terlihat
+            // Gambar video selalu, meskipun pause → frame terakhir tetap terlihat
             const canvasAspect = w / h;
             const videoAspect = bgVideo.videoWidth / bgVideo.videoHeight;
             let dx = 0, dy = 0, dw = w, dh = h;
@@ -326,6 +328,7 @@
         }
     }
 
+    // --- ANIMATION LOOP ---
     function animate(t) {
         if (!animationPaused || recording) {
             globalTime = t;
@@ -440,7 +443,7 @@
     btnRedo.addEventListener('click', () => { undoStack.push(JSON.parse(JSON.stringify(shapes))); shapes = redoStack.pop(); syncUndoBtn(); flash('↪️ Redo'); });
     document.getElementById('btnClear').addEventListener('click', () => { snapshot(); shapes = []; flash('🗑️ Bersih!'); });
 
-    // --- COPY / PASTE / DELETE (FIX: pastikan ID unik) ---
+    // --- COPY / PASTE / DELETE (FIX) ---
     document.getElementById('btnCopy').addEventListener('click', () => {
         if(selectedIdx >= 0) {
             clipboard = JSON.parse(JSON.stringify(shapes[selectedIdx]));
@@ -492,6 +495,8 @@
         const url = URL.createObjectURL(file);
         if (file.type.startsWith('video/')) {
             hasVideo = true;
+            // Hentikan video lama jika ada
+            bgVideo.pause();
             bgVideo.src = url;
             bgVideo.load();
             bgVideo.play().catch(e => console.log('Autoplay error:', e));
@@ -522,14 +527,18 @@
         flash(animationPaused ? '⏸️ Animasi dijeda' : '▶️ Animasi dilanjutkan');
     });
 
-    // --- PLAY/PAUSE VIDEO (tanpa blank) ---
+    // --- PLAY/PAUSE VIDEO (FIX: tidak macet) ---
     document.getElementById('playPauseVideoBtn').addEventListener('click', function() {
         if (!hasVideo) {
             flash('⚠️ Tidak ada video', true);
             return;
         }
+        // Hindari toggling terlalu cepat dengan menonaktifkan tombol sementara
+        this.disabled = true;
+        setTimeout(() => { this.disabled = false; }, 300);
+
         if (bgVideo.paused) {
-            bgVideo.play();
+            bgVideo.play().catch(e => console.log('Play error:', e));
             this.textContent = '⏸️ Pause Video';
             flash('▶️ Video diputar');
         } else {
