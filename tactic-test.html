@@ -16,7 +16,6 @@
         .stage-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #0f2d1f; border-radius: 16px; overflow: hidden; margin: 16px 0; border: 1px solid #2d4a2d; }
         .stage { position: relative; width: 100%; height: 100%; }
         #drawCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
-        
         .toolbar-container { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
         .toolbar-group { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; background: #111827; padding: 12px 10px 10px; border-radius: 12px; border: 1px solid #1f2937; position: relative; }
         .toolbar-group::before { content: attr(data-label); position: absolute; top: -8px; left: 12px; background: #0f1a0f; padding: 0 6px; font-size: 9px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
@@ -44,6 +43,7 @@
         .control-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .control-row .btn { flex: 1; min-width: 80px; }
         .watermark { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 4px; color: #ffffff; text-transform: uppercase; margin-top: 20px; padding-top: 12px; border-top: 1px solid #1a2e1a; }
+        #bgVideo { display: none; }
     </style>
 </head>
 <body>
@@ -52,8 +52,8 @@
 
 <div id="uploadScreen">
     <div class="upload-box" id="uploadBox">
-        <p>📁 ADD IMAGE</p>
-        <div style="font-size:10px;color:#6b7280;">Tap untuk pilih gambar base</div>
+        <p>📁 ADD IMAGE / VIDEO</p>
+        <div style="font-size:10px;color:#6b7280;">Tap untuk pilih gambar atau video</div>
     </div>
 </div>
 
@@ -101,9 +101,10 @@
         <div class="status" id="status">Mode: Pilih / Edit</div>
 
         <div class="action-buttons">
-            <!-- Control row: Play/Pause and Record -->
+            <!-- Control row: Play/Pause Animasi, Play/Pause Video, Record -->
             <div class="control-row">
-                <button class="btn" id="playPauseBtn">⏸️ Pause</button>
+                <button class="btn" id="playPauseBtn">⏸️ Pause Animasi</button>
+                <button class="btn" id="playPauseVideoBtn">⏸️ Pause Video</button>
                 <button class="btn record" id="recordBtn">🔴 Mulai Rekam</button>
             </div>
             <!-- Export buttons -->
@@ -113,7 +114,8 @@
     <div class="watermark">⚡ THE FOOTYS ⚡</div>
 </div>
 
-<input type="file" id="fileInput" accept="image/*" style="display:none;">
+<input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+<video id="bgVideo" loop muted playsinline></video>
 
 <script>
 (function(){
@@ -124,19 +126,23 @@
     const btnSelect = document.getElementById('btnSelect');
     const btnUndo = document.getElementById('btnUndo'), btnRedo = document.getElementById('btnRedo');
     const btnPaste = document.getElementById('btnPaste');
+    const bgVideo = document.getElementById('bgVideo');
 
     let mode = 'select', currentColor = '#ef4444', tempPts = [], shapes = [];
     let selectedIdx = -1, clipboard = null, undoStack = [], redoStack = [];
     let isDragging = false, isPointerDown = false, dragOffX = 0, dragOffY = 0, globalTime = 0;
-    let animationPaused = false;          // NEW: pause animasi
-    let recording = false;                // NEW: status rekaman
-    let recorder = null;                  // NEW: objek MediaRecorder
-    let recordedChunks = [];              // NEW: potongan video
-    let stream = null;                    // NEW: stream dari canvas
-    let hdLoopId = null;                 // NEW: id requestAnimationFrame untuk loop rekaman
-    let animationId = null;               // NEW: id animasi utama
-    
-    const bgImage = new Image();
+    let animationPaused = false;
+    let recording = false;
+    let recorder = null;
+    let recordedChunks = [];
+    let stream = null;
+    let hdLoopId = null;
+    let animationId = null;
+    let videoPaused = false; // untuk kontrol video background
+
+    // Media: bisa gambar atau video
+    let bgImage = new Image();
+    let hasVideo = false; // flag apakah menggunakan video
 
     function resizeCanvas() {
         canvas.width = stage.offsetWidth; canvas.height = stage.offsetHeight;
@@ -183,7 +189,7 @@
         }
     }
 
-    // --- DRAWING FUNCTIONS (core, reusable) ---
+    // --- DRAWING FUNCTIONS (core) ---
     function drawShapeOn(ctx, s, scaleX, scaleY, isSelected, time) {
         if (!s) return;
         const color = s.color || '#ef4444';
@@ -265,9 +271,23 @@
         ctx.restore();
     }
 
-    // --- DRAW BACKGROUND (reusable) ---
+    // --- DRAW BACKGROUND (supports image or video) ---
     function drawBackgroundOn(ctx, w, h) {
-        if (bgImage.src) {
+        if (hasVideo && bgVideo.readyState >= 2 && !bgVideo.paused) {
+            // Gambar video sebagai background
+            const canvasAspect = w / h;
+            const videoAspect = bgVideo.videoWidth / bgVideo.videoHeight;
+            let dx = 0, dy = 0, dw = w, dh = h;
+            if (canvasAspect > videoAspect) {
+                dw = w; dh = w / videoAspect; dy = (h - dh) / 2;
+            } else {
+                dh = h; dw = h * videoAspect; dx = (w - dw) / 2;
+            }
+            ctx.drawImage(bgVideo, dx, dy, dw, dh);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(0, 0, w, h);
+        } else if (bgImage.src) {
+            // Gambar background
             const canvasAspect = w / h;
             const imgAspect = bgImage.width / bgImage.height;
             let dx = 0, dy = 0, dw = w, dh = h;
@@ -280,6 +300,7 @@
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
             ctx.fillRect(0, 0, w, h);
         } else {
+            // Default hijau
             ctx.fillStyle = '#14532d';
             ctx.fillRect(0, 0, w, h);
         }
@@ -318,7 +339,7 @@
 
     // --- ANIMATION LOOP ---
     function animate(t) {
-        if (!animationPaused) {
+        if (!animationPaused || recording) {
             globalTime = t;
             redrawAll();
         }
@@ -452,34 +473,67 @@
         e.target.classList.add('active');
     });
 
-    // --- UPLOAD IMAGE ---
+    // --- UPLOAD MEDIA (IMAGE or VIDEO) ---
     document.getElementById('uploadBox').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
         const file = fileInput.files[0];
         if(!file) return;
-        bgImage.onload = () => {
-            document.getElementById('uploadScreen').style.display = 'none';
-            document.getElementById('mainScreen').style.display = 'block';
-            resizeCanvas();
-        };
-        bgImage.src = URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
+        if (file.type.startsWith('video/')) {
+            // Video
+            hasVideo = true;
+            bgVideo.src = url;
+            bgVideo.load();
+            bgVideo.play().catch(e => console.log('Autoplay error:', e));
+            bgVideo.onloadeddata = () => {
+                document.getElementById('uploadScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                resizeCanvas();
+            };
+        } else {
+            // Image
+            hasVideo = false;
+            bgImage.onload = () => {
+                document.getElementById('uploadScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                resizeCanvas();
+            };
+            bgImage.src = url;
+        }
+        // Reset file input agar bisa upload ulang
+        fileInput.value = '';
     });
 
-    // --- PLAY/PAUSE ---
+    // --- PLAY/PAUSE ANIMASI ---
     document.getElementById('playPauseBtn').addEventListener('click', function() {
         animationPaused = !animationPaused;
-        this.textContent = animationPaused ? '▶️ Play' : '⏸️ Pause';
+        this.textContent = animationPaused ? '▶️ Play Animasi' : '⏸️ Pause Animasi';
         if (!animationPaused) {
-            // reset globalTime ke sekarang agar animasi melanjutkan dari waktu sekarang
             globalTime = performance.now();
         }
         flash(animationPaused ? '⏸️ Animasi dijeda' : '▶️ Animasi dilanjutkan');
     });
 
+    // --- PLAY/PAUSE VIDEO BACKGROUND ---
+    document.getElementById('playPauseVideoBtn').addEventListener('click', function() {
+        if (!hasVideo) {
+            flash('⚠️ Tidak ada video', true);
+            return;
+        }
+        if (bgVideo.paused) {
+            bgVideo.play();
+            this.textContent = '⏸️ Pause Video';
+            flash('▶️ Video diputar');
+        } else {
+            bgVideo.pause();
+            this.textContent = '▶️ Play Video';
+            flash('⏸️ Video dijeda');
+        }
+    });
+
     // --- RECORD (Start/Stop) ---
     document.getElementById('recordBtn').addEventListener('click', function() {
         if (recording) {
-            // Stop recording
             if (recorder && recorder.state === 'recording') {
                 recorder.stop();
             }
@@ -503,23 +557,8 @@
             const scaleX = HD_W / canvas.width;
             const scaleY = HD_H / canvas.height;
 
-            // Background
-            if (bgImage.src) {
-                const canvasAspect = HD_W / HD_H;
-                const imgAspect = bgImage.width / bgImage.height;
-                let dx = 0, dy = 0, dw = HD_W, dh = HD_H;
-                if (canvasAspect > imgAspect) {
-                    dw = HD_W; dh = HD_W / imgAspect; dy = (HD_H - dh) / 2;
-                } else {
-                    dh = HD_H; dw = HD_H * imgAspect; dx = (HD_W - dw) / 2;
-                }
-                hdCtx.drawImage(bgImage, dx, dy, dw, dh);
-                hdCtx.fillStyle = 'rgba(0,0,0,0.15)';
-                hdCtx.fillRect(0, 0, HD_W, HD_H);
-            } else {
-                hdCtx.fillStyle = '#14532d';
-                hdCtx.fillRect(0, 0, HD_W, HD_H);
-            }
+            // Background (dengan video atau gambar)
+            drawBackgroundOn(hdCtx, HD_W, HD_H);
 
             // Shapes
             shapes.forEach(s => {
@@ -570,12 +609,11 @@
             if (hdLoopId) cancelAnimationFrame(hdLoopId);
         };
 
-        recorder.start(100); // collect data every 100ms
+        recorder.start(100);
         recording = true;
         this.textContent = '⏹️ Stop Rekam';
         this.classList.add('active');
 
-        // Start HD render loop
         function hdLoop() {
             if (!recording) return;
             renderHDFrame();
@@ -597,23 +635,7 @@
         const scaleX = W / canvas.width;
         const scaleY = H / canvas.height;
 
-        // Background
-        if (bgImage.src) {
-            const canvasAspect = W / H;
-            const imgAspect = bgImage.width / bgImage.height;
-            let dx = 0, dy = 0, dw = W, dh = H;
-            if (canvasAspect > imgAspect) {
-                dw = W; dh = W / imgAspect; dy = (H - dh) / 2;
-            } else {
-                dh = H; dw = H * imgAspect; dx = (W - dw) / 2;
-            }
-            offCtx.drawImage(bgImage, dx, dy, dw, dh);
-            offCtx.fillStyle = 'rgba(0,0,0,0.15)';
-            offCtx.fillRect(0, 0, W, H);
-        } else {
-            offCtx.fillStyle = '#14532d';
-            offCtx.fillRect(0, 0, W, H);
-        }
+        drawBackgroundOn(offCtx, W, H);
 
         shapes.forEach(s => {
             const age = globalTime - (s.createdAt || 0);
