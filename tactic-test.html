@@ -101,13 +101,11 @@
         <div class="status" id="status">Mode: Pilih / Edit</div>
 
         <div class="action-buttons">
-            <!-- Control row: Play/Pause Animasi, Play/Pause Video, Record -->
             <div class="control-row">
                 <button class="btn" id="playPauseBtn">⏸️ Pause Animasi</button>
                 <button class="btn" id="playPauseVideoBtn">⏸️ Pause Video</button>
                 <button class="btn record" id="recordBtn">🔴 Mulai Rekam</button>
             </div>
-            <!-- Export buttons -->
             <div class="btn-export" id="exportImageBtn">📸 SAVE AS STATIC IMAGE (1920×1080)</div>
         </div>
     </div>
@@ -123,7 +121,6 @@
     const ctx = canvas.getContext('2d'), stage = document.getElementById('stage');
     const statusEl = document.getElementById('status'), paletteEl = document.getElementById('palette');
     const selectBar = document.getElementById('selectBar'), fileInput = document.getElementById('fileInput');
-    const btnSelect = document.getElementById('btnSelect');
     const btnUndo = document.getElementById('btnUndo'), btnRedo = document.getElementById('btnRedo');
     const btnPaste = document.getElementById('btnPaste');
     const bgVideo = document.getElementById('bgVideo');
@@ -138,11 +135,8 @@
     let stream = null;
     let hdLoopId = null;
     let animationId = null;
-    let videoPaused = false; // untuk kontrol video background
-
-    // Media: bisa gambar atau video
+    let hasVideo = false;
     let bgImage = new Image();
-    let hasVideo = false; // flag apakah menggunakan video
 
     function resizeCanvas() {
         canvas.width = stage.offsetWidth; canvas.height = stage.offsetHeight;
@@ -189,7 +183,7 @@
         }
     }
 
-    // --- DRAWING FUNCTIONS (core) ---
+    // --- DRAWING FUNCTIONS ---
     function drawShapeOn(ctx, s, scaleX, scaleY, isSelected, time) {
         if (!s) return;
         const color = s.color || '#ef4444';
@@ -229,7 +223,6 @@
             ctx.moveTo(p0.x * sx, p0.y * sy);
             ctx.quadraticCurveTo(p1.x * sx, p1.y * sy, p2.x * sx, p2.y * sy);
             ctx.stroke();
-
             const ang = Math.atan2(p2.y * sy - p1.y * sy, p2.x * sx - p1.x * sx);
             ctx.setLineDash([]);
             ctx.beginPath();
@@ -261,7 +254,6 @@
             ctx.quadraticCurveTo(x0, y0, x0 + rx, y0);
             ctx.closePath();
             ctx.fill();
-
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.shadowBlur = 0;
@@ -271,10 +263,10 @@
         ctx.restore();
     }
 
-    // --- DRAW BACKGROUND (supports image or video) ---
+    // --- DRAW BACKGROUND (FIX: video tetap tampil saat pause) ---
     function drawBackgroundOn(ctx, w, h) {
-        if (hasVideo && bgVideo.readyState >= 2 && !bgVideo.paused) {
-            // Gambar video sebagai background
+        if (hasVideo && bgVideo.readyState >= 2) {
+            // Gambar video meskipun paused — frame terakhir tetap terlihat
             const canvasAspect = w / h;
             const videoAspect = bgVideo.videoWidth / bgVideo.videoHeight;
             let dx = 0, dy = 0, dw = w, dh = h;
@@ -287,7 +279,6 @@
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
             ctx.fillRect(0, 0, w, h);
         } else if (bgImage.src) {
-            // Gambar background
             const canvasAspect = w / h;
             const imgAspect = bgImage.width / bgImage.height;
             let dx = 0, dy = 0, dw = w, dh = h;
@@ -300,13 +291,11 @@
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
             ctx.fillRect(0, 0, w, h);
         } else {
-            // Default hijau
             ctx.fillStyle = '#14532d';
             ctx.fillRect(0, 0, w, h);
         }
     }
 
-    // --- REVEAL / ANIMATION WRAPPER for main canvas ---
     function redrawAll() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackgroundOn(ctx, canvas.width, canvas.height);
@@ -337,7 +326,6 @@
         }
     }
 
-    // --- ANIMATION LOOP ---
     function animate(t) {
         if (!animationPaused || recording) {
             globalTime = t;
@@ -452,19 +440,42 @@
     btnRedo.addEventListener('click', () => { undoStack.push(JSON.parse(JSON.stringify(shapes))); shapes = redoStack.pop(); syncUndoBtn(); flash('↪️ Redo'); });
     document.getElementById('btnClear').addEventListener('click', () => { snapshot(); shapes = []; flash('🗑️ Bersih!'); });
 
-    document.getElementById('btnCopy').addEventListener('click', () => { if(selectedIdx>=0){ clipboard = JSON.parse(JSON.stringify(shapes[selectedIdx])); btnPaste.disabled = false; flash('📋 Dicopy'); } });
+    // --- COPY / PASTE / DELETE (FIX: pastikan ID unik) ---
+    document.getElementById('btnCopy').addEventListener('click', () => {
+        if(selectedIdx >= 0) {
+            clipboard = JSON.parse(JSON.stringify(shapes[selectedIdx]));
+            document.getElementById('btnPaste').disabled = false;
+            flash('📋 Dicopy');
+        } else {
+            flash('⚠️ Pilih shape dulu', true);
+        }
+    });
+
     document.getElementById('btnPaste').addEventListener('click', () => {
-        if(clipboard){
+        if(clipboard) {
             const c = JSON.parse(JSON.stringify(clipboard));
             moveShape(c, 20, 20);
             c.createdAt = performance.now();
             snapshot();
             shapes.push(c);
-            selectedIdx = shapes.length-1;
+            selectedIdx = shapes.length - 1;
             flash('📌 Dipaste');
+        } else {
+            flash('⚠️ Clipboard kosong', true);
         }
     });
-    document.getElementById('btnDeleteSel').addEventListener('click', () => { if(selectedIdx>=0){ snapshot(); shapes.splice(selectedIdx, 1); selectedIdx = -1; selectBar.style.display = 'none'; flash('🗑️ Dihapus'); } });
+
+    document.getElementById('btnDeleteSel').addEventListener('click', () => {
+        if(selectedIdx >= 0) {
+            snapshot();
+            shapes.splice(selectedIdx, 1);
+            selectedIdx = -1;
+            selectBar.style.display = 'none';
+            flash('🗑️ Dihapus');
+        } else {
+            flash('⚠️ Pilih shape dulu', true);
+        }
+    });
 
     paletteEl.addEventListener('click', e => {
         if(!e.target.dataset.color) return;
@@ -473,14 +484,13 @@
         e.target.classList.add('active');
     });
 
-    // --- UPLOAD MEDIA (IMAGE or VIDEO) ---
+    // --- UPLOAD MEDIA ---
     document.getElementById('uploadBox').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
         const file = fileInput.files[0];
         if(!file) return;
         const url = URL.createObjectURL(file);
         if (file.type.startsWith('video/')) {
-            // Video
             hasVideo = true;
             bgVideo.src = url;
             bgVideo.load();
@@ -491,7 +501,6 @@
                 resizeCanvas();
             };
         } else {
-            // Image
             hasVideo = false;
             bgImage.onload = () => {
                 document.getElementById('uploadScreen').style.display = 'none';
@@ -500,7 +509,6 @@
             };
             bgImage.src = url;
         }
-        // Reset file input agar bisa upload ulang
         fileInput.value = '';
     });
 
@@ -514,7 +522,7 @@
         flash(animationPaused ? '⏸️ Animasi dijeda' : '▶️ Animasi dilanjutkan');
     });
 
-    // --- PLAY/PAUSE VIDEO BACKGROUND ---
+    // --- PLAY/PAUSE VIDEO (tanpa blank) ---
     document.getElementById('playPauseVideoBtn').addEventListener('click', function() {
         if (!hasVideo) {
             flash('⚠️ Tidak ada video', true);
@@ -531,12 +539,10 @@
         }
     });
 
-    // --- RECORD (Start/Stop) ---
+    // --- RECORD ---
     document.getElementById('recordBtn').addEventListener('click', function() {
         if (recording) {
-            if (recorder && recorder.state === 'recording') {
-                recorder.stop();
-            }
+            if (recorder && recorder.state === 'recording') recorder.stop();
             recording = false;
             this.textContent = '🔴 Mulai Rekam';
             this.classList.remove('active');
@@ -545,7 +551,6 @@
             return;
         }
 
-        // Start recording
         const HD_W = 1280, HD_H = 720;
         const hdCanvas = document.createElement('canvas');
         hdCanvas.width = HD_W;
@@ -556,11 +561,7 @@
             hdCtx.clearRect(0, 0, HD_W, HD_H);
             const scaleX = HD_W / canvas.width;
             const scaleY = HD_H / canvas.height;
-
-            // Background (dengan video atau gambar)
             drawBackgroundOn(hdCtx, HD_W, HD_H);
-
-            // Shapes
             shapes.forEach(s => {
                 const age = globalTime - (s.createdAt || 0);
                 const revealProgress = Math.min(1, age / 600);
@@ -585,16 +586,10 @@
         const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
 
         stream = hdCanvas.captureStream(60);
-        recorder = new MediaRecorder(stream, {
-            mimeType,
-            videoBitsPerSecond: 8000000
-        });
+        recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
         recordedChunks = [];
 
-        recorder.ondataavailable = e => {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-
+        recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         recorder.onstop = () => {
             const blob = new Blob(recordedChunks, { type: mimeType.split(';')[0] });
             const url = URL.createObjectURL(blob);
@@ -620,11 +615,10 @@
             hdLoopId = requestAnimationFrame(hdLoop);
         }
         hdLoop();
-
         flash('🔴 Merekam... (klik Stop untuk menyimpan)', true);
     });
 
-    // --- EXPORT STATIC IMAGE (HD 1920x1080) ---
+    // --- EXPORT STATIC IMAGE ---
     function renderHDScene() {
         const W = 1920, H = 1080;
         const offscreen = document.createElement('canvas');
@@ -634,7 +628,6 @@
 
         const scaleX = W / canvas.width;
         const scaleY = H / canvas.height;
-
         drawBackgroundOn(offCtx, W, H);
 
         shapes.forEach(s => {
