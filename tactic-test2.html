@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The Footys - Anotasi Animasi Reveal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0f0a; color: white; font-family: system-ui; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+        .topbar { width: 100%; max-width: 680px; border-left: 3px solid #4ade80; padding: 12px 20px; background: #0f1a0f; letter-spacing: 2px; font-size: 10px; color: #6b7280; font-weight: 600; margin-bottom: 24px; text-transform: uppercase; }
+        #uploadScreen { display: flex; align-items: center; justify-content: center; min-height: 60vh; width: 100%; max-width: 680px; }
+        .upload-box { border: 2px dashed #1f2d1f; border-radius: 16px; padding: 48px 32px; text-align: center; max-width: 400px; width: 100%; cursor: pointer; }
+        .upload-box p { color: #4b5563; letter-spacing: 1px; font-size: 12px; text-transform: uppercase; margin-bottom: 16px; }
+        #mainScreen { display: none; width: 100%; max-width: 680px; }
+        .card { background: #0f1a0f; border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 20px; }
+        .stage-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #0f2d1f; border-radius: 16px; overflow: hidden; margin: 16px 0; border: 1px solid #2d4a2d; }
+        .stage { position: relative; width: 100%; height: 100%; }
+        #drawCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
+        .toolbar-container { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+        .toolbar-group { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; background: #111827; padding: 12px 10px 10px; border-radius: 12px; border: 1px solid #1f2937; position: relative; }
+        .toolbar-group::before { content: attr(data-label); position: absolute; top: -8px; left: 12px; background: #0f1a0f; padding: 0 6px; font-size: 9px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .btn { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-weight: 500; font-size: 11px; padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: center; white-space: nowrap; transition: all 0.2s; }
+        .btn:active { transform: scale(0.96); }
+        .btn.active  { background: #064e3b; border-color: #10b981; color: #34d399; }
+        .btn.danger  { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+        .btn.purple  { background: #2e1065; border-color: #8b5cf6; color: #c4b5fd; }
+        .btn.purple:disabled { opacity: 0.4; cursor: default; }
+        .btn.record { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+        .btn.record.active { background: #450a0a; }
+        #selectBar { display: none; align-items: center; justify-content: center; gap: 8px; margin: 6px 0; background: #0f1a1f; border: 1px solid #1e3a4a; border-radius: 999px; padding: 6px 14px; }
+        #selectBar.visible { display: flex; }
+        .palette { display: flex; justify-content: center; gap: 10px; margin: 12px 0; }
+        .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; }
+        .swatch.active { border-color: #facc15; transform: scale(1.2); }
+        .status { text-align: center; font-size: 11px; background: #111827; border-radius: 999px; padding: 6px 12px; margin: 8px 0; color: #9ca3af; transition: all 0.3s; }
+        .status.recording { background: #7f1d1d; color: #fca5a5; animation: pulseRed 1s infinite; font-weight: bold; }
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .action-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+        .btn-export { flex: 1; background: #161f16; color: #4ade80; border: 1px solid #4ade80; border-radius: 8px; padding: 12px 8px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-export:hover { background: #1c2b1c; }
+        .btn-export:active { transform: scale(0.98); }
+        .btn-export.secondary { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+        .control-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .control-row .btn { flex: 1; min-width: 80px; }
+        .watermark { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 4px; color: #ffffff; text-transform: uppercase; margin-top: 20px; padding-top: 12px; border-top: 1px solid #1a2e1a; }
+        #bgVideo { display: none; }
+
+        /* Slider styling */
+        .slider-group { display: flex; align-items: center; gap: 10px; background: #1a2332; padding: 4px 12px; border-radius: 20px; }
+        .slider-group label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+        .slider-group input[type="range"] { width: 80px; height: 4px; -webkit-appearance: none; background: #374151; border-radius: 2px; outline: none; }
+        .slider-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #4ade80; cursor: pointer; }
+        .slider-group span { font-size: 11px; color: #cbd5e1; min-width: 24px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">⚽ THE FOOTYS TACTICS</div>
+
+<div id="uploadScreen">
+    <div class="upload-box" id="uploadBox">
+        <p>📁 ADD IMAGE / VIDEO</p>
+        <div style="font-size:10px;color:#6b7280;">Tap untuk pilih gambar atau video</div>
+    </div>
+</div>
+
+<div id="mainScreen">
+    <div class="card">
+        <div class="stage-wrapper">
+            <div class="stage" id="stage">
+                <canvas id="drawCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="toolbar-container">
+            <div class="toolbar-group" data-label="Mode">
+                <button class="btn active" id="btnSelect">🖱️ Pilih / Edit</button>
+            </div>
+            <div class="toolbar-group" data-label="Gambar Animasi">
+                <button class="btn" id="btnLine">📏 Garis</button>
+                <button class="btn" id="btnTriangle">🔺 Segitiga</button>
+                <button class="btn" id="btnQuad">⬛ Segiempat</button>
+                <button class="btn" id="btnCircle">⭕ Elips</button>
+                <button class="btn" id="btnArrow">➡️ Panah</button>
+                <button class="btn" id="btnName">🏷️ Teks</button>
+                <button class="btn" id="btnCone">🔻 Corong</button> <!-- NEW -->
+            </div>
+            <div class="toolbar-group" data-label="History">
+                <button class="btn purple" id="btnUndo" disabled>↩️ Undo</button>
+                <button class="btn purple" id="btnRedo" disabled>↪️ Redo</button>
+                <button class="btn danger" id="btnClear">🗑️ Hapus</button>
+            </div>
+            <!-- NEW: Pengaturan Opacity & LineWidth -->
+            <div class="toolbar-group" data-label="Pengaturan">
+                <div class="slider-group">
+                    <label>Opacity</label>
+                    <input type="range" id="opacitySlider" min="0.1" max="1" step="0.05" value="0.8">
+                    <span id="opacityValue">0.80</span>
+                </div>
+                <div class="slider-group">
+                    <label>Width</label>
+                    <input type="range" id="lineWidthSlider" min="1" max="10" step="0.5" value="3">
+                    <span id="lineWidthValue">3.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="selectBar">
+            <button class="btn" id="btnCopy">📋 Copy</button>
+            <button class="btn" id="btnPaste" disabled>📌 Paste</button>
+            <button class="btn danger" id="btnDeleteSel">🗑️ Hapus</button>
+        </div>
+
+        <div class="palette" id="palette">
+            <div class="swatch active" style="background:#ef4444" data-color="#ef4444"></div>
+            <div class="swatch" style="background:#3b82f6" data-color="#3b82f6"></div>
+            <div class="swatch" style="background:#facc15" data-color="#facc15"></div>
+            <div class="swatch" style="background:#10b981" data-color="#10b981"></div>
+            <div class="swatch" style="background:#ffffff" data-color="#ffffff"></div>
+        </div>
+
+        <div class="status" id="status">Mode: Pilih / Edit</div>
+
+        <div class="action-buttons">
+            <div class="control-row">
+                <button class="btn" id="playPauseBtn">⏸️ Pause Animasi</button>
+                <button class="btn" id="playPauseVideoBtn">⏸️ Pause Video</button>
+                <button class="btn record" id="recordBtn">🔴 Mulai Rekam</button>
+            </div>
+            <div class="btn-export" id="exportImageBtn">📸 SAVE AS STATIC IMAGE (1920×1080)</div>
+        </div>
+    </div>
+    <div class="watermark">⚡ THE FOOTYS ⚡</div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+<video id="bgVideo" loop muted playsinline></video>
+
+<script>
+(function(){
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d'), stage = document.getElementById('stage');
+    const statusEl = document.getElementById('status'), paletteEl = document.getElementById('palette');
+    const selectBar = document.getElementById('selectBar'), fileInput = document.getElementById('fileInput');
+    const btnUndo = document.getElementById('btnUndo'), btnRedo = document.getElementById('btnRedo');
+    const btnPaste = document.getElementById('btnPaste');
+    const bgVideo = document.getElementById('bgVideo');
+
+    // Sliders
+    const opacitySlider = document.getElementById('opacitySlider');
+    const lineWidthSlider = document.getElementById('lineWidthSlider');
+    const opacityValue = document.getElementById('opacityValue');
+    const lineWidthValue = document.getElementById('lineWidthValue');
+
+    let mode = 'select', currentColor = '#ef4444', tempPts = [], shapes = [];
+    let selectedIdx = -1, clipboard = null, undoStack = [], redoStack = [];
+    let isDragging = false, isPointerDown = false, dragOffX = 0, dragOffY = 0, globalTime = 0;
+    let animationPaused = false;
+    let recording = false;
+    let recorder = null;
+    let recordedChunks = [];
+    let stream = null;
+    let hdLoopId = null;
+    let animationId = null;
+    let hasVideo = false;
+    let bgImage = new Image();
+
+    // --- Slider events ---
+    opacitySlider.addEventListener('input', () => {
+        opacityValue.textContent = parseFloat(opacitySlider.value).toFixed(2);
+    });
+    lineWidthSlider.addEventListener('input', () => {
+        lineWidthValue.textContent = parseFloat(lineWidthSlider.value).toFixed(1);
+    });
+
+    function getOpacity() { return parseFloat(opacitySlider.value); }
+    function getLineWidth() { return parseFloat(lineWidthSlider.value); }
+
+    // --- Resize ---
+    function resizeCanvas() {
+        canvas.width = stage.offsetWidth; canvas.height = stage.offsetHeight;
+        redrawAll();
+    }
+    new ResizeObserver(resizeCanvas).observe(stage);
+
+    // --- Helper ---
+    function getPoint(e) {
+        const r = canvas.getBoundingClientRect();
+        const sx = canvas.width / r.width, sy = canvas.height / r.height;
+        const src = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+        return {
+            x: Math.min(Math.max(0, (src.clientX - r.left) * sx), canvas.width),
+            y: Math.min(Math.max(0, (src.clientY - r.top) * sy), canvas.height)
+        };
+    }
+
+    function snapshot() {
+        undoStack.push(JSON.parse(JSON.stringify(shapes)));
+        redoStack = []; syncUndoBtn();
+    }
+    function syncUndoBtn() { btnUndo.disabled = !undoStack.length; btnRedo.disabled = !redoStack.length; }
+
+    function shapeAnchor(s) {
+        if (s.type === 'circle') return { x: s.cx, y: s.cy };
+        if (s.type === 'name') return { x: s.x, y: s.y };
+        if (s.type === 'cone') return { x: (s.pts[0].x + s.pts[1].x + s.pts[2].x)/3, y: (s.pts[0].y + s.pts[1].y + s.pts[2].y)/3 };
+        return { x: s.pts[0].x, y: s.pts[0].y };
+    }
+
+    function moveShape(s, dx, dy) {
+        if (s.type === 'circle') { s.cx += dx; s.cy += dy; }
+        else if (s.type === 'name') { s.x += dx; s.y += dy; }
+        else s.pts = s.pts.map(p => ({ x: p.x + dx, y: p.y + dy }));
+    }
+
+    function flash(msg, isAlert = false) {
+        statusEl.innerHTML = msg;
+        if(isAlert) statusEl.classList.add('recording');
+        else statusEl.classList.remove('recording');
+        if(!isAlert) {
+            setTimeout(() => {
+                if(statusEl.innerHTML === msg) statusEl.innerHTML = `Mode: ${mode.toUpperCase()}`;
+            }, 2000);
+        }
+    }
+
+    // --- DRAWING FUNCTIONS ---
+    function drawShapeOn(ctx, s, scaleX, scaleY, isSelected, time) {
+        if (!s) return;
+        const color = s.color || '#ef4444';
+        const opacity = s.opacity !== undefined ? s.opacity : 0.8;
+        const lw = (s.lineWidth || 3) * ((scaleX + scaleY) / 2);
+        const pulse = 8 + Math.sin((time || 0) * 0.005) * 6;
+
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = isSelected ? pulse + 10 : pulse;
+        ctx.setLineDash([10 * ((scaleX + scaleY) / 2), 8 * ((scaleX + scaleY) / 2)]);
+        ctx.lineDashOffset = -(time || 0) * 0.02;
+
+        const sx = scaleX || 1, sy = scaleY || 1;
+
+        if (s.type === 'line' && s.pts && s.pts.length === 2) {
+            ctx.beginPath();
+            ctx.moveTo(s.pts[0].x * sx, s.pts[0].y * sy);
+            ctx.lineTo(s.pts[1].x * sx, s.pts[1].y * sy);
+            ctx.stroke();
+        } else if ((s.type === 'triangle' || s.type === 'quad') && s.pts && s.pts.length >= 3) {
+            ctx.beginPath();
+            ctx.moveTo(s.pts[0].x * sx, s.pts[0].y * sy);
+            for (let i = 1; i < s.pts.length; i++) ctx.lineTo(s.pts[i].x * sx, s.pts[i].y * sy);
+            ctx.closePath();
+            ctx.fillStyle = color + '33';
+            ctx.fill();
+            ctx.stroke();
+        } else if (s.type === 'circle') {
+            ctx.beginPath();
+            ctx.ellipse(s.cx * sx, s.cy * sy, s.rx * sx, s.ry * sy, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (s.type === 'arrow' && s.pts && s.pts.length === 3) {
+            const [p0, p1, p2] = s.pts;
+            ctx.beginPath();
+            ctx.moveTo(p0.x * sx, p0.y * sy);
+            ctx.quadraticCurveTo(p1.x * sx, p1.y * sy, p2.x * sx, p2.y * sy);
+            ctx.stroke();
+            const ang = Math.atan2(p2.y * sy - p1.y * sy, p2.x * sx - p1.x * sx);
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(p2.x * sx, p2.y * sy);
+            const headLen = 15 * ((sx + sy) / 2);
+            ctx.lineTo(p2.x * sx - headLen * Math.cos(ang - 0.5), p2.y * sy - headLen * Math.sin(ang - 0.5));
+            ctx.lineTo(p2.x * sx - headLen * Math.cos(ang + 0.5), p2.y * sy - headLen * Math.sin(ang + 0.5));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        } else if (s.type === 'name') {
+            const fs = 13 * ((sx + sy) / 2);
+            ctx.font = `bold ${fs}px system-ui`;
+            ctx.shadowBlur = isSelected ? pulse + 10 : pulse;
+            const tw = ctx.measureText(s.text).width;
+            const bw = tw + 20 * ((sx + sy) / 2), bh = 26 * ((sx + sy) / 2);
+            ctx.fillStyle = color;
+            const rx = 8 * ((sx + sy) / 2);
+            const x0 = s.x * sx - bw/2, y0 = s.y * sy - bh - 10 * ((sx + sy) / 2);
+            ctx.beginPath();
+            ctx.moveTo(x0 + rx, y0);
+            ctx.lineTo(x0 + bw - rx, y0);
+            ctx.quadraticCurveTo(x0 + bw, y0, x0 + bw, y0 + rx);
+            ctx.lineTo(x0 + bw, y0 + bh - rx);
+            ctx.quadraticCurveTo(x0 + bw, y0 + bh, x0 + bw - rx, y0 + bh);
+            ctx.lineTo(x0 + rx, y0 + bh);
+            ctx.quadraticCurveTo(x0, y0 + bh, x0, y0 + bh - rx);
+            ctx.lineTo(x0, y0 + rx);
+            ctx.quadraticCurveTo(x0, y0, x0 + rx, y0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.shadowBlur = 0;
+            ctx.fillText(s.text, s.x * sx, s.y * sy - bh/2 - 6 * ((sx + sy) / 2));
+        } else if (s.type === 'cone' && s.pts && s.pts.length === 3) {
+            // Corong: titik puncak, kiri bawah, kanan bawah
+            const [top, left, right] = s.pts;
+            ctx.beginPath();
+            ctx.moveTo(top.x * sx, top.y * sy);
+            ctx.lineTo(left.x * sx, left.y * sy);
+            // alas melengkung (busur)
+            const cx = (left.x + right.x) / 2 * sx;
+            const cy = (left.y + right.y) / 2 * sy;
+            const radius = Math.hypot((right.x - left.x) * sx, (right.y - left.y) * sy) / 2;
+            const startAngle = Math.atan2(left.y * sy - cy, left.x * sx - cx);
+            const endAngle = Math.atan2(right.y * sy - cy, right.x * sx - cx);
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fillStyle = color + '44';
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    // --- BACKGROUND ---
+    function drawBackgroundOn(ctx, w, h) {
+        if (hasVideo && bgVideo.readyState >= 2) {
+            const canvasAspect = w / h;
+            const videoAspect = bgVideo.videoWidth / bgVideo.videoHeight;
+            let dx = 0, dy = 0, dw = w, dh = h;
+            if (canvasAspect > videoAspect) {
+                dw = w; dh = w / videoAspect; dy = (h - dh) / 2;
+            } else {
+                dh = h; dw = h * videoAspect; dx = (w - dw) / 2;
+            }
+            ctx.drawImage(bgVideo, dx, dy, dw, dh);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(0, 0, w, h);
+        } else if (bgImage.src) {
+            const canvasAspect = w / h;
+            const imgAspect = bgImage.width / bgImage.height;
+            let dx = 0, dy = 0, dw = w, dh = h;
+            if (canvasAspect > imgAspect) {
+                dw = w; dh = w / imgAspect; dy = (h - dh) / 2;
+            } else {
+                dh = h; dw = h * imgAspect; dx = (w - dw) / 2;
+            }
+            ctx.drawImage(bgImage, dx, dy, dw, dh);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(0, 0, w, h);
+        } else {
+            ctx.fillStyle = '#14532d';
+            ctx.fillRect(0, 0, w, h);
+        }
+    }
+
+    function redrawAll() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackgroundOn(ctx, canvas.width, canvas.height);
+
+        shapes.forEach((s, i) => {
+            const sel = i === selectedIdx;
+            const age = globalTime - (s.createdAt || 0);
+            const revealProgress = Math.min(1, age / 600);
+            const easeOutCubic = 1 - Math.pow(1 - revealProgress, 3);
+
+            if (easeOutCubic < 1 && s.createdAt) {
+                const a = shapeAnchor(s);
+                ctx.save();
+                ctx.translate(a.x, a.y);
+                ctx.scale(easeOutCubic, easeOutCubic);
+                ctx.globalAlpha = revealProgress * (s.opacity || 0.8);
+                ctx.translate(-a.x, -a.y);
+                drawShapeOn(ctx, s, 1, 1, sel, globalTime);
+                ctx.restore();
+            } else {
+                drawShapeOn(ctx, s, 1, 1, sel, globalTime);
+            }
+        });
+
+        if (tempPts.length > 0) {
+            ctx.fillStyle = currentColor;
+            tempPts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, 7); ctx.fill(); });
+        }
+    }
+
+    // --- ANIMATION LOOP ---
+    function animate(t) {
+        if (!animationPaused || recording) {
+            globalTime = t;
+            redrawAll();
+        }
+        animationId = requestAnimationFrame(animate);
+    }
+    animationId = requestAnimationFrame(animate);
+
+    // --- HIT TEST ---
+    function hitTest(p) {
+        for (let i = shapes.length - 1; i >= 0; i--) {
+            const s = shapes[i];
+            if (s.type === 'circle') {
+                if (Math.hypot(p.x - s.cx, p.y - s.cy) <= Math.max(s.rx, s.ry) + 15) return i;
+            } else if (s.type === 'name') {
+                if (Math.hypot(p.x - s.x, p.y - s.y) < 40) return i;
+            } else if (s.type === 'cone' && s.pts && s.pts.length === 3) {
+                // simple bounding box
+                const pts = s.pts;
+                const minX = Math.min(...pts.map(pt=>pt.x)), maxX = Math.max(...pts.map(pt=>pt.x));
+                const minY = Math.min(...pts.map(pt=>pt.y)), maxY = Math.max(...pts.map(pt=>pt.y));
+                if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) return i;
+            } else if (s.pts) {
+                if (s.pts.some(pt => Math.hypot(p.x - pt.x, p.y - pt.y) < 30)) return i;
+                if (s.type === 'line' && s.pts.length === 2) {
+                    const mx = (s.pts[0].x + s.pts[1].x) / 2, my = (s.pts[0].y + s.pts[1].y) / 2;
+                    if (Math.hypot(p.x - mx, p.y - my) < 30) return i;
+                }
+                if (s.type === 'arrow' && s.pts.length === 3) {
+                    if (Math.hypot(p.x - s.pts[1].x, p.y - s.pts[1].y) < 30) return i;
+                }
+                if (['triangle', 'quad'].includes(s.type)) {
+                    const minX = Math.min(...s.pts.map(pt=>pt.x)), maxX = Math.max(...s.pts.map(pt=>pt.x));
+                    const minY = Math.min(...s.pts.map(pt=>pt.y)), maxY = Math.max(...s.pts.map(pt=>pt.y));
+                    if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    // --- POINTER EVENTS ---
+    canvas.addEventListener('touchstart', onPointerDown, {passive:false});
+    canvas.addEventListener('mousedown',  onPointerDown);
+    window.addEventListener('touchmove',  onPointerMove, {passive:false});
+    window.addEventListener('mousemove',  onPointerMove);
+    window.addEventListener('touchend',   onPointerUp,   {passive:false});
+    window.addEventListener('mouseup',    onPointerUp);
+
+    function onPointerDown(e) {
+        if(e.touches && e.touches.length > 1) return;
+        if(e.target === canvas && e.cancelable) e.preventDefault();
+
+        isPointerDown = true;
+        const p = getPoint(e);
+
+        if(mode === 'select') {
+            selectedIdx = hitTest(p);
+            if(selectedIdx !== -1) {
+                const a = shapeAnchor(shapes[selectedIdx]);
+                dragOffX = p.x - a.x;
+                dragOffY = p.y - a.y;
+                isDragging = false;
+            }
+            selectBar.style.display = selectedIdx !== -1 ? 'flex' : 'none';
+        } else {
+            tempPts.push(p);
+            const limits = {line:2, triangle:3, quad:4, arrow:3, circle:3, name:1, cone:3};
+            if(tempPts.length === limits[mode]) {
+                snapshot();
+                const now = performance.now();
+                const opacity = getOpacity();
+                const lineWidth = getLineWidth();
+                if(mode==='circle') {
+                    shapes.push({type:'circle', cx:tempPts[0].x, cy:tempPts[0].y, rx:Math.abs(tempPts[1].x-tempPts[0].x), ry:Math.abs(tempPts[2].y-tempPts[0].y), color:currentColor, opacity, lineWidth, createdAt: now});
+                } else if(mode==='name') {
+                    const t = prompt('Teks:'); if(t) shapes.push({type:'name', text:t, x:tempPts[0].x, y:tempPts[0].y, color:currentColor, opacity, lineWidth, createdAt: now});
+                } else if(mode==='cone') {
+                    // 3 titik: puncak, kiri bawah, kanan bawah
+                    shapes.push({type:'cone', pts:[...tempPts], color:currentColor, opacity, lineWidth, createdAt: now});
+                } else {
+                    shapes.push({type:mode, pts:[...tempPts], color:currentColor, opacity, lineWidth, createdAt: now});
+                }
+                tempPts = [];
+                flash(`✅ ${mode.toUpperCase()} ditambahkan!`);
+            }
+        }
+    }
+
+    function onPointerMove(e) {
+        if(!isPointerDown || selectedIdx === -1 || mode !== 'select') return;
+        if(e.cancelable) e.preventDefault();
+
+        const p = getPoint(e);
+        const a = shapeAnchor(shapes[selectedIdx]);
+        const dx = (p.x - dragOffX) - a.x;
+        const dy = (p.y - dragOffY) - a.y;
+
+        if(!isDragging && Math.hypot(dx, dy) > 4) isDragging = true;
+        if(isDragging) moveShape(shapes[selectedIdx], dx, dy);
+    }
+
+    function onPointerUp() {
+        if(isDragging && selectedIdx >= 0) snapshot();
+        isDragging = false;
+        isPointerDown = false;
+    }
+
+    // --- TOOLBAR ---
+    document.querySelectorAll('.toolbar-group .btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if(btn.id.startsWith('btnUndo') || btn.id.startsWith('btnRedo') || btn.id === 'btnClear') return;
+            mode = btn.id.replace('btn', '').toLowerCase();
+            document.querySelectorAll('.toolbar-group .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedIdx = -1; selectBar.style.display = 'none'; tempPts = [];
+            flash(`Mode: ${mode.toUpperCase()}`);
+        });
+    });
+
+    btnUndo.addEventListener('click', () => { redoStack.push(JSON.parse(JSON.stringify(shapes))); shapes = undoStack.pop(); syncUndoBtn(); flash('↩️ Undo'); });
+    btnRedo.addEventListener('click', () => { undoStack.push(JSON.parse(JSON.stringify(shapes))); shapes = redoStack.pop(); syncUndoBtn(); flash('↪️ Redo'); });
+    document.getElementById('btnClear').addEventListener('click', () => { snapshot(); shapes = []; flash('🗑️ Bersih!'); });
+
+    document.getElementById('btnCopy').addEventListener('click', () => {
+        if(selectedIdx >= 0) {
+            clipboard = JSON.parse(JSON.stringify(shapes[selectedIdx]));
+            document.getElementById('btnPaste').disabled = false;
+            flash('📋 Dicopy');
+        } else {
+            flash('⚠️ Pilih shape dulu', true);
+        }
+    });
+
+    document.getElementById('btnPaste').addEventListener('click', () => {
+        if(clipboard) {
+            const c = JSON.parse(JSON.stringify(clipboard));
+            moveShape(c, 20, 20);
+            c.createdAt = performance.now();
+            snapshot();
+            shapes.push(c);
+            selectedIdx = shapes.length - 1;
+            flash('📌 Dipaste');
+        } else {
+            flash('⚠️ Clipboard kosong', true);
+        }
+    });
+
+    document.getElementById('btnDeleteSel').addEventListener('click', () => {
+        if(selectedIdx >= 0) {
+            snapshot();
+            shapes.splice(selectedIdx, 1);
+            selectedIdx = -1;
+            selectBar.style.display = 'none';
+            flash('🗑️ Dihapus');
+        } else {
+            flash('⚠️ Pilih shape dulu', true);
+        }
+    });
+
+    paletteEl.addEventListener('click', e => {
+        if(!e.target.dataset.color) return;
+        currentColor = e.target.dataset.color;
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        e.target.classList.add('active');
+    });
+
+    // --- UPLOAD MEDIA ---
+    document.getElementById('uploadBox').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if(!file) return;
+        const url = URL.createObjectURL(file);
+        if (file.type.startsWith('video/')) {
+            hasVideo = true;
+            bgVideo.pause();
+            bgVideo.src = url;
+            bgVideo.load();
+            bgVideo.play().catch(e => console.log('Autoplay error:', e));
+            bgVideo.onloadeddata = () => {
+                document.getElementById('uploadScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                resizeCanvas();
+            };
+        } else {
+            hasVideo = false;
+            bgImage.onload = () => {
+                document.getElementById('uploadScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                resizeCanvas();
+            };
+            bgImage.src = url;
+        }
+        fileInput.value = '';
+    });
+
+    // --- PLAY/PAUSE ANIMASI ---
+    document.getElementById('playPauseBtn').addEventListener('click', function() {
+        animationPaused = !animationPaused;
+        this.textContent = animationPaused ? '▶️ Play Animasi' : '⏸️ Pause Animasi';
+        if (!animationPaused) {
+            globalTime = performance.now();
+        }
+        flash(animationPaused ? '⏸️ Animasi dijeda' : '▶️ Animasi dilanjutkan');
+    });
+
+    // --- PLAY/PAUSE VIDEO ---
+    document.getElementById('playPauseVideoBtn').addEventListener('click', function() {
+        if (!hasVideo) {
+            flash('⚠️ Tidak ada video', true);
+            return;
+        }
+        this.disabled = true;
+        setTimeout(() => { this.disabled = false; }, 300);
+        if (bgVideo.paused) {
+            bgVideo.play().catch(e => console.log('Play error:', e));
+            this.textContent = '⏸️ Pause Video';
+            flash('▶️ Video diputar');
+        } else {
+            bgVideo.pause();
+            this.textContent = '▶️ Play Video';
+            flash('⏸️ Video dijeda');
+        }
+    });
+
+    // --- RECORD ---
+    document.getElementById('recordBtn').addEventListener('click', function() {
+        if (recording) {
+            if (recorder && recorder.state === 'recording') recorder.stop();
+            recording = false;
+            this.textContent = '🔴 Mulai Rekam';
+            this.classList.remove('active');
+            if (hdLoopId) cancelAnimationFrame(hdLoopId);
+            flash('⏹️ Rekaman dihentikan, menyimpan video...', true);
+            return;
+        }
+
+        const HD_W = 1280, HD_H = 720;
+        const hdCanvas = document.createElement('canvas');
+        hdCanvas.width = HD_W;
+        hdCanvas.height = HD_H;
+        const hdCtx = hdCanvas.getContext('2d');
+
+        function renderHDFrame() {
+            hdCtx.clearRect(0, 0, HD_W, HD_H);
+            const scaleX = HD_W / canvas.width;
+            const scaleY = HD_H / canvas.height;
+            drawBackgroundOn(hdCtx, HD_W, HD_H);
+            shapes.forEach(s => {
+                const age = globalTime - (s.createdAt || 0);
+                const revealProgress = Math.min(1, age / 600);
+                const easeOutCubic = 1 - Math.pow(1 - revealProgress, 3);
+                if (easeOutCubic < 1 && s.createdAt) {
+                    const a = shapeAnchor(s);
+                    hdCtx.save();
+                    hdCtx.translate(a.x * scaleX, a.y * scaleY);
+                    hdCtx.scale(easeOutCubic, easeOutCubic);
+                    hdCtx.globalAlpha = revealProgress * (s.opacity || 0.8);
+                    hdCtx.translate(-a.x * scaleX, -a.y * scaleY);
+                    drawShapeOn(hdCtx, s, scaleX, scaleY, false, globalTime);
+                    hdCtx.restore();
+                } else {
+                    drawShapeOn(hdCtx, s, scaleX, scaleY, false, globalTime);
+                }
+            });
+        }
+
+        const mimeTypes = ['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+        const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+        const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+        stream = hdCanvas.captureStream(60);
+        recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+        recordedChunks = [];
+
+        recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        recorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: mimeType.split(';')[0] });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `TheFootys_Recording_${Date.now()}.${ext}`;
+            a.click();
+            flash('✅ Video rekaman tersimpan!');
+            recording = false;
+            document.getElementById('recordBtn').textContent = '🔴 Mulai Rekam';
+            document.getElementById('recordBtn').classList.remove('active');
+            if (hdLoopId) cancelAnimationFrame(hdLoopId);
+        };
+
+        recorder.start(100);
+        recording = true;
+        this.textContent = '⏹️ Stop Rekam';
+        this.classList.add('active');
+
+        function hdLoop() {
+            if (!recording) return;
+            renderHDFrame();
+            hdLoopId = requestAnimationFrame(hdLoop);
+        }
+        hdLoop();
+        flash('🔴 Merekam... (klik Stop untuk menyimpan)', true);
+    });
+
+    // --- EXPORT STATIC IMAGE ---
+    function renderHDScene() {
+        const W = 1920, H = 1080;
+        const offscreen = document.createElement('canvas');
+        offscreen.width = W;
+        offscreen.height = H;
+        const offCtx = offscreen.getContext('2d');
+
+        const scaleX = W / canvas.width;
+        const scaleY = H / canvas.height;
+        drawBackgroundOn(offCtx, W, H);
+
+        shapes.forEach(s => {
+            const age = globalTime - (s.createdAt || 0);
+            const revealProgress = Math.min(1, age / 600);
+            const easeOutCubic = 1 - Math.pow(1 - revealProgress, 3);
+            if (easeOutCubic < 1 && s.createdAt) {
+                const a = shapeAnchor(s);
+                offCtx.save();
+                offCtx.translate(a.x * scaleX, a.y * scaleY);
+                offCtx.scale(easeOutCubic, easeOutCubic);
+                offCtx.globalAlpha = revealProgress * (s.opacity || 0.8);
+                offCtx.translate(-a.x * scaleX, -a.y * scaleY);
+                drawShapeOn(offCtx, s, scaleX, scaleY, false, globalTime);
+                offCtx.restore();
+            } else {
+                drawShapeOn(offCtx, s, scaleX, scaleY, false, globalTime);
+            }
+        });
+
+        return offscreen;
+    }
+
+    document.getElementById('exportImageBtn').addEventListener('click', () => {
+        selectedIdx = -1;
+        selectBar.style.display = 'none';
+        const hdCanvas = renderHDScene();
+        const link = document.createElement('a');
+        link.download = `TheFootys_Taktik_HD_${Date.now()}.png`;
+        link.href = hdCanvas.toDataURL('image/png');
+        link.click();
+        flash('💾 GAMBAR HD TERSIMPAN! (1920×1080)');
+    });
+
+})();
+</script>
+</body>
+</html>
