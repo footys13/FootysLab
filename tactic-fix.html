@@ -50,6 +50,12 @@
         .slider-group input[type="range"] { width: 80px; height: 4px; -webkit-appearance: none; background: #374151; border-radius: 2px; outline: none; }
         .slider-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #4ade80; cursor: pointer; }
         .slider-group span { font-size: 11px; color: #cbd5e1; min-width: 24px; text-align: center; }
+
+        .zoom-group { display: flex; align-items: center; gap: 6px; background: #1a2332; padding: 4px 12px; border-radius: 20px; }
+        .zoom-group label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+        .zoom-group input[type="range"] { width: 100px; height: 4px; -webkit-appearance: none; background: #374151; border-radius: 2px; outline: none; }
+        .zoom-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #facc15; cursor: pointer; }
+        .zoom-group span { font-size: 11px; color: #facc15; min-width: 36px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -105,6 +111,12 @@
                     <input type="range" id="fontSizeSlider" min="10" max="50" step="1" value="16">
                     <span id="fontSizeValue">16</span>
                 </div>
+                <div class="zoom-group">
+                    <label>🔍 Zoom</label>
+                    <input type="range" id="zoomSlider" min="50" max="300" step="5" value="100">
+                    <span id="zoomValue">1.00×</span>
+                </div>
+                <button class="btn" id="resetZoomBtn" style="padding:4px 10px; font-size:10px;">⟲ Reset</button>
             </div>
         </div>
 
@@ -152,9 +164,11 @@
     const opacitySlider = document.getElementById('opacitySlider');
     const lineWidthSlider = document.getElementById('lineWidthSlider');
     const fontSizeSlider = document.getElementById('fontSizeSlider');
+    const zoomSlider = document.getElementById('zoomSlider');
     const opacityValue = document.getElementById('opacityValue');
     const lineWidthValue = document.getElementById('lineWidthValue');
     const fontSizeValue = document.getElementById('fontSizeValue');
+    const zoomValue = document.getElementById('zoomValue');
 
     let mode = 'select', currentColor = '#ef4444', tempPts = [], shapes = [];
     let selectedIdx = -1, clipboard = null, undoStack = [], redoStack = [];
@@ -169,10 +183,39 @@
     let hasVideo = false;
     let bgImage = new Image();
 
-    // Slider events
+    // --- ZOOM & PAN ---
+    let zoom = 1.0;              // 0.5 - 3.0
+    let panX = 0, panY = 0;      // offset dalam pixel canvas
+    let isPanning = false;
+    let panStartX = 0, panStartY = 0;
+    let panStartOffsetX = 0, panStartOffsetY = 0;
+
+    // --- Slider events ---
     opacitySlider.addEventListener('input', () => { opacityValue.textContent = parseFloat(opacitySlider.value).toFixed(2); });
     lineWidthSlider.addEventListener('input', () => { lineWidthValue.textContent = parseFloat(lineWidthSlider.value).toFixed(1); });
     fontSizeSlider.addEventListener('input', () => { fontSizeValue.textContent = Math.round(fontSizeSlider.value); });
+
+    zoomSlider.addEventListener('input', () => {
+        zoom = parseInt(zoomSlider.value, 10) / 100;
+        zoomValue.textContent = zoom.toFixed(2) + '×';
+        // Batasi pan agar tidak keluar terlalu jauh
+        clampPan();
+        redrawAll();
+    });
+
+    document.getElementById('resetZoomBtn').addEventListener('click', () => {
+        zoomSlider.value = '100';
+        zoom = 1.0;
+        zoomValue.textContent = '1.00×';
+        panX = 0; panY = 0;
+        redrawAll();
+        flash('⟲ Zoom & pan direset');
+    });
+
+    function clampPan() {
+        // Batasi pan agar background tidak keluar terlalu jauh (opsional)
+        // Tidak perlu clamping ketat, user bisa bebas pan
+    }
 
     function getOpacity() { return parseFloat(opacitySlider.value); }
     function getLineWidth() { return parseFloat(lineWidthSlider.value); }
@@ -225,7 +268,53 @@
         }
     }
 
-    // --- DRAWING FUNCTIONS ---
+    // --- DRAW BACKGROUND WITH ZOOM & PAN ---
+    function drawBackgroundOn(ctx, w, h) {
+        ctx.save();
+        // Terapkan zoom & pan
+        ctx.translate(panX, panY);
+        ctx.scale(zoom, zoom);
+
+        let source = null;
+        let srcW = 0, srcH = 0;
+        if (hasVideo && bgVideo.readyState >= 2) {
+            source = bgVideo;
+            srcW = bgVideo.videoWidth;
+            srcH = bgVideo.videoHeight;
+        } else if (bgImage.src) {
+            source = bgImage;
+            srcW = bgImage.width;
+            srcH = bgImage.height;
+        }
+
+        if (source && srcW > 0 && srcH > 0) {
+            // Fit "contain" ke canvas (tidak terpotong)
+            const canvasAspect = w / h;
+            const imgAspect = srcW / srcH;
+            let dx = 0, dy = 0, dw = w, dh = h;
+            if (canvasAspect > imgAspect) {
+                dw = w;
+                dh = w / imgAspect;
+                dy = (h - dh) / 2;
+            } else {
+                dh = h;
+                dw = h * imgAspect;
+                dx = (w - dw) / 2;
+            }
+            // Gambar background dengan zoom & pan sudah diterapkan via transformasi
+            ctx.drawImage(source, dx, dy, dw, dh);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(0, 0, w, h);
+        } else {
+            // Default hijau
+            ctx.fillStyle = '#14532d';
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        ctx.restore();
+    }
+
+    // --- DRAWING FUNCTIONS (shape di koordinat absolut canvas, tidak terpengaruh zoom/pan) ---
     function drawShapeOn(ctx, s, scaleX, scaleY, isSelected, time) {
         if (!s) return;
         const color = s.color || '#ef4444';
@@ -322,38 +411,6 @@
         ctx.restore();
     }
 
-    // --- BACKGROUND ---
-    function drawBackgroundOn(ctx, w, h) {
-        if (hasVideo && bgVideo.readyState >= 2) {
-            const canvasAspect = w / h;
-            const videoAspect = bgVideo.videoWidth / bgVideo.videoHeight;
-            let dx = 0, dy = 0, dw = w, dh = h;
-            if (canvasAspect > videoAspect) {
-                dw = w; dh = w / videoAspect; dy = (h - dh) / 2;
-            } else {
-                dh = h; dw = h * videoAspect; dx = (w - dw) / 2;
-            }
-            ctx.drawImage(bgVideo, dx, dy, dw, dh);
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
-            ctx.fillRect(0, 0, w, h);
-        } else if (bgImage.src) {
-            const canvasAspect = w / h;
-            const imgAspect = bgImage.width / bgImage.height;
-            let dx = 0, dy = 0, dw = w, dh = h;
-            if (canvasAspect > imgAspect) {
-                dw = w; dh = w / imgAspect; dy = (h - dh) / 2;
-            } else {
-                dh = h; dw = h * imgAspect; dx = (w - dw) / 2;
-            }
-            ctx.drawImage(bgImage, dx, dy, dw, dh);
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
-            ctx.fillRect(0, 0, w, h);
-        } else {
-            ctx.fillStyle = '#14532d';
-            ctx.fillRect(0, 0, w, h);
-        }
-    }
-
     function redrawAll() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackgroundOn(ctx, canvas.width, canvas.height);
@@ -438,9 +495,10 @@
         if(e.touches && e.touches.length > 1) return;
         if(e.target === canvas && e.cancelable) e.preventDefault();
 
-        isPointerDown = true;
         const p = getPoint(e);
+        isPointerDown = true;
 
+        // Cek apakah mode select dan ada shape
         if(mode === 'select') {
             selectedIdx = hitTest(p);
             if(selectedIdx !== -1) {
@@ -448,9 +506,21 @@
                 dragOffX = p.x - a.x;
                 dragOffY = p.y - a.y;
                 isDragging = false;
+                selectBar.style.display = 'flex';
+                return;
+            } else {
+                // Tidak ada shape, mulai pan background
+                isPanning = true;
+                panStartX = p.x;
+                panStartY = p.y;
+                panStartOffsetX = panX;
+                panStartOffsetY = panY;
+                canvas.style.cursor = 'grab';
+                selectBar.style.display = 'none';
+                return;
             }
-            selectBar.style.display = selectedIdx !== -1 ? 'flex' : 'none';
         } else {
+            // Mode gambar
             tempPts.push(p);
             const limits = {line:2, triangle:3, quad:4, arrow:3, circle:3, name:1, cone:3};
             if(tempPts.length === limits[mode]) {
@@ -476,28 +546,52 @@
     }
 
     function onPointerMove(e) {
-        if(!isPointerDown || selectedIdx === -1 || mode !== 'select') return;
+        if(!isPointerDown) return;
         if(e.cancelable) e.preventDefault();
 
         const p = getPoint(e);
-        const a = shapeAnchor(shapes[selectedIdx]);
-        const dx = (p.x - dragOffX) - a.x;
-        const dy = (p.y - dragOffY) - a.y;
 
-        if(!isDragging && Math.hypot(dx, dy) > 4) isDragging = true;
-        if(isDragging) moveShape(shapes[selectedIdx], dx, dy);
+        if (isPanning) {
+            // Pan background
+            const dx = p.x - panStartX;
+            const dy = p.y - panStartY;
+            panX = panStartOffsetX + dx;
+            panY = panStartOffsetY + dy;
+            redrawAll();
+            return;
+        }
+
+        if (mode === 'select' && selectedIdx !== -1) {
+            const a = shapeAnchor(shapes[selectedIdx]);
+            const dx = (p.x - dragOffX) - a.x;
+            const dy = (p.y - dragOffY) - a.y;
+            if(!isDragging && Math.hypot(dx, dy) > 4) isDragging = true;
+            if(isDragging) {
+                moveShape(shapes[selectedIdx], dx, dy);
+                // Update drag offset agar tidak melompat
+                const newA = shapeAnchor(shapes[selectedIdx]);
+                dragOffX = p.x - newA.x;
+                dragOffY = p.y - newA.y;
+            }
+        }
     }
 
     function onPointerUp() {
         if(isDragging && selectedIdx >= 0) snapshot();
+        if(isPanning) {
+            isPanning = false;
+            canvas.style.cursor = 'default';
+        }
         isDragging = false;
         isPointerDown = false;
+        isPanning = false;
     }
 
     // --- TOOLBAR ---
     document.querySelectorAll('.toolbar-group .btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if(btn.id.startsWith('btnUndo') || btn.id.startsWith('btnRedo') || btn.id === 'btnClear') return;
+            if(btn.id === 'resetZoomBtn') return;
             mode = btn.id.replace('btn', '').toLowerCase();
             document.querySelectorAll('.toolbar-group .btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -569,6 +663,12 @@
                 document.getElementById('uploadScreen').style.display = 'none';
                 document.getElementById('mainScreen').style.display = 'block';
                 resizeCanvas();
+                // Reset zoom & pan
+                zoomSlider.value = '100';
+                zoom = 1.0;
+                zoomValue.textContent = '1.00×';
+                panX = 0; panY = 0;
+                redrawAll();
             };
         } else {
             hasVideo = false;
@@ -576,6 +676,11 @@
                 document.getElementById('uploadScreen').style.display = 'none';
                 document.getElementById('mainScreen').style.display = 'block';
                 resizeCanvas();
+                zoomSlider.value = '100';
+                zoom = 1.0;
+                zoomValue.textContent = '1.00×';
+                panX = 0; panY = 0;
+                redrawAll();
             };
             bgImage.src = url;
         }
@@ -633,7 +738,42 @@
             hdCtx.clearRect(0, 0, HD_W, HD_H);
             const scaleX = HD_W / canvas.width;
             const scaleY = HD_H / canvas.height;
-            drawBackgroundOn(hdCtx, HD_W, HD_H);
+
+            // Gambar background dengan zoom & pan
+            hdCtx.save();
+            hdCtx.translate(panX * scaleX, panY * scaleY);
+            hdCtx.scale(zoom, zoom);
+            // Sama seperti drawBackgroundOn tapi di HD
+            let source = null;
+            let srcW = 0, srcH = 0;
+            if (hasVideo && bgVideo.readyState >= 2) {
+                source = bgVideo;
+                srcW = bgVideo.videoWidth;
+                srcH = bgVideo.videoHeight;
+            } else if (bgImage.src) {
+                source = bgImage;
+                srcW = bgImage.width;
+                srcH = bgImage.height;
+            }
+            if (source && srcW > 0 && srcH > 0) {
+                const canvasAspect = HD_W / HD_H;
+                const imgAspect = srcW / srcH;
+                let dx = 0, dy = 0, dw = HD_W, dh = HD_H;
+                if (canvasAspect > imgAspect) {
+                    dw = HD_W; dh = HD_W / imgAspect; dy = (HD_H - dh) / 2;
+                } else {
+                    dh = HD_H; dw = HD_H * imgAspect; dx = (HD_W - dw) / 2;
+                }
+                hdCtx.drawImage(source, dx, dy, dw, dh);
+                hdCtx.fillStyle = 'rgba(0,0,0,0.15)';
+                hdCtx.fillRect(0, 0, HD_W, HD_H);
+            } else {
+                hdCtx.fillStyle = '#14532d';
+                hdCtx.fillRect(0, 0, HD_W, HD_H);
+            }
+            hdCtx.restore();
+
+            // Shapes (di koordinat canvas)
             shapes.forEach(s => {
                 const age = globalTime - (s.createdAt || 0);
                 const revealProgress = Math.min(1, age / 600);
@@ -700,8 +840,41 @@
 
         const scaleX = W / canvas.width;
         const scaleY = H / canvas.height;
-        drawBackgroundOn(offCtx, W, H);
 
+        // Background dengan zoom & pan
+        offCtx.save();
+        offCtx.translate(panX * scaleX, panY * scaleY);
+        offCtx.scale(zoom, zoom);
+        let source = null;
+        let srcW = 0, srcH = 0;
+        if (hasVideo && bgVideo.readyState >= 2) {
+            source = bgVideo;
+            srcW = bgVideo.videoWidth;
+            srcH = bgVideo.videoHeight;
+        } else if (bgImage.src) {
+            source = bgImage;
+            srcW = bgImage.width;
+            srcH = bgImage.height;
+        }
+        if (source && srcW > 0 && srcH > 0) {
+            const canvasAspect = W / H;
+            const imgAspect = srcW / srcH;
+            let dx = 0, dy = 0, dw = W, dh = H;
+            if (canvasAspect > imgAspect) {
+                dw = W; dh = W / imgAspect; dy = (H - dh) / 2;
+            } else {
+                dh = H; dw = H * imgAspect; dx = (W - dw) / 2;
+            }
+            offCtx.drawImage(source, dx, dy, dw, dh);
+            offCtx.fillStyle = 'rgba(0,0,0,0.15)';
+            offCtx.fillRect(0, 0, W, H);
+        } else {
+            offCtx.fillStyle = '#14532d';
+            offCtx.fillRect(0, 0, W, H);
+        }
+        offCtx.restore();
+
+        // Shapes
         shapes.forEach(s => {
             const age = globalTime - (s.createdAt || 0);
             const revealProgress = Math.min(1, age / 600);
