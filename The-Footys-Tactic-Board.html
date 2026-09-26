@@ -1,0 +1,3301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Footys — Tactics Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #070c12; --panel: #0e1720; --panel-2: #121e29; --panel-3: #172634;
+      --line: #1d2c3a; --line-2: #26394c; --text: #e9eff6; --text-2: #9db1c4;
+      --muted: #617a90; --accent: #00d68f; --accent-2: #3d9bff; --danger: #ff4d4d;
+      --bench-w: 152px; --radius: 10px;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: radial-gradient(1200px 600px at 50% -10%, #12222f 0%, transparent 70%), var(--bg);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      color: var(--text);
+      display: flex; flex-direction: column;
+      user-select: none; -webkit-font-smoothing: antialiased;
+    }
+    #header {
+      display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+      background: linear-gradient(180deg, #14222f 0%, #0c151e 100%);
+      border-bottom: 1px solid var(--line); flex-shrink: 0;
+      flex-wrap: nowrap; overflow-x: auto; overflow-y: visible;
+      -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+      position: relative; z-index: 900;
+    }
+    #header::-webkit-scrollbar { height: 6px; }
+    #header::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+    #header .toolgroup { flex-shrink: 0; }
+    .brand {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 21px; font-weight: 700;
+      letter-spacing: 1.6px; color: #ffffff; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0;
+    }
+    .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+      box-shadow: 0 0 10px var(--accent), 0 0 3px #fff inset; }
+    .brand em { font-style: normal; color: var(--accent); }
+    .sep { width: 1px; height: 26px; background: var(--line); flex-shrink: 0; }
+    .toolgroup { display: flex; gap: 6px; align-items: center; position: relative; }
+    .tool-label { font-size: 9.5px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1.1px; font-weight: 700; padding-right: 2px; white-space: nowrap; }
+    .btn {
+      background: linear-gradient(180deg, #1b2a38 0%, #14202c 100%);
+      border: 1px solid var(--line-2); color: var(--text-2); border-radius: 8px;
+      padding: 6px 11px; font-size: 12.5px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all .15s ease; display: flex; align-items: center;
+      gap: 6px; white-space: nowrap;
+    }
+    .btn:hover { background: linear-gradient(180deg, #22354a 0%, #182736 100%);
+      border-color: var(--accent-2); color: #fff; }
+    .btn:active { transform: translateY(1px); }
+    .btn.active {
+      background: linear-gradient(180deg, #00b97c 0%, #009a67 100%);
+      border-color: var(--accent); color: #04120c; box-shadow: 0 0 12px rgba(0,214,143,.28);
+    }
+    .btn:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+    .btn svg { width: 14px; height: 14px; }
+    .dropdown-wrap { position: relative; }
+    .dropdown-menu {
+      position: fixed; top: 0; left: 0; min-width: 200px;
+      background: linear-gradient(180deg, #1a2936 0%, #131e28 100%);
+      border: 1px solid var(--line-2); border-radius: 10px; padding: 5px;
+      box-shadow: 0 14px 34px rgba(0,0,0,.85); z-index: 99999;
+      display: none; flex-direction: column; gap: 2px;
+    }
+    .dropdown-menu.visible { display: flex; }
+    .dropdown-menu button {
+      background: none; border: none; color: var(--text-2);
+      padding: 8px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
+      border-radius: 6px; cursor: pointer; text-align: left; display: flex;
+      align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .dropdown-menu button:hover { background: #1e3243; color: #fff; }
+    .dropdown-menu .menu-sep { height: 1px; background: var(--line); margin: 4px 2px; }
+    .dropdown-menu .menu-label {
+      font-size: 9px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1px; font-weight: 700; padding: 6px 12px 2px;
+    }
+    .anim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 2px 5px 5px; }
+    .anim-grid button {
+      background: #16222e; border: 1px solid var(--line); color: var(--text-2);
+      border-radius: 6px; padding: 5px 4px; font-size: 11px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-align: center;
+      display: block; white-space: nowrap;
+    }
+    .anim-grid button:hover { background: #1e3243; color: #fff; border-color: var(--accent-2); }
+    .anim-grid button.active {
+      background: linear-gradient(180deg, #00b97c 0%, #009a67 100%);
+      color: #04120c; border-color: var(--accent); box-shadow: 0 0 10px rgba(0,214,143,.28);
+    }
+    .color-swatch {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2);
+      cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; flex-shrink: 0;
+    }
+    .color-swatch:hover, .color-swatch.active {
+      transform: scale(1.18); border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,.35);
+    }
+    .color-swatch[data-color="#ffffff"] { border-color: #aaa; }
+    .color-popover {
+      position: fixed; top: 0; left: 0;
+      background: linear-gradient(180deg, #1a2936 0%, #131e28 100%);
+      border: 1px solid var(--line-2); border-radius: 10px; padding: 8px;
+      box-shadow: 0 14px 34px rgba(0,0,0,.85); z-index: 99999;
+      display: none; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 220px;
+    }
+    .color-popover.visible { display: grid; }
+    .color-popover .color-swatch { width: 26px; height: 26px; }
+    input[type=color] {
+      width: 30px; height: 28px; border: 1px solid var(--line-2);
+      border-radius: 8px; background: var(--panel-2); cursor: pointer; padding: 2px;
+    }
+    input[type=range] {
+      -webkit-appearance: none; appearance: none; width: 72px; height: 4px;
+      border-radius: 2px; background: var(--line-2); cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 6px rgba(0,214,143,.6); cursor: pointer;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 13px; height: 13px; border: none; border-radius: 50%; background: var(--accent);
+    }
+    select {
+      background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text-2);
+      border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--accent); }
+    #annotate-dock {
+      position: fixed; left: calc(var(--bench-w) + 8px); top: calc(50% + 30px);
+      transform: translateY(-50%); z-index: 200; display: flex; flex-direction: column; gap: 5px;
+      background: linear-gradient(180deg, #13202c 0%, #0d1721 100%);
+      border: 1px solid var(--line-2); border-radius: 14px; padding: 6px;
+      box-shadow: 0 10px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.02) inset;
+      max-height: calc(100vh - 180px); overflow-y: auto; scrollbar-width: none;
+    }
+    #annotate-dock::-webkit-scrollbar { display: none; }
+    #annotate-dock .btn { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 10px; }
+    #annotate-dock .btn svg { width: 18px; height: 18px; }
+    #annotate-dock .dock-sep { height: 1px; background: var(--line); margin: 3px 4px; }
+    #main-row { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+    .bench-panel {
+      width: var(--bench-w); flex-shrink: 0;
+      background: linear-gradient(180deg, #101b25 0%, #0b141c 100%);
+      display: flex; flex-direction: column; overflow-y: auto;
+      -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    }
+    .bench-panel::-webkit-scrollbar { width: 5px; }
+    .bench-panel::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+    #bench-left  { border-right: 1px solid var(--line); }
+    #bench-right { border-left: 1px solid var(--line); }
+    .bench-header {
+      position: sticky; top: 0; z-index: 2;
+      background: linear-gradient(180deg, #16232f 0%, #101b25 100%);
+      padding: 9px 9px 7px; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--text-2); border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 6px;
+    }
+    #bench-left  .bench-header { border-left: 3px solid #3d9bff; }
+    #bench-right .bench-header { border-left: 3px solid #ff4d4d; }
+    .bench-team-input {
+      background: transparent; border: none; color: var(--text-2);
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 1.4px; text-transform: uppercase; width: 100%; cursor: text;
+    }
+    .bench-team-input:focus { outline: none; color: var(--accent); }
+    .bench-list { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+    .bench-slot {
+      display: flex; align-items: center; gap: 7px;
+      background: linear-gradient(180deg, #16222e 0%, #111b25 100%);
+      border: 1px solid var(--line); border-radius: 9px; padding: 5px 6px;
+      cursor: grab; transition: border-color .15s, transform .12s;
+    }
+    .bench-slot:hover { border-color: var(--line-2); }
+    .bench-slot:active { cursor: grabbing; transform: scale(.98); }
+    .bench-swatch {
+      width: 26px; height: 26px; min-width: 26px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.35); flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,.45); cursor: pointer;
+    }
+    .bench-swatch[data-color="#ffffff"] { border-color: #aaa; }
+    .bench-name-input {
+      width: 100%; min-width: 0; background: transparent; border: none;
+      color: var(--text); font-size: 11px; font-weight: 600; font-family: inherit;
+      padding: 2px; cursor: text;
+    }
+    .bench-name-input::placeholder { color: #4c6379; }
+    .bench-name-input:focus { outline: none; color: var(--accent); }
+    .bench-hint {
+      padding: 0 9px 9px; font-size: 9.5px; color: var(--muted); line-height: 1.45;
+      transition: opacity .5s ease;
+    }
+    .bench-hint.fade-out { opacity: 0; }
+    .bench-token-ghost {
+      position: fixed; z-index: 9999; pointer-events: none; width: 36px; height: 36px;
+      border-radius: 50%; border: 2px solid rgba(255,255,255,.9);
+      box-shadow: 0 6px 16px rgba(0,0,0,.65); transform: translate(-50%, -50%); opacity: .92;
+    }
+    .bench-color-popover {
+      position: fixed; z-index: 600; background: var(--panel-3);
+      border: 1px solid var(--line-2); border-radius: 10px; padding: 7px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.7);
+    }
+    .bench-color-popover .color-swatch { width: 22px; height: 22px; }
+    @media (max-width: 760px) {
+      :root { --bench-w: 92px; }
+      .bench-header { font-size: 10px; padding: 7px 6px 5px; }
+      .bench-name-input { font-size: 9.5px; }
+      .bench-hint { display: none; }
+      .bench-swatch { width: 22px; height: 22px; min-width: 22px; }
+    }
+    #pitch-wrap {
+      flex: 1; display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+      padding: 8px 8px 8px 60px;
+      min-width: 0; min-height: 0;
+      background: radial-gradient(900px 500px at 50% 0%, rgba(0,214,143,.05) 0%, transparent 60%);
+    }
+    #pitch-container { position: relative; touch-action: none; flex-shrink: 0; transform-origin: center center; }
+    #pitch-svg {
+      display: block; border-radius: 6px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 22px 60px rgba(0,0,0,.7);
+    }
+    #bg-layer {
+      position: absolute; top: 0; left: 0; overflow: hidden; border-radius: 6px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 22px 60px rgba(0,0,0,.7);
+      background: #000; display: none; width: 100%; height: 100%;
+    }
+    #bg-layer.visible { display: block; }
+    #bg-img, #bg-video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+    #video-error-overlay {
+      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 24px; color: #ff7b72; font: 600 14px/1.55 'Inter', sans-serif;
+      background: rgba(0,0,0,.45); pointer-events: none;
+    }
+    #video-error-overlay.visible { display: flex; }
+    #annotation-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+    #annotation-canvas.drawing { pointer-events: all; }
+    #inpaint-layer { position: absolute; top: 0; left: 0; pointer-events: none; }
+    #player-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    #player-layer.editable { pointer-events: all; }
+    .player-token {
+      position: absolute; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; pointer-events: all;
+    }
+    .player-token.dragging { opacity: .88; z-index: 999; cursor: grabbing; }
+    .player-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.9);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;
+      letter-spacing: .3px; color: #fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.35);
+      position: relative; z-index: 1; transition: transform .15s, box-shadow .15s;
+    }
+    .player-token:hover .player-circle { transform: scale(1.07); }
+    .player-circle.selected {
+      box-shadow: 0 0 0 3px #fff, 0 0 16px 5px rgba(0,214,143,.7), 0 3px 10px rgba(0,0,0,.55);
+    }
+    .player-role {
+      position: absolute; top: -7px; right: -13px;
+      background: linear-gradient(180deg, #0f1c27 0%, #0a141c 100%);
+      border: 1px solid rgba(255,255,255,.28); color: #cfe2f2;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700;
+      letter-spacing: .6px; padding: 1px 5px; border-radius: 4px; white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(0,0,0,.5); z-index: 3;
+    }
+    .player-role:empty { display: none; }
+    .player-label {
+      margin-top: 3px; background: rgba(6,12,18,.92); color: #eaf2f9;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 10.5px; font-weight: 600;
+      letter-spacing: .8px; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+      text-transform: uppercase; pointer-events: none; border: 1px solid rgba(255,255,255,.07);
+    }
+    .player-label:empty { display: none; }
+    #ball-token {
+      position: absolute; transform: translate(-50%, -50%);
+      width: 32px; height: 32px; cursor: grab; pointer-events: all; z-index: 50;
+      filter: drop-shadow(0 3px 7px rgba(0,0,0,.7)); transition: filter .12s;
+    }
+    #ball-token:hover { filter: drop-shadow(0 0 10px rgba(0,214,143,.6)) drop-shadow(0 3px 7px rgba(0,0,0,.7)); }
+    #ball-token.dragging {
+      cursor: grabbing;
+      filter: drop-shadow(0 0 14px rgba(0,214,143,.85)) drop-shadow(0 4px 9px rgba(0,0,0,.75));
+      z-index: 999;
+    }
+    #player-editor {
+      position: fixed; right: 16px; top: 64px;
+      background: linear-gradient(180deg, #16232f 0%, #0f1a24 100%);
+      border: 1px solid var(--line-2); border-radius: 14px; padding: 14px; width: 238px;
+      z-index: 500; display: none; flex-direction: column; gap: 10px;
+      box-shadow: 0 18px 46px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03) inset;
+    }
+    #player-editor.visible { display: flex; }
+    #player-editor h3 {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1.6px;
+      border-bottom: 1px solid var(--line); padding-bottom: 7px;
+    }
+    #player-editor input[type=text] {
+      width: 100%; background: #0a131b; border: 1px solid var(--line-2);
+      border-radius: 8px; color: var(--text); padding: 7px 9px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+    }
+    #player-editor input[type=text]::placeholder { color: #4a6176; font-weight: 500; }
+    #player-editor input[type=text]:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,214,143,.12);
+    }
+    .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+    .color-grid .color-swatch { width: 25px; height: 25px; }
+    #ann-editor {
+      position: fixed; right: 16px; top: 64px;
+      background: linear-gradient(180deg, #16232f 0%, #0f1a24 100%);
+      border: 1px solid var(--line-2); border-radius: 14px; padding: 14px; width: 244px;
+      z-index: 500; display: none; flex-direction: column; gap: 9px;
+      box-shadow: 0 18px 46px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03) inset;
+    }
+    #ann-editor.visible { display: flex; }
+    #ann-editor h3 {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1.6px;
+      border-bottom: 1px solid var(--line); padding-bottom: 7px;
+    }
+    #ann-editor .ae-type {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1.1px; font-weight: 700; margin-top: -3px;
+    }
+    #ann-editor .ae-row { display: flex; align-items: center; gap: 8px; }
+    #ann-editor .ae-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1px; font-weight: 700; min-width: 38px;
+    }
+    #ann-editor .ae-val { font-size: 11px; color: var(--text-2); min-width: 18px; text-align: right; }
+    #ann-editor .ae-row select { flex: 1; padding: 5px 7px; font-size: 11.5px; }
+    #ann-editor .ae-row input[type=range] { flex: 1; width: auto; }
+    #ann-editor textarea#ae-text {
+      width: 100%; background: #0a131b; border: 1px solid var(--line-2);
+      border-radius: 8px; color: var(--text); padding: 7px 9px;
+      font-size: 12px; font-family: inherit; resize: vertical; min-height: 46px;
+      line-height: 1.4; display: none;
+    }
+    #ann-editor textarea#ae-text.visible { display: block; }
+    #ann-editor textarea#ae-text:focus { outline: none; border-color: var(--accent); }
+    #ann-editor .ae-row-btns { gap: 6px; }
+    #ann-editor .ae-row-btns .btn { flex: 1; justify-content: center; font-size: 11px; padding: 6px 8px; }
+    #ann-editor .btn.danger { color: #ff6b6b; border-color: rgba(255,107,107,.4); }
+    #ann-editor .btn.danger:hover { background: rgba(255,77,77,.14); color: #ff9a9a; }
+    #ctx-menu {
+      position: fixed; background: linear-gradient(180deg, #172532 0%, #101b25 100%);
+      border: 1px solid var(--line-2); border-radius: 10px; padding: 5px; z-index: 1000;
+      display: none; flex-direction: column; gap: 2px;
+      box-shadow: 0 14px 34px rgba(0,0,0,.75); min-width: 150px;
+    }
+    #ctx-menu.visible { display: flex; }
+    #ctx-menu button {
+      background: none; border: none; color: var(--text-2); padding: 8px 12px;
+      font-size: 12px; font-weight: 600; font-family: inherit; border-radius: 6px;
+      cursor: pointer; text-align: left; transition: background .12s, color .12s;
+    }
+    #ctx-menu button:hover { background: #1e3243; color: #fff; }
+    #ctx-menu button.danger { color: #ff6b6b; }
+    #ctx-menu button.danger:hover { background: rgba(255,77,77,.14); }
+    #tpl-modal, #shortcuts-modal, #confirm-modal, #text-modal {
+      position: fixed; inset: 0; background: rgba(2,6,10,.78);
+      backdrop-filter: blur(3px); z-index: 20000; display: none;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    #tpl-modal.visible, #shortcuts-modal.visible, #confirm-modal.visible, #text-modal.visible { display: flex; }
+    #tpl-box, #shortcuts-box, #confirm-box, #text-box {
+      background: linear-gradient(180deg, #16232f 0%, #0e1822 100%);
+      border: 1px solid var(--line-2); border-radius: 16px; padding: 20px;
+      width: 360px; max-width: 100%; max-height: 84vh; display: flex;
+      flex-direction: column; gap: 13px; box-shadow: 0 26px 70px rgba(0,0,0,.85);
+    }
+    #shortcuts-box { width: 420px; }
+    #confirm-box { width: 340px; }
+    #text-box { width: 380px; }
+    #tpl-box h2, #shortcuts-box h2, #confirm-box h2, #text-box h2 {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 15px; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1.6px;
+    }
+    #text-input {
+      width: 100%; background: #0a131b; border: 1px solid var(--line-2);
+      border-radius: 8px; color: var(--text); padding: 9px 11px;
+      font-size: 13px; font-family: inherit; resize: vertical; min-height: 62px; line-height: 1.45;
+    }
+    #text-input::placeholder { color: #4a6176; }
+    #text-input:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,214,143,.12);
+    }
+    #tpl-box p { font-size: 11.5px; color: var(--text-2); line-height: 1.6; }
+    #tpl-box code { background: #0a131b; padding: 1px 5px; border-radius: 4px;
+      color: var(--accent); font-size: 10.5px; }
+    #tpl-box label {
+      display: block; font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 5px;
+    }
+    #tpl-name-input {
+      width: 100%; background: #0a131b; border: 1px solid var(--line-2);
+      border-radius: 8px; color: var(--text); padding: 9px 11px;
+      font-size: 13px; font-family: inherit;
+    }
+    #tpl-name-input:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,214,143,.12);
+    }
+    #tpl-list {
+      overflow-y: auto; flex: 1; display: flex; flex-direction: column;
+      gap: 7px; max-height: 300px; scrollbar-width: thin;
+    }
+    #tpl-list::-webkit-scrollbar { width: 5px; }
+    #tpl-list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+    .tpl-item {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(180deg, #17242f 0%, #121d27 100%);
+      border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .tpl-item:hover { border-color: var(--accent); }
+    .tpl-item-name { flex: 1; font-size: 13px; font-weight: 700; }
+    .tpl-item-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .tpl-item-del { background: none; border: none; color: #ff6b6b;
+      cursor: pointer; padding: 2px 6px; font-size: 14px; border-radius: 5px; }
+    .tpl-item-del:hover { background: rgba(255,77,77,.15); }
+    .tpl-actions { display: flex; gap: 8px; }
+    .tpl-actions .btn { flex: 1; justify-content: center; }
+    .tpl-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 18px 0; }
+    .shortcut-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 12px;
+    }
+    .shortcut-row:last-child { border-bottom: none; }
+    .shortcut-row span:first-child { color: var(--text-2); }
+    .shortcut-key {
+      background: #0a131b; border: 1px solid var(--line-2); border-radius: 5px;
+      padding: 2px 7px; font-family: 'SF Mono', Menlo, monospace;
+      font-size: 10.5px; color: var(--accent);
+    }
+    #status {
+      font-size: 11.5px; color: var(--text-2); padding: 5px 16px;
+      background: linear-gradient(180deg, #0e1822 0%, #0a121a 100%);
+      border-top: 1px solid var(--line); flex-shrink: 0; letter-spacing: .2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #video-bar {
+      display: none; align-items: center; gap: 10px; padding: 6px 16px;
+      background: linear-gradient(180deg, #101c26 0%, #0b141c 100%);
+      border-bottom: 1px solid var(--line); flex-shrink: 0;
+    }
+    #video-bar.visible { display: flex; }
+    #video-bar input[type=range] { flex: 1; width: auto; }
+    #video-time {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: .8px;
+      color: var(--text-2); min-width: 96px; text-align: center;
+    }
+    #anim-bar {
+      display: none; align-items: center; gap: 10px; padding: 6px 16px;
+      background: linear-gradient(180deg, #0d1720 0%, #091119 100%);
+      border-bottom: 1px solid var(--line); flex-shrink: 0;
+    }
+    #anim-bar.visible { display: flex; }
+    #kf-count {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+      letter-spacing: 1px; color: var(--muted); white-space: nowrap; text-transform: uppercase;
+    }
+    #kf-track {
+      display: flex; gap: 6px; flex: 1; overflow-x: auto; padding: 2px 0;
+      -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    }
+    #kf-track::-webkit-scrollbar { height: 5px; }
+    #kf-track::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+    .kf-item {
+      display: flex; align-items: center; gap: 5px;
+      background: linear-gradient(180deg, #17242f 0%, #121d27 100%);
+      border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px;
+      cursor: pointer; flex-shrink: 0; transition: border-color .15s, background .15s;
+    }
+    .kf-item:hover { border-color: var(--accent-2); }
+    .kf-item.active {
+      border-color: var(--accent); background: rgba(0,214,143,.12);
+      box-shadow: 0 0 10px rgba(0,214,143,.18);
+    }
+    .kf-item .kf-num {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+      color: var(--text); width: 16px; text-align: center; flex-shrink: 0;
+    }
+    .kf-item input[type=number] {
+      width: 46px; background: #0a131b; border: 1px solid var(--line-2);
+      border-radius: 5px; color: var(--text); font-size: 11px;
+      font-family: inherit; padding: 2px 4px;
+    }
+    .kf-del { background: none; border: none; color: #ff6b6b;
+      cursor: pointer; font-size: 12px; padding: 0 2px; line-height: 1; }
+    .kf-del:hover { color: #ff9a9a; }
+    #anim-seek { flex-shrink: 0; width: 138px; }
+    #annotation-canvas.drawing.mode-crosshair { cursor: crosshair; }
+    #annotation-canvas.drawing.mode-pen { cursor: cell; }
+    #annotation-canvas.mode-select-ann { cursor: default; }
+    #annotation-canvas.mode-select-ann.hovering { cursor: move; }
+    #annotation-canvas.mode-boxselect { cursor: crosshair; }
+    #annotation-canvas.mode-buildup { cursor: copy; }
+    #annotation-canvas.mode-highlight { cursor: cell; }
+    #annotation-canvas.mode-text { cursor: text; }
+    #toast {
+      position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: linear-gradient(180deg, #1a2936 0%, #131e28 100%);
+      border: 1px solid var(--accent); color: #fff;
+      padding: 10px 20px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,.7), 0 0 20px rgba(0,214,143,.2);
+      z-index: 5000; opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s;
+    }
+    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<input type="file" id="media-input" style="display:none" onchange="handleMediaUpload(this.files[0])">
+
+<div id="annotate-dock">
+  <button class="btn" id="tool-arrow" onclick="setTool('arrow')" title="Arrow (1)"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><line x1="2" y1="14" x2="12" y2="4"/><polyline points="7,4 12,4 12,9"/></svg></button>
+  <button class="btn" id="tool-line" onclick="setTool('line')" title="Line (2)"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><line x1="2" y1="14" x2="14" y2="2"/></svg></button>
+  <button class="btn" id="tool-curve" onclick="setTool('curve')" title="Curve (3)"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M2 14 Q8 2 14 8"/><polyline points="10,5 14,8 11,11"/></svg></button>
+  <button class="btn" id="tool-ellipse" onclick="setTool('ellipse')" title="Ellipse (4)"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4"/></svg></button>
+  <button class="btn" id="tool-rect" onclick="setTool('rect')" title="Rectangle (5)"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="2" y="4" width="12" height="8" rx="1"/></svg></button>
+  <button class="btn" id="tool-polygon" onclick="setTool('polygon')" title="Polygon (6)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="8,2 14,6 12,13 4,13 2,6"/></svg></button>
+  <button class="btn" id="tool-buildup" onclick="setTool('buildup')" title="Build-up Structure (7)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="4" cy="11" rx="2.6" ry="1.5"/><ellipse cx="8" cy="5" rx="2.6" ry="1.5"/><ellipse cx="12" cy="11" rx="2.6" ry="1.5"/><line x1="5.8" y1="10.2" x2="6.5" y2="6.2"/><line x1="9.5" y1="6.2" x2="10.2" y2="10.2"/></svg></button>
+  <button class="btn" id="tool-highlight" onclick="setTool('highlight')" title="Player Highlight (8)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="12" r="3.5"/><path d="M8 8 L6.5 -1 M8 8 L9.5 -1" opacity="0.6"/><ellipse cx="8" cy="12" rx="5.5" ry="2.5"/></svg></button>
+  <button class="btn" id="tool-text" onclick="setTool('text')" title="Text Label (9)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M8 4v8M5.8 12h4.4"/></svg></button>
+  <div class="dock-sep"></div>
+  <button class="btn" id="btn-undo" onclick="undo()" title="Undo (Ctrl+Z)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4H10a4 4 0 010 8H4"/><polyline points="7,1 4,4 7,7"/></svg></button>
+  <button class="btn" id="btn-redo" onclick="redo()" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4H6a4 4 0 000 8h6"/><polyline points="9,1 12,4 9,7"/></svg></button>
+  <button class="btn" onclick="clearAnnotations()" title="Clear all drawings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+</div>
+
+<div id="header">
+  <span class="brand"><span class="dot"></span>The<em>Footys</em></span>
+  <div class="sep"></div>
+  <div class="toolgroup">
+    <span class="tool-label">Mode</span>
+    <button class="btn active" id="tool-select" onclick="setTool('select')" title="Select &amp; Move (Esc)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l10 6-5 1-2 5z"/></svg>Select</button>
+    <button class="btn" id="tool-boxselect" onclick="setTool('boxselect')" title="Box select multiple"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3,2"><rect x="2" y="2" width="12" height="12" rx="1"/></svg>Box</button>
+    <button class="btn" id="tool-player" onclick="setTool('player')" title="Add Player"><svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Player</button>
+    <button class="btn" id="tool-ball" onclick="setTool('ball')" title="Toggle Ball"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 2 Q10 5 8 8 Q6 11 8 14M2 6h12M2 10h12"/></svg>Ball</button>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleColorPopover(event)" title="Drawing color">
+      <span class="color-swatch active" id="current-color-indicator" style="background:#ffffff;width:16px;height:16px;border-width:1.5px;margin:0" data-color="#ffffff"></span>
+      Color
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px"><polyline points="4,6 8,10 12,6"/></svg>
+    </button>
+    <div class="color-popover" id="color-popover"></div>
+    <input type="range" id="stroke-size" min="1" max="8" value="2" oninput="strokeSize=+this.value" style="width:50px" title="Stroke size">
+    <button class="btn active" id="stroke-solid" onclick="setDash('solid')" title="Solid line">—</button>
+    <button class="btn" id="stroke-dash" onclick="setDash('dash')" title="Dashed line">- -</button>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleTeamMenu(event)" title="Team setup">
+      <svg viewBox="0 0 16 16" fill="currentColor" style="width:13px;height:13px"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+      Team
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px"><polyline points="4,6 8,10 12,6"/></svg>
+    </button>
+    <div class="dropdown-menu" id="team-menu">
+      <div class="menu-label">Load Formation</div>
+      <button onclick="loadFormation('433'); closeAllDropdowns()">4-3-3</button>
+      <button onclick="loadFormation('442'); closeAllDropdowns()">4-4-2</button>
+      <button onclick="loadFormation('352'); closeAllDropdowns()">3-5-2</button>
+      <button onclick="loadFormation('4231'); closeAllDropdowns()">4-2-3-1</button>
+      <button onclick="loadFormation('325'); closeAllDropdowns()">3-2-5 (Box3)</button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Quick Setup</div>
+      <button onclick="loadMonoFormation('own'); closeAllDropdowns()"><span style="width:9px;height:9px;border-radius:50%;background:#3d9bff;display:inline-block"></span>Load My XI</button>
+      <button onclick="loadMonoFormation('opp'); closeAllDropdowns()"><span style="width:9px;height:9px;border-radius:50%;background:#ff4d4d;display:inline-block"></span>Load Opponent XI</button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleBoardMenu(event)" title="Board options">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="8" y1="3" x2="8" y2="13"/><circle cx="8" cy="8" r="2"/></svg>
+      Board
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px"><polyline points="4,6 8,10 12,6"/></svg>
+    </button>
+    <div class="dropdown-menu" id="board-menu">
+      <div class="menu-label">Orientation</div>
+      <button onclick="setOrientation('horizontal'); closeAllDropdowns()">▭ Horizontal</button>
+      <button onclick="setOrientation('vertical'); closeAllDropdowns()">▯ Vertical</button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Background Media</div>
+      <button onclick="document.getElementById('media-input').click(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M8 11V2M4 6l4-4 4 4"/><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>Upload Image / Video
+      </button>
+      <button onclick="setMediaMode('pitch'); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><circle cx="8" cy="8" r="6"/><path d="M8 2v12M2 8h12"/></svg>Show Pitch
+      </button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Fit</div>
+      <button onclick="fitToScreen(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>Fit To Screen
+      </button>
+      <button onclick="resetZoom(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><circle cx="8" cy="8" r="5"/><path d="M8 5v3l2 2"/></svg>Reset Size (100%)
+      </button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Reset</div>
+      <button onclick="confirmResetBoard(); closeAllDropdowns()" style="color:#ff6b6b">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M2 8a6 6 0 1 1 1.8 4.2"/><polyline points="2,12 2,8 6,8"/></svg>Reset Board
+      </button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleFileMenu(event)" title="Save, export, templates">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v5h6V2M5 10h6"/></svg>
+      File
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px"><polyline points="4,6 8,10 12,6"/></svg>
+    </button>
+    <div class="dropdown-menu" id="file-menu">
+      <div class="menu-label">Export</div>
+      <button onclick="exportPNG(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M3 11v3h10v-3M8 2v8M5 7l3 3 3-3"/></svg>Export PNG
+      </button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Templates</div>
+      <button onclick="openTemplateModal(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M13 5l-8 8-4-4"/></svg>Save / Load Templates
+      </button>
+      <div class="menu-sep"></div>
+      <div class="menu-label">Help</div>
+      <button onclick="openShortcuts(); closeAllDropdowns()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M4 7h1M7 7h1M10 7h2"/></svg>Keyboard Shortcuts
+      </button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup">
+    <span class="tool-label">Phases</span>
+    <button class="btn" onclick="addKeyframe()" title="Capture the current pitch as a new phase"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>+ Snapshot</button>
+    <button class="btn active" id="btn-toggle-paths" onclick="toggleKeyframePaths()" title="Toggle movement path visibility">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M2 12 Q8 4 14 12" stroke-dasharray="3,2"/><circle cx="2" cy="12" r="1.5" fill="currentColor"/><circle cx="14" cy="12" r="1.5" fill="currentColor"/></svg>Paths
+    </button>
+    <button class="btn" onclick="updateActiveKeyframe()" title="Overwrite selected phase with current pitch">Update</button>
+    <button class="btn" id="btn-anim-play" onclick="toggleAnimPlay()" title="Play / Pause animation (Space)">
+      <svg viewBox="0 0 16 16" fill="currentColor" id="icon-anim-play" style="width:14px;height:14px"><polygon points="3,2 14,8 3,14"/></svg>
+    </button>
+    <button class="btn" id="btn-export-anim" onclick="exportAnimationVideo()" title="Export full animation as video (all phases)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><circle cx="8" cy="8" r="5"/><polygon points="6.5,5.5 11,8 6.5,10.5" fill="currentColor"/></svg>Export Anim
+    </button>
+    <span id="gif-progress" style="font-size:11px;color:var(--accent);min-width:120px;font-weight:600;display:inline-flex;align-items:center;gap:6px;"></span>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleAnimMenu(event)" title="Animate selected drawings (in / loop / out)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M2 12 Q8 3 14 12"/><circle cx="2" cy="12" r="1.6" fill="currentColor"/><circle cx="14" cy="12" r="1.6" fill="currentColor"/></svg>
+      Animate
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px"><polyline points="4,6 8,10 12,6"/></svg>
+    </button>
+    <div class="dropdown-menu" id="anim-menu" style="min-width:258px">
+      <div class="menu-label">Entrance</div>
+      <div class="anim-grid" data-kind="in">
+        <button data-val="none"  onclick="setAnnAnim('in','none',event)">None</button>
+        <button data-val="fade"  onclick="setAnnAnim('in','fade',event)">Fade</button>
+        <button data-val="pop"   onclick="setAnnAnim('in','pop',event)">Pop</button>
+        <button data-val="draw"  onclick="setAnnAnim('in','draw',event)">Draw</button>
+        <button data-val="slide" onclick="setAnnAnim('in','slide',event)">Slide</button>
+        <button data-val="type"  onclick="setAnnAnim('in','type',event)">Type</button>
+      </div>
+      <div class="menu-label">Loop</div>
+      <div class="anim-grid" data-kind="loop">
+        <button data-val="none"  onclick="setAnnAnim('loop','none',event)">None</button>
+        <button data-val="pulse" onclick="setAnnAnim('loop','pulse',event)">Pulse</button>
+        <button data-val="blink" onclick="setAnnAnim('loop','blink',event)">Blink</button>
+        <button data-val="float" onclick="setAnnAnim('loop','float',event)">Float</button>
+        <button data-val="dash"  onclick="setAnnAnim('loop','dash',event)">March</button>
+      </div>
+      <div class="menu-label">Exit</div>
+      <div class="anim-grid" data-kind="out">
+        <button data-val="none"   onclick="setAnnAnim('out','none',event)">None</button>
+        <button data-val="fade"   onclick="setAnnAnim('out','fade',event)">Fade</button>
+        <button data-val="shrink" onclick="setAnnAnim('out','shrink',event)">Shrink</button>
+        <button data-val="slide"  onclick="setAnnAnim('out','slide',event)">Slide</button>
+      </div>
+      <div class="menu-sep"></div>
+      <div style="font-size:10.5px;color:var(--muted);padding:2px 10px 8px;line-height:1.55;white-space:normal;max-width:236px">
+        Pick a drawing first. Entrance &amp; exit play during phase transitions, loops play all the time. With nothing selected it becomes the default for new drawings.
+      </div>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="toolgroup dropdown-wrap">
+    <button class="btn" onclick="toggleMoreMenu(event)" title="More options">
+      <svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+    </button>
+    <div class="dropdown-menu" id="more-menu" style="right:0;left:auto">
+      <div class="menu-label">Developer</div>
+      <button onclick="debugKeyframes(); closeAllDropdowns()">🐞 Debug Keyframes</button>
+      <button onclick="clearKeyframes(); closeAllDropdowns()">🗑 Clear All Phases</button>
+    </div>
+  </div>
+</div>
+
+<div id="video-bar">
+  <button class="btn" id="btn-video-play" onclick="toggleVideoPlay()" title="Play / Pause video"><svg viewBox="0 0 16 16" fill="currentColor" id="icon-play"><polygon points="3,2 14,8 3,14"/></svg></button>
+  <button class="btn" onclick="restartVideo()" title="Restart video"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 1 1.8 4.2"/><polyline points="2,12 2,8 6,8"/></svg></button>
+  <input type="range" id="video-seek" min="0" max="1000" value="0" oninput="seekVideo(this.value)">
+  <span id="video-time">0:00 / 0:00</span>
+  <button class="btn" id="btn-video-mute" onclick="toggleVideoMute()" title="Mute / Unmute">🔊</button>
+</div>
+
+<div id="anim-bar">
+  <span id="kf-count">0 phases</span>
+  <div id="kf-track"></div>
+  <input type="range" id="anim-seek" min="0" max="1000" value="0" oninput="seekAnimation(this.value)" title="Scrub animation">
+</div>
+
+<div id="main-row">
+  <div id="bench-left" class="bench-panel">
+    <div class="bench-header">
+      <input type="text" class="bench-team-input" id="home-team-name" value="HOME BENCH" placeholder="Team name" oninput="updateTeamName('left')">
+    </div>
+    <div class="bench-hint" id="bench-left-hint">Tap colour dot to change. Drag onto pitch to place.</div>
+    <div class="bench-list" id="bench-left-list"></div>
+  </div>
+
+  <div id="pitch-wrap">
+    <div id="pitch-container">
+      <div id="bg-layer">
+        <img id="bg-img" alt="background">
+        <video id="bg-video" playsinline webkit-playsinline preload="auto" muted></video>
+        <div id="video-error-overlay"></div>
+      </div>
+      <canvas id="inpaint-layer"></canvas>
+      <svg id="pitch-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <canvas id="annotation-canvas"></canvas>
+      <img id="ball-token" alt="ball" draggable="false"/>
+      <div id="player-layer"></div>
+    </div>
+  </div>
+
+  <div id="bench-right" class="bench-panel">
+    <div class="bench-header">
+      <input type="text" class="bench-team-input" id="away-team-name" value="AWAY BENCH" placeholder="Team name" oninput="updateTeamName('right')">
+    </div>
+    <div class="bench-hint" id="bench-right-hint">Tap colour dot to change. Drag onto pitch to place.</div>
+    <div class="bench-list" id="bench-right-list"></div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<div id="player-editor">
+  <h3>Player Card</h3>
+  <input type="text" id="pe-number" placeholder="Shirt number" maxlength="2" oninput="updateSelectedPlayer()">
+  <input type="text" id="pe-name" placeholder="Player name" oninput="updateSelectedPlayer()">
+  <input type="text" id="pe-role" placeholder="Role (GK, CB, CM…)" maxlength="6" oninput="updateSelectedPlayer()">
+  <div class="color-grid" id="pe-colors"></div>
+  <button class="btn" style="font-size:11px;color:#ff6b6b;justify-content:center" onclick="deleteSelectedPlayer()">🗑 Remove Player</button>
+</div>
+
+<div id="ann-editor">
+  <h3>Drawing Card</h3>
+  <div id="ae-type-label" class="ae-type">Arrow</div>
+
+  <div class="color-grid" id="ae-colors"></div>
+
+  <div class="ae-row">
+    <span class="ae-label">Size</span>
+    <input type="range" id="ae-size" min="1" max="12" step="1" value="2">
+    <span id="ae-size-val" class="ae-val">2</span>
+  </div>
+
+  <div class="ae-row">
+    <span class="ae-label">Style</span>
+    <button class="btn" id="ae-solid" onclick="setSelectedAnnDash('solid')" title="Solid">—</button>
+    <button class="btn" id="ae-dash"  onclick="setSelectedAnnDash('dash')"  title="Dashed">- -</button>
+  </div>
+
+  <div class="ae-row">
+    <span class="ae-label">In</span>
+    <select id="ae-anim-in" onchange="setSelectedAnnAnim('in', this.value)">
+      <option value="none">None</option>
+      <option value="fade">Fade</option>
+      <option value="pop">Pop</option>
+      <option value="draw">Draw</option>
+      <option value="slide">Slide</option>
+      <option value="type">Type</option>
+    </select>
+  </div>
+  <div class="ae-row">
+    <span class="ae-label">Loop</span>
+    <select id="ae-anim-loop" onchange="setSelectedAnnAnim('loop', this.value)">
+      <option value="none">None</option>
+      <option value="pulse">Pulse</option>
+      <option value="blink">Blink</option>
+      <option value="float">Float</option>
+      <option value="dash">March</option>
+    </select>
+  </div>
+  <div class="ae-row">
+    <span class="ae-label">Out</span>
+    <select id="ae-anim-out" onchange="setSelectedAnnAnim('out', this.value)">
+      <option value="none">None</option>
+      <option value="fade">Fade</option>
+      <option value="shrink">Shrink</option>
+      <option value="slide">Slide</option>
+    </select>
+  </div>
+
+  <textarea id="ae-text" placeholder="Label text…" rows="2"></textarea>
+
+  <div class="ae-row ae-row-btns">
+    <button class="btn" onclick="duplicateSelectedAnnotations()">⧉ Duplicate</button>
+    <button class="btn danger" onclick="deleteSelectedAnnotations()">🗑 Remove</button>
+  </div>
+</div>
+
+<div id="ctx-menu">
+  <button onclick="ctxEdit()">✏️ Edit Player</button>
+  <button onclick="ctxDuplicate()">⧉ Duplicate</button>
+  <button class="danger" onclick="ctxDelete()">🗑 Delete</button>
+</div>
+
+<div id="tpl-modal">
+  <div id="tpl-box">
+    <h2>📋 Tactical Templates</h2>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="tpl-name-input" placeholder="Template name…" style="flex:1">
+      <button class="btn" onclick="saveTemplate()" style="white-space:nowrap">Save</button>
+    </div>
+    <div id="tpl-list"></div>
+    <div class="tpl-actions">
+      <button class="btn" onclick="closeTemplateModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="text-modal">
+  <div id="text-box">
+    <h2>Text Label</h2>
+    <textarea id="text-input" rows="2" placeholder="Type your label… e.g. “Press here!”"></textarea>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Size</span>
+      <input type="range" id="text-size" min="10" max="44" value="18" style="flex:1" oninput="document.getElementById('text-size-val').textContent=this.value">
+      <span id="text-size-val" style="font-size:11px;color:var(--text-2);min-width:22px;text-align:right">18</span>
+    </div>
+    <div class="tpl-actions">
+      <button class="btn" onclick="closeTextModal()">Cancel</button>
+      <button class="btn" id="text-ok-btn" onclick="confirmTextModal()" style="border-color:var(--accent);color:var(--accent)">Add Label</button>
+    </div>
+  </div>
+</div>
+
+<div id="shortcuts-modal">
+  <div id="shortcuts-box">
+    <h2>⌨️ Keyboard Shortcuts</h2>
+    <div>
+      <div class="shortcut-row"><span>Select tool</span><span class="shortcut-key">Esc</span></div>
+      <div class="shortcut-row"><span>Undo</span><span class="shortcut-key">Ctrl + Z</span></div>
+      <div class="shortcut-row"><span>Redo</span><span class="shortcut-key">Ctrl + Shift + Z</span></div>
+      <div class="shortcut-row"><span>Play / Pause animation</span><span class="shortcut-key">Space</span></div>
+      <div class="shortcut-row"><span>Delete selected player</span><span class="shortcut-key">Del</span></div>
+      <div class="shortcut-row"><span>Quick tools (…Text)</span><span class="shortcut-key">1 – 9</span></div>
+      <div class="shortcut-row"><span>Finish build-up</span><span class="shortcut-key">Enter</span></div>
+      <div class="shortcut-row"><span>Fit to screen</span><span class="shortcut-key">F</span></div>
+      <div class="shortcut-row"><span>Edit a text label</span><span class="shortcut-key">Double-click</span></div>
+      <div class="shortcut-row"><span>Debug keyframes</span><span class="shortcut-key">Ctrl + Shift + D</span></div>
+      <div class="shortcut-row"><span>Show shortcuts</span><span class="shortcut-key">?</span></div>
+    </div>
+    <div class="tpl-actions">
+      <button class="btn" onclick="closeShortcuts()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal">
+  <div id="confirm-box">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-message" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"></p>
+    <div class="tpl-actions">
+      <button class="btn" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn" id="confirm-ok-btn" style="border-color:#ff6b6b;color:#ff6b6b">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const BALL_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <radialGradient id="bb" cx="0.34" cy="0.26" r="0.86">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#fbfbfb"/>
+      <stop offset="0.78" stop-color="#e5e5e5"/>
+      <stop offset="1" stop-color="#bcbcbc"/>
+    </radialGradient>
+    <radialGradient id="bgl" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bsh" x1="0.12" y1="0" x2="0.88" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.42" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.30"/>
+    </linearGradient>
+    <clipPath id="bcl"><circle cx="50" cy="50" r="47.5"/></clipPath>
+    <g id="op"><polygon points="70.19,22.21 50,28.75 29.81,22.21 37.52,11.60 62.48,11.60"/></g>
+  </defs>
+  <circle cx="50" cy="50" r="47.5" fill="url(#bb)"/>
+  <g clip-path="url(#bcl)">
+    <g fill="#151515">
+      <polygon points="50,28.75 70.21,43.43 62.49,67.19 37.51,67.19 29.79,43.43"/>
+      <use href="#op"/>
+      <use href="#op" transform="rotate(72 50 50)"/>
+      <use href="#op" transform="rotate(144 50 50)"/>
+      <use href="#op" transform="rotate(216 50 50)"/>
+      <use href="#op" transform="rotate(288 50 50)"/>
+    </g>
+    <circle cx="50" cy="50" r="47.5" fill="url(#bsh)"/>
+    <ellipse cx="41" cy="41" rx="11" ry="8" fill="url(#bgl)" transform="rotate(-32 41 41)"/>
+    <circle cx="37" cy="37" r="4" fill="#ffffff" opacity="0.9"/>
+  </g>
+  <circle cx="50" cy="50" r="47.5" fill="none" stroke="#151515" stroke-width="2"/>
+</svg>`;
+(function applyBallArtwork() {
+  const el = document.getElementById('ball-token');
+  if (el) el.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(BALL_SVG.trim());
+})();
+
+let PITCH_W = 800, PITCH_H = 520;
+let pitchOrientation = 'horizontal';
+const PITCH_DIMS = { horizontal: [800, 520], vertical: [520, 800] };
+let pitchScale = 1;
+
+const PLAYER_COLORS = [
+  '#ffffff','#3d9bff','#00d68f','#ff4d4d','#ffa657',
+  '#8957e5','#db61a2','#2ea043','#58a6ff',
+  '#0d1117','#000000','#f9e157',
+  '#ff8a3d','#0f4c81','#20c997','#ff66c4',
+];
+function isLightColor(hex) {
+  if (!hex) return false;
+  const h = hex.replace('#', '');
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return (0.299*r + 0.587*g + 0.114*b) > 175;
+}
+function playerBorderColor(hex) { return isLightColor(hex) ? '#0d1117' : 'rgba(255,255,255,.9)'; }
+function hexToRgb(hex) {
+  const h = (hex || '#ffffff').replace('#', '');
+  return { r: parseInt(h.slice(0,2),16)||0, g: parseInt(h.slice(2,4),16)||0, b: parseInt(h.slice(4,6),16)||0 };
+}
+
+let currentTool = 'select';
+let currentColor = '#ffffff';
+let strokeSize = 2;
+let dashStyle = 'solid';
+let ball = { x: 400, y: 260, visible: true };
+let hoveredAnnIdx = -1;
+let selectedSet = new Set();
+
+function selKey(type, id) { return `${type}:${id}`; }
+function isSelected(type, id) { return type === 'ball' ? selectedSet.has('ball') : selectedSet.has(selKey(type, id)); }
+function clearSelection() { selectedSet.clear(); deselectPlayer(); closeEditor(); closeAnnEditor(); redraw(); }
+
+let pinPts = [];
+let mouseX = 0, mouseY = 0;
+let inDraw = false;
+let annotations = [];
+let historyStack = [];
+let redoStack = [];
+const HISTORY_LIMIT = 150;
+
+let buildupNodes = null;
+let lastBuildupTapTime = 0;
+let lastBuildupTapPos = null;
+const BUILup_DOUBLE_TAP_WINDOW = 350;
+const BUILup_DOUBLE_TAP_DIST = 40;
+const SNAP_RADIUS = 42;
+const BUILdup_RX = 26;
+const BUILdup_RY = 13;
+
+/* ── Annotation animation state ── */
+let animClock = 0;
+let animStateMap = new Map();
+const defaultAnnAnim = { in: 'none', loop: 'none', out: 'none' };
+let animLoopRAF = null;
+
+/* ── Static-shape caching (perf for looping annotations) ── */
+let staticAnnCanvas = null;
+let staticAnnCtx = null;
+let staticAnnDirty = true;
+let lastSelHovSig = '';
+function invalidateStaticAnn() { staticAnnDirty = true; lastSelHovSig = ''; }
+
+function newUid() { return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function ensureUids() {
+  annotations.forEach(a => { if (!a.uid) a.uid = newUid(); });
+  keyframes.forEach(kf => (kf.annotations || []).forEach(a => { if (!a.uid) a.uid = newUid(); }));
+}
+
+function snapshotState() { return { players: JSON.parse(JSON.stringify(players)), ball: JSON.parse(JSON.stringify(ball)), annotations: JSON.parse(JSON.stringify(annotations)), nextPlayerId }; }
+function pushHistory() { historyStack.push(snapshotState()); if (historyStack.length > HISTORY_LIMIT) historyStack.shift(); redoStack.length = 0; updateHistoryButtons(); invalidateStaticAnn(); }
+function applySnapshot(s) {
+  players = JSON.parse(JSON.stringify(s.players));
+  ball = JSON.parse(JSON.stringify(s.ball));
+  annotations = JSON.parse(JSON.stringify(s.annotations));
+  nextPlayerId = s.nextPlayerId;
+  animStateMap.clear();
+  invalidateStaticAnn();
+  renderPlayers();
+  const ballEl = document.getElementById('ball-token');
+  if (ballEl) { ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; ballEl.style.display = ball.visible ? 'block' : 'none'; }
+  redraw();
+  if (typeof refreshAnnotationEditor === 'function') refreshAnnotationEditor();
+}
+function undo() { if (inDraw) { cancelDraw(); return; } if (historyStack.length === 0) return; redoStack.push(snapshotState()); applySnapshot(historyStack.pop()); updateHistoryButtons(); }
+function redo() { if (redoStack.length === 0) return; historyStack.push(snapshotState()); applySnapshot(redoStack.pop()); updateHistoryButtons(); }
+function updateHistoryButtons() { const u = document.getElementById('btn-undo'); const r = document.getElementById('btn-redo'); if (u) u.style.opacity = historyStack.length ? '1' : '.4'; if (r) r.style.opacity = redoStack.length ? '1' : '.4'; }
+
+let players = [];
+let nextPlayerId = 1;
+let selectedPlayerId = null;
+let dragOffX = 0, dragOffY = 0;
+let ctxTargetId = null;
+let homeTeamName = 'HOME BENCH';
+let awayTeamName = 'AWAY BENCH';
+
+let toastTimeout = null;
+function showToast(msg, ms = 2200) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('visible'); if (toastTimeout) clearTimeout(toastTimeout); toastTimeout = setTimeout(() => el.classList.remove('visible'), ms); }
+
+function finishBuildup() {
+  if (buildupNodes && buildupNodes.length >= 2) { saveAnnotation({ type:'buildup', nodes: buildupNodes.slice(), color: currentColor, size: strokeSize }); showToast('Build-up saved'); }
+  buildupNodes = null; inDraw = false; lastBuildupTapTime = 0; lastBuildupTapPos = null; redraw();
+}
+
+function ellipseRayDistance(ux, uy, RX, RY) { const denom = (ux*ux)/(RX*RX) + (uy*uy)/(RY*RY); if (denom <= 0) return 0; return 1 / Math.sqrt(denom); }
+function trimmedSegment(a, b, RX, RY) {
+  const dx = b.x - a.x, dy = b.y - a.y; const dist = Math.hypot(dx, dy); if (dist < 0.001) return null;
+  const ux = dx / dist, uy = dy / dist;
+  const tStart = ellipseRayDistance(ux, uy, RX, RY);
+  const tEnd = ellipseRayDistance(-ux, -uy, RX, RY);
+  if (tStart + tEnd >= dist - 1) return null;
+  return { x1: a.x + ux * tStart, y1: a.y + uy * tStart, x2: b.x - ux * tEnd, y2: b.y - uy * tEnd };
+}
+
+function closeAllDropdowns() { document.querySelectorAll('.dropdown-menu, .color-popover').forEach(m => m.classList.remove('visible')); }
+function positionDropdown(menu, button) {
+  const r = button.getBoundingClientRect();
+  menu.style.visibility = 'hidden'; menu.classList.add('visible');
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let left = r.left; if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8; if (left < 8) left = 8;
+  let top = r.bottom + 6;
+  if (top + mh > window.innerHeight - 8) { const above = r.top - mh - 6; if (above > 8) top = above; else top = Math.max(8, window.innerHeight - mh - 8); }
+  menu.style.left = left + 'px'; menu.style.top = top + 'px'; menu.style.visibility = '';
+}
+function openDropdown(menuId, btn) { const menu = document.getElementById(menuId); const wasVisible = menu.classList.contains('visible'); closeAllDropdowns(); if (!wasVisible) { menu.classList.add('visible'); positionDropdown(menu, btn); } }
+function toggleColorPopover(e) {
+  e.stopPropagation(); const btn = e.currentTarget; const pop = document.getElementById('color-popover');
+  const wasVisible = pop.classList.contains('visible'); closeAllDropdowns();
+  if (!wasVisible) { buildToolbarColorPopover(); pop.classList.add('visible'); positionDropdown(pop, btn); }
+}
+function toggleTeamMenu(e) { e.stopPropagation(); openDropdown('team-menu', e.currentTarget); }
+function toggleBoardMenu(e) { e.stopPropagation(); openDropdown('board-menu', e.currentTarget); }
+function toggleFileMenu(e) { e.stopPropagation(); openDropdown('file-menu', e.currentTarget); }
+function toggleMoreMenu(e) { e.stopPropagation(); openDropdown('more-menu', e.currentTarget); }
+function toggleAnimMenu(e) { e.stopPropagation(); markAnimMenuActive(); openDropdown('anim-menu', e.currentTarget); }
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap') && !e.target.closest('.dropdown-menu') && !e.target.closest('.color-popover')) closeAllDropdowns();
+});
+window.addEventListener('resize', () => { closeAllDropdowns(); fitToScreen(); });
+window.addEventListener('scroll', () => closeAllDropdowns(), true);
+const headerEl = document.getElementById('header');
+if (headerEl) headerEl.addEventListener('scroll', () => closeAllDropdowns());
+
+function fitToScreen() {
+  const wrap = document.getElementById('pitch-wrap'); const container = document.getElementById('pitch-container');
+  if (!wrap || !container) return;
+  const style = getComputedStyle(wrap);
+  const padLeft = parseFloat(style.paddingLeft) || 0, padRight = parseFloat(style.paddingRight) || 0;
+  const padTop = parseFloat(style.paddingTop) || 0, padBottom = parseFloat(style.paddingBottom) || 0;
+  const availW = wrap.clientWidth - padLeft - padRight - 8, availH = wrap.clientHeight - padTop - padBottom - 8;
+  if (availW <= 0 || availH <= 0) return;
+  const scale = Math.min(availW / PITCH_W, availH / PITCH_H);
+  pitchScale = Math.max(0.2, Math.min(2, scale));
+  applyPitchScale();
+}
+function resetZoom() { pitchScale = 1; applyPitchScale(); }
+function applyPitchScale() {
+  const container = document.getElementById('pitch-container'); if (!container) return;
+  container.style.transform = `scale(${pitchScale})`;
+  container.style.width = PITCH_W + 'px'; container.style.height = PITCH_H + 'px';
+}
+
+let confirmCallback = null;
+function openConfirmModal(title, message, onConfirm) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = message;
+  document.getElementById('confirm-modal').classList.add('visible');
+  confirmCallback = onConfirm;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.onclick = () => { if (confirmCallback) confirmCallback(); closeConfirmModal(); };
+}
+function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('visible'); confirmCallback = null; }
+function confirmResetBoard() {
+  openConfirmModal('Reset Board?', 'This will remove all players, drawings, and phases. This cannot be undone.', () => {
+    players = []; annotations = []; keyframes = []; nextPlayerId = 1; ball = { x: 400, y: 260, visible: true };
+    activeKeyframeIndex = -1;
+    historyStack = []; redoStack = []; updateHistoryButtons();
+    animStateMap.clear(); invalidateStaticAnn();
+    renderPlayers(); renderTimeline(); redraw();
+    updateAnimBarVisibility();
+    document.getElementById('ball-token').style.left = ball.x + 'px';
+    document.getElementById('ball-token').style.top = ball.y + 'px';
+    document.getElementById('ball-token').style.display = 'block';
+    closeAnnEditor();
+    showToast('Board reset');
+  });
+}
+function openShortcuts() { document.getElementById('shortcuts-modal').classList.add('visible'); }
+function closeShortcuts() { document.getElementById('shortcuts-modal').classList.remove('visible'); }
+
+let keyframes = [];
+let activeKeyframeIndex = -1;
+let isPlayingAnim = false;
+let showKeyframePaths = true;
+let animRAF = null, animStartTime = 0, animTotalDuration = 0;
+function easeInOutQuad(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function toggleKeyframePaths() { showKeyframePaths = !showKeyframePaths; document.getElementById('btn-toggle-paths').classList.toggle('active', showKeyframePaths); redraw(); showToast(showKeyframePaths ? 'Paths shown' : 'Paths hidden', 1200); }
+function updateAnimBarVisibility() {
+  const bar = document.getElementById('anim-bar');
+  if (keyframes.length > 0) bar.classList.add('visible'); else bar.classList.remove('visible');
+  const exportBtn = document.getElementById('btn-export-anim');
+  if (exportBtn) exportBtn.disabled = keyframes.length < 2;
+  requestAnimationFrame(() => fitToScreen());
+}
+function addKeyframe() {
+  const kf = { id: Date.now() + Math.random(), players: players.map(p => ({ id: p.id, x: p.x, y: p.y })), ball: { x: ball.x, y: ball.y, visible: ball.visible }, annotations: JSON.parse(JSON.stringify(annotations)), duration: 1.5 };
+  keyframes.push(kf); activeKeyframeIndex = keyframes.length - 1;
+  renderTimeline(); redraw(); updateAnimBarVisibility(); showToast(`Phase ${keyframes.length} captured`);
+}
+function updateActiveKeyframe() {
+  if (activeKeyframeIndex < 0 || !keyframes[activeKeyframeIndex]) { showToast('Select a phase first'); return; }
+  const kf = keyframes[activeKeyframeIndex];
+  kf.players = players.map(p => ({ id: p.id, x: p.x, y: p.y }));
+  kf.ball = { x: ball.x, y: ball.y, visible: ball.visible };
+  kf.annotations = JSON.parse(JSON.stringify(annotations));
+  renderTimeline(); redraw(); showToast(`Phase ${activeKeyframeIndex + 1} updated`);
+}
+function goToKeyframe(i) { if (i < 0 || i >= keyframes.length) return; stopPlayback(); activeKeyframeIndex = i; applyKeyframePositions(keyframes[i]); renderTimeline(); }
+function applyKeyframePositions(kf) {
+  kf.players.forEach(kp => { const p = players.find(pl => pl.id === kp.id); if (p) { p.x = kp.x; p.y = kp.y; } });
+  ball.x = kf.ball.x; ball.y = kf.ball.y; ball.visible = kf.ball.visible;
+  annotations = kf.annotations ? JSON.parse(JSON.stringify(kf.annotations)) : [];
+  animStateMap.clear(); invalidateStaticAnn();
+  renderPlayers();
+  const ballEl = document.getElementById('ball-token');
+  ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; ballEl.style.display = ball.visible ? 'block' : 'none';
+  redraw();
+}
+function deleteKeyframe(i) { if (i < 0 || i >= keyframes.length) return; keyframes.splice(i, 1); if (activeKeyframeIndex >= keyframes.length) activeKeyframeIndex = keyframes.length - 1; renderTimeline(); redraw(); updateAnimBarVisibility(); }
+function setKeyframeDuration(i, val) { if (keyframes[i]) keyframes[i].duration = Math.max(0.1, parseFloat(val) || 1.5); }
+function clearKeyframes() {
+  if (keyframes.length === 0) return;
+  openConfirmModal('Clear all phases?', 'All keyframes will be removed. Players and drawings stay intact.', () => {
+    keyframes = []; activeKeyframeIndex = -1; renderTimeline(); redraw(); updateAnimBarVisibility(); showToast('Phases cleared');
+  });
+}
+function drawKeyframePaths() {
+  if (!showKeyframePaths || isPlayingAnim || isRecording || keyframes.length < 2) return;
+  const idSet = new Set();
+  keyframes.forEach(kf => kf.players.forEach(p => idSet.add(p.id)));
+  ctx.save();
+  idSet.forEach(id => {
+    const pts = [];
+    keyframes.forEach(kf => { const kp = kf.players.find(p => p.id === id); if (kp) pts.push({ x: kp.x, y: kp.y }); });
+    if (pts.length < 2) return;
+    const moved = pts.some((pt, i) => i > 0 && Math.hypot(pt.x - pts[0].x, pt.y - pts[0].y) > 2);
+    if (!moved) return;
+    const player = players.find(pl => pl.id === id);
+    const color = player ? player.color : '#ffffff';
+    ctx.strokeStyle = color; ctx.globalAlpha = 0.55; ctx.lineWidth = 2; ctx.setLineDash([7, 5]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 0.5;
+    for (let i = 1; i < pts.length - 1; i++) { ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 3, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
+    ctx.globalAlpha = 0.9; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, 5, 0, Math.PI * 2); ctx.strokeStyle = color; ctx.stroke();
+    const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+    const angle = Math.atan2(last.y - prev.y, last.x - prev.x); const hl = 12;
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(last.x, last.y);
+    ctx.lineTo(last.x - hl * Math.cos(angle - 0.4), last.y - hl * Math.sin(angle - 0.4));
+    ctx.lineTo(last.x - hl * Math.cos(angle + 0.4), last.y - hl * Math.sin(angle + 0.4));
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+}
+function debugKeyframes() {
+  const summary = keyframes.map((k, i) => ({ i, duration: k.duration, numPlayers: k.players.length, numAnnotations: (k.annotations || []).length, positions: k.players.map(p => `${p.id}:(${Math.round(p.x)},${Math.round(p.y)})`), ball: `(${Math.round(k.ball.x)},${Math.round(k.ball.y)})` }));
+  const text = JSON.stringify(summary, null, 2);
+  let box = document.getElementById('debug-kf-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'debug-kf-box';
+    box.style.cssText = 'position:fixed; top:5%; left:5%; width:90%; height:80%; background:#0a131b; border:2px solid #f0883e; border-radius:10px; z-index:99999; padding:10px; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,0.7);';
+    const header = document.createElement('div'); header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;';
+    const title = document.createElement('span'); title.textContent = 'Keyframe Debug Data'; title.style.cssText = 'color:#f0883e; font:700 13px Inter, sans-serif;';
+    const closeBtn = document.createElement('button'); closeBtn.textContent = '✕ Close'; closeBtn.style.cssText = 'background:#17242f; color:#e9eff6; border:1px solid #26394c; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;';
+    closeBtn.onclick = () => box.remove(); header.appendChild(title); header.appendChild(closeBtn);
+    const ta = document.createElement('textarea'); ta.id = 'debug-kf-textarea'; ta.readOnly = true;
+    ta.style.cssText = 'flex:1; width:100%; background:#050b10; color:#00d68f; font:11px/1.45 monospace; border:1px solid #26394c; border-radius:8px; padding:8px; resize:none;';
+    box.appendChild(header); box.appendChild(ta); document.body.appendChild(box);
+    ta.addEventListener('click', () => { ta.focus(); ta.select(); });
+  }
+  document.getElementById('debug-kf-textarea').value = text;
+  document.getElementById('debug-kf-textarea').focus(); document.getElementById('debug-kf-textarea').select();
+}
+function totalAnimDurationMs() { return keyframes.slice(1).reduce((s, k) => s + k.duration, 0) * 1000; }
+function playAnimation() {
+  if (keyframes.length < 2) { showToast('Add at least 2 phases first'); return; }
+  isPlayingAnim = true;
+  const btn = document.getElementById('btn-anim-play');
+  if (btn) { btn.classList.add('active'); document.getElementById('icon-anim-play').innerHTML = '<rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/>'; }
+  animTotalDuration = totalAnimDurationMs(); animStartTime = performance.now();
+  animRAF = requestAnimationFrame(animStep);
+}
+function pauseAnimation() {
+  isPlayingAnim = false;
+  const btn = document.getElementById('btn-anim-play');
+  if (btn) { btn.classList.remove('active'); document.getElementById('icon-anim-play').innerHTML = '<polygon points="3,2 14,8 3,14"/>'; }
+  if (animRAF) cancelAnimationFrame(animRAF); animRAF = null;
+  animStateMap.clear(); invalidateStaticAnn();
+  redraw();
+}
+function stopPlayback() { pauseAnimation(); }
+function toggleAnimPlay() { if (isPlayingAnim) pauseAnimation(); else playAnimation(); }
+function animStep(now) {
+  if (!isPlayingAnim) return;
+  const elapsed = now - animStartTime;
+  if (elapsed >= animTotalDuration) {
+    renderAnimFrameAtMs(animTotalDuration);
+    updateAnimSeekUI(1);
+    pauseAnimation();
+    return;
+  }
+  updateAnimSeekUI(animTotalDuration ? elapsed / animTotalDuration : 1);
+  renderAnimFrameAtMs(elapsed);
+  animRAF = requestAnimationFrame(animStep);
+}
+function renderAnimFrameAtMs(elapsedMs) {
+  animClock = elapsedMs / 1000;
+  const t = elapsedMs / 1000;
+  let i = 1, acc = 0;
+  while (i < keyframes.length - 1 && acc + keyframes[i].duration < t) { acc += keyframes[i].duration; i++; }
+  const kfA = keyframes[i - 1], kfB = keyframes[i];
+  const segDur = kfB.duration || 0.0001; const localT = Math.max(0, Math.min(1, (t - acc) / segDur));
+  interpolateAndRender(kfA, kfB, easeInOutQuad(localT));
+}
+function interpolateAndRender(a, b, t) {
+  const bMap = {}; b.players.forEach(p => bMap[p.id] = p);
+  a.players.forEach(pa => {
+    const pb = bMap[pa.id]; const p = players.find(pl => pl.id === pa.id);
+    if (!p) return;
+    if (pb) { p.x = pa.x + (pb.x - pa.x) * t; p.y = pa.y + (pb.y - pa.y) * t; }
+    else { p.x = pa.x; p.y = pa.y; }
+    const el = playerLayer.querySelector(`[data-id="${p.id}"]`);
+    if (el) { el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; }
+  });
+  ball.x = a.ball.x + (b.ball.x - a.ball.x) * t;
+  ball.y = a.ball.y + (b.ball.y - a.ball.y) * t;
+  ball.visible = t < 0.5 ? a.ball.visible : b.ball.visible;
+  const ballEl = document.getElementById('ball-token');
+  ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; ballEl.style.display = ball.visible ? 'block' : 'none';
+
+  const annA = a.annotations || [];
+  const annB = b.annotations || [];
+  const hasUids = annA.every(x => x.uid) && annB.every(x => x.uid);
+
+  if (!hasUids) {
+    annotations = JSON.parse(JSON.stringify(t < 0.5 ? annA : annB));
+    animStateMap.clear();
+    invalidateStaticAnn();
+    redraw();
+    return;
+  }
+
+  const aUids = new Map(annA.map(x => [x.uid, x]));
+  const bUids = new Map(annB.map(x => [x.uid, x]));
+  const out = [];
+  const states = new Map();
+
+  annA.forEach(x => {
+    if (bUids.has(x.uid)) {
+      out.push(t < 0.5 ? x : bUids.get(x.uid));
+    } else if (t < 0.5) {
+      out.push(x);
+      states.set(x.uid, annExitState(x, t / 0.5));
+    }
+  });
+  annB.forEach(x => {
+    if (!aUids.has(x.uid) && t >= 0.5) {
+      out.push(x);
+      states.set(x.uid, annEnterState(x, (t - 0.5) / 0.5));
+    }
+  });
+
+  annotations = JSON.parse(JSON.stringify(out));
+  animStateMap = states;
+  invalidateStaticAnn();
+  redraw();
+}
+function updateAnimSeekUI(frac) { const seek = document.getElementById('anim-seek'); if (seek) seek.value = Math.round(frac * 1000); }
+function seekAnimation(val) { if (keyframes.length < 2) return; stopPlayback(); const total = totalAnimDurationMs(); renderAnimFrameAtMs((val / 1000) * total); }
+function renderTimeline() {
+  const track = document.getElementById('kf-track'); const count = document.getElementById('kf-count');
+  if (count) count.textContent = keyframes.length + ' phase' + (keyframes.length === 1 ? '' : 's');
+  if (!track) return; track.innerHTML = '';
+  keyframes.forEach((kf, i) => {
+    const item = document.createElement('div'); item.className = 'kf-item' + (i === activeKeyframeIndex ? ' active' : '');
+    item.title = 'Click to view/edit'; item.onclick = () => goToKeyframe(i);
+    const num = document.createElement('span'); num.className = 'kf-num'; num.textContent = i + 1; item.appendChild(num);
+    if (i > 0) {
+      const dur = document.createElement('input'); dur.type = 'number'; dur.min = '0.1'; dur.step = '0.1'; dur.value = kf.duration;
+      dur.title = 'Seconds'; dur.onclick = e => e.stopPropagation(); dur.onchange = e => setKeyframeDuration(i, e.target.value); item.appendChild(dur);
+    }
+    const del = document.createElement('button'); del.className = 'kf-del'; del.textContent = '✕'; del.title = 'Delete phase';
+    del.onclick = e => { e.stopPropagation(); deleteKeyframe(i); }; item.appendChild(del);
+    track.appendChild(item);
+  });
+}
+
+/* ──────────────────────────────────────────────
+   ANNOTATION ANIMATION HELPERS
+   ────────────────────────────────────────────── */
+function annAnchor(s) {
+  switch (s.type) {
+    case 'arrow': case 'line': case 'curve': case 'ellipse': case 'rect':
+      return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
+    case 'polygon': {
+      const pts = s.points || []; if (!pts.length) return { x: 0, y: 0 };
+      return { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
+    }
+    case 'buildup': { const n = (s.nodes || [])[0]; return n ? { x: n.x, y: n.y } : { x: 0, y: 0 }; }
+    case 'highlight': case 'text': return { x: s.x, y: s.y };
+  }
+  return { x: 0, y: 0 };
+}
+function annStartPoint(s) {
+  switch (s.type) {
+    case 'arrow': case 'line': case 'curve': return { x: s.x1, y: s.y1 };
+    case 'polygon': { const p = (s.points || [])[0]; return p || { x: 0, y: 0 }; }
+    case 'buildup': { const n = (s.nodes || [])[0]; return n ? { x: n.x, y: n.y } : { x: 0, y: 0 }; }
+    default: return annAnchor(s);
+  }
+}
+function baseState() { return { alpha: 1, scale: 1, dx: 0, dy: 0, dashOffset: 0, anchor: null, progress: 1, typewriter: false, forceDash: false }; }
+
+function annEnterState(s, p) {
+  p = Math.max(0, Math.min(1, p));
+  const e = easeOutCubic(p);
+  const st = baseState();
+  st.progress = p;
+  switch (s.inAnim || 'none') {
+    case 'fade': st.alpha = e; break;
+    case 'pop':
+      st.alpha = Math.min(1, p * 2);
+      st.scale = 0.5 + 0.5 * e;
+      st.anchor = annAnchor(s);
+      break;
+    case 'draw':
+      st.alpha = Math.min(1, p * 3);
+      st.scale = Math.max(0.02, e);
+      st.anchor = annStartPoint(s);
+      break;
+    case 'slide':
+      st.alpha = e;
+      st.dy = 60 * (1 - e);
+      break;
+    case 'type':
+      if (s.type === 'text') { st.typewriter = true; st.progress = p; st.alpha = 1; }
+      else { st.alpha = e; }
+      break;
+    default: break;
+  }
+  return st;
+}
+function annExitState(s, p) {
+  p = Math.max(0, Math.min(1, p));
+  const e = easeOutCubic(p);
+  const st = baseState();
+  switch (s.outAnim || 'none') {
+    case 'fade': st.alpha = 1 - e; break;
+    case 'shrink':
+      st.alpha = 1 - e;
+      st.scale = 1 - 0.7 * e;
+      st.anchor = annAnchor(s);
+      break;
+    case 'slide':
+      st.alpha = 1 - e;
+      st.dy = -60 * e;
+      break;
+    default: break;
+  }
+  return st;
+}
+function getAnnAnimState(s) {
+  const st = baseState();
+  const es = s.uid ? animStateMap.get(s.uid) : null;
+  if (es) {
+    st.alpha = es.alpha; st.scale = es.scale; st.dx = es.dx; st.dy = es.dy;
+    st.dashOffset = es.dashOffset; st.anchor = es.anchor; st.progress = es.progress;
+    st.typewriter = es.typewriter; st.forceDash = es.forceDash;
+  }
+  const loop = s.loopAnim || 'none';
+  if (loop !== 'none') {
+    const t = animClock;
+    if (loop === 'pulse') {
+      st.scale *= 1 + 0.08 * Math.sin(t * 3.4);
+      if (!st.anchor) st.anchor = annAnchor(s);
+    } else if (loop === 'blink') {
+      st.alpha *= 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 4.2));
+    } else if (loop === 'float') {
+      st.dy += Math.sin(t * 2.6) * 6;
+    } else if (loop === 'dash') {
+      st.forceDash = true;
+      st.dashOffset = -t * 36;
+    }
+  }
+  return st;
+}
+function drawAnnotatedShape(s, st) {
+  const needsT = st.alpha !== 1 || st.scale !== 1 || st.dx !== 0 || st.dy !== 0;
+  if (!needsT) { drawShape(s, st); return; }
+  ctx.save();
+  ctx.globalAlpha *= st.alpha;
+  const a = st.anchor || annAnchor(s);
+  ctx.translate(a.x + st.dx, a.y + st.dy);
+  ctx.scale(st.scale, st.scale);
+  ctx.translate(-a.x, -a.y);
+  drawShape(s, st);
+  ctx.restore();
+}
+function getSelectedAnnIndices() {
+  const out = [];
+  selectedSet.forEach(k => {
+    if (typeof k === 'string' && k.indexOf('ann:') === 0) {
+      const i = +k.slice(4);
+      if (annotations[i]) out.push(i);
+    }
+  });
+  return out;
+}
+function setAnnAnim(kind, val, ev) {
+  if (ev) ev.stopPropagation();
+  const idxs = getSelectedAnnIndices();
+  if (!idxs.length) {
+    defaultAnnAnim[kind] = val;
+    showToast('Default ' + kind + ' animation: ' + val);
+  } else {
+    pushHistory();
+    idxs.forEach(i => {
+      if (kind === 'in') annotations[i].inAnim = val;
+      else if (kind === 'loop') annotations[i].loopAnim = val;
+      else annotations[i].outAnim = val;
+    });
+    invalidateStaticAnn();
+    redraw();
+    showToast('Animation applied to ' + idxs.length + ' drawing' + (idxs.length > 1 ? 's' : ''));
+  }
+  markAnimMenuActive();
+  if (typeof refreshAnnotationEditor === 'function') refreshAnnotationEditor();
+}
+function markAnimMenuActive() {
+  const idxs = getSelectedAnnIndices();
+  const sample = idxs.length ? annotations[idxs[0]] : null;
+  const cur = {
+    in:   sample ? (sample.inAnim   || 'none') : defaultAnnAnim.in,
+    loop: sample ? (sample.loopAnim || 'none') : defaultAnnAnim.loop,
+    out:  sample ? (sample.outAnim  || 'none') : defaultAnnAnim.out,
+  };
+  document.querySelectorAll('#anim-menu .anim-grid').forEach(grid => {
+    const kind = grid.dataset.kind;
+    grid.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.val === cur[kind]));
+  });
+}
+function hasLoopingAnnotations() {
+  if (isRecording) return false;
+  for (let i = 0; i < annotations.length; i++) {
+    const l = annotations[i].loopAnim;
+    if (l && l !== 'none') return true;
+  }
+  return false;
+}
+function startAnimTicker() {
+  if (animLoopRAF) return;
+  const tick = (now) => {
+    if (!isPlayingAnim && !isRecording) {
+      animClock = now / 1000;
+      if (hasLoopingAnnotations()) redraw();
+    }
+    animLoopRAF = requestAnimationFrame(tick);
+  };
+  animLoopRAF = requestAnimationFrame(tick);
+}
+
+const pitchSVG = document.getElementById('pitch-svg');
+const canvas = document.getElementById('annotation-canvas');
+/* `ctx` must be reassignable — the static-shape cache swaps it to an offscreen context during redraw. */
+let ctx = canvas.getContext('2d');
+const playerLayer = document.getElementById('player-layer');
+const inpaintLayerEl = document.getElementById('inpaint-layer');
+const inpaintLayerCtx = inpaintLayerEl.getContext('2d');
+const inpaintCanvas = document.createElement('canvas');
+const inpaintCtx = inpaintCanvas.getContext('2d');
+
+function init() {
+  pitchSVG.setAttribute('width', PITCH_W); pitchSVG.setAttribute('height', PITCH_H); pitchSVG.innerHTML = buildPitchSVG();
+  canvas.width = PITCH_W; canvas.height = PITCH_H;
+  inpaintLayerEl.width = PITCH_W; inpaintLayerEl.height = PITCH_H;
+  inpaintCanvas.width = PITCH_W; inpaintCanvas.height = PITCH_H;
+  staticAnnCanvas = document.createElement('canvas');
+  staticAnnCanvas.width = PITCH_W; staticAnnCanvas.height = PITCH_H;
+  staticAnnCtx = staticAnnCanvas.getContext('2d');
+  const pitchContainer = document.getElementById('pitch-container');
+  pitchContainer.style.width = PITCH_W + 'px'; pitchContainer.style.height = PITCH_H + 'px';
+  const bgLayer = document.getElementById('bg-layer'); bgLayer.style.width = PITCH_W + 'px'; bgLayer.style.height = PITCH_H + 'px';
+  buildColorGrid(); buildToolbarColorPopover(); updateStatus(); initBall(); initBench();
+  updateHistoryButtons(); renderTimeline(); updateAnimBarVisibility();
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && e.shiftKey) { e.preventDefault(); redo(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') { e.preventDefault(); debugKeyframes(); }
+    if (e.key === ' ' && keyframes.length >= 2) { e.preventDefault(); toggleAnimPlay(); }
+    if (e.key === 'Escape') { cancelDraw(); closeAllDropdowns(); closeShortcuts(); closeConfirmModal(); closeTextModal(); closeAnnEditor(); }
+    if (e.key === 'Enter') { if (currentTool === 'buildup') finishBuildup(); else commitShape(); }
+    if (e.key === 'Delete' || e.key === 'Backspace') { if (selectedPlayerId !== null) deleteSelectedPlayer(); }
+    if (e.key === '?') { e.preventDefault(); openShortcuts(); }
+    if (e.key.toLowerCase() === 'f') { e.preventDefault(); fitToScreen(); }
+    if (e.key >= '1' && e.key <= '9') { const tools = ['arrow','line','curve','ellipse','rect','polygon','buildup','highlight','text']; setTool(tools[+e.key - 1]); }
+  });
+  document.addEventListener('click', () => hideCtxMenu(), true);
+  document.getElementById('tpl-modal').addEventListener('click', e => { if (e.target === document.getElementById('tpl-modal')) closeTemplateModal(); });
+  document.getElementById('shortcuts-modal').addEventListener('click', e => { if (e.target === document.getElementById('shortcuts-modal')) closeShortcuts(); });
+  document.getElementById('confirm-modal').addEventListener('click', e => { if (e.target === document.getElementById('confirm-modal')) closeConfirmModal(); });
+  document.getElementById('text-modal').addEventListener('click', e => { if (e.target === document.getElementById('text-modal')) closeTextModal(); });
+
+  const textInputEl = document.getElementById('text-input');
+  textInputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmTextModal(); }
+    if (e.key === 'Escape') { e.preventDefault(); closeTextModal(); }
+  });
+
+  /* Preload display fonts so canvas hit-tests use the right metrics */
+  if (document.fonts && document.fonts.load) {
+    Promise.all([
+      document.fonts.load('700 18px "Barlow Condensed"'),
+      document.fonts.load('700 24px "Barlow Condensed"'),
+      document.fonts.load('600 12px Inter'),
+    ]).catch(() => {});
+  }
+
+  restoreAutosave();
+  ensureUids();
+  startAnimTicker();
+  requestAnimationFrame(fitToScreen);
+  setInterval(autosave, 30000);
+  window.addEventListener('beforeunload', autosave);
+  window.addEventListener('pagehide', autosave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') autosave();
+  });
+}
+function updateTeamName(side) { const input = document.getElementById(side === 'left' ? 'home-team-name' : 'away-team-name'); if (side === 'left') homeTeamName = input.value; else awayTeamName = input.value; }
+
+function buildToolbarColorPopover() {
+  const pop = document.getElementById('color-popover'); pop.innerHTML = '';
+  PLAYER_COLORS.forEach(c => {
+    const s = document.createElement('div');
+    s.className = 'color-swatch' + (c === currentColor ? ' active' : '');
+    s.style.background = c; s.dataset.color = c;
+    s.onclick = ev => { ev.stopPropagation(); setColorFromHex(c); closeAllDropdowns(); };
+    pop.appendChild(s);
+  });
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'grid-column: span 6; margin-top: 4px; display: flex; align-items: center; gap: 8px;';
+  const label = document.createElement('span'); label.textContent = 'Custom';
+  label.style.cssText = 'font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700;';
+  const picker = document.createElement('input'); picker.type = 'color'; picker.id = 'custom-color';
+  picker.value = currentColor;
+  picker.onchange = (e) => { setColorFromHex(e.target.value); closeAllDropdowns(); };
+  picker.onclick = (e) => e.stopPropagation();
+  wrap.appendChild(label); wrap.appendChild(picker); pop.appendChild(wrap);
+}
+function setColorFromHex(hex) {
+  currentColor = hex;
+  const indicator = document.getElementById('current-color-indicator');
+  if (indicator) { indicator.style.background = hex; indicator.dataset.color = hex; indicator.style.borderColor = isLightColor(hex) ? '#aaa' : 'var(--line-2)'; }
+  document.querySelectorAll('#pe-colors .color-swatch').forEach(s => { s.classList.toggle('active', s.dataset.color === hex); });
+  updateSelectedPlayerColor(hex);
+  buildToolbarColorPopover();
+}
+
+const AUTOSAVE_KEY = 'thefootys_autosave_v1';
+function autosave() {
+  try {
+    const data = { players: JSON.parse(JSON.stringify(players)), ball: JSON.parse(JSON.stringify(ball)), annotations: JSON.parse(JSON.stringify(annotations)), keyframes: JSON.parse(JSON.stringify(keyframes)), nextPlayerId, homeTeamName, awayTeamName, benchLeft, benchRight, pitchOrientation, savedAt: Date.now() };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+function restoreAutosave() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.players && !data.annotations && !data.keyframes) return;
+    if ((data.players || []).length === 0 && (data.annotations || []).length === 0 && (data.keyframes || []).length === 0) return;
+    players = data.players || []; ball = data.ball || { x: 400, y: 260, visible: true };
+    annotations = data.annotations || []; keyframes = data.keyframes || [];
+    nextPlayerId = data.nextPlayerId || 1;
+    homeTeamName = data.homeTeamName || 'HOME BENCH'; awayTeamName = data.awayTeamName || 'AWAY BENCH';
+    if (data.benchLeft) benchLeft = data.benchLeft; if (data.benchRight) benchRight = data.benchRight;
+    activeKeyframeIndex = keyframes.length ? keyframes.length - 1 : -1;
+    document.getElementById('home-team-name').value = homeTeamName;
+    document.getElementById('away-team-name').value = awayTeamName;
+    renderBench('left'); renderBench('right');
+    renderPlayers(); renderTimeline(); redraw(); updateAnimBarVisibility();
+    const ballEl = document.getElementById('ball-token');
+    ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px';
+    ballEl.style.display = ball.visible ? 'block' : 'none';
+    const savedAgo = Math.round((Date.now() - (data.savedAt || Date.now())) / 60000);
+    if (savedAgo < 60) setTimeout(() => showToast('Previous session restored'), 800);
+  } catch (e) {}
+}
+
+function buildPitchSVG() {
+  if (pitchOrientation === 'vertical') { const inner = buildPitchMarkup(PITCH_H, PITCH_W); return `<g transform="translate(${PITCH_W},0) rotate(90)">${inner}</g>`; }
+  return buildPitchMarkup(PITCH_W, PITCH_H);
+}
+function buildPitchMarkup(W, H) {
+  const CX = W/2, CY = H/2; const M = 22; const TL=M, TR=W-M, TT=M, TB=H-M;
+  const TW=TR-TL, TH=TB-TT; const PA_W=Math.round(TW*.165), PA_H=Math.round(TH*.58); const SA_W=Math.round(TW*.057), SA_H=Math.round(TH*.26);
+  const PSPOT=Math.round(TW*.137), PARC_R=Math.round(TH*.195); const GOAL_H=Math.round(TH*.19), GOAL_D=16, CR=Math.round(TH*.025);
+  const arcDist=PA_W-PSPOT; const arcDY=arcDist<PARC_R?Math.sqrt(PARC_R**2-arcDist**2):0; const STRIPE_N=10, stripeW=TW/STRIPE_N;
+  const stripes=Array.from({length:STRIPE_N},(_,i)=>{ const x=TL+i*stripeW; const shade = i%2===0 ? '#2c8a45' : '#27803f'; return `<rect x="${x}" y="${TT}" width="${stripeW+0.5}" height="${TH}" fill="${shade}"/>`; }).join('');
+  const L='#ffffff'; const sw=1.9; const p=`stroke="${L}" stroke-width="${sw}" fill="none" stroke-linecap="round" opacity="0.9"`;
+  return `<defs>
+    <linearGradient id="turfBase" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2e8f48"/><stop offset="100%" stop-color="#257239"/></linearGradient>
+    <radialGradient id="turfVig" cx="50%" cy="45%" r="78%"><stop offset="55%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.34"/></radialGradient>
+  </defs>
+  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#turfBase)"/>${stripes}
+  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#turfVig)"/>
+  <rect x="${TL}" y="${TT}" width="${TW}" height="${TH}" ${p}/>
+  <line x1="${CX}" y1="${TT}" x2="${CX}" y2="${TB}" ${p}/>
+  <circle cx="${CX}" cy="${CY}" r="${PARC_R}" ${p}/><circle cx="${CX}" cy="${CY}" r="3.6" fill="${L}" opacity="0.9"/>
+  <rect x="${TL}" y="${CY-PA_H/2}" width="${PA_W}" height="${PA_H}" ${p}/><rect x="${TL}" y="${CY-SA_H/2}" width="${SA_W}" height="${SA_H}" ${p}/>
+  <circle cx="${TL+PSPOT}" cy="${CY}" r="3" fill="${L}" opacity="0.9"/><path d="M ${TL+PA_W} ${CY-arcDY} A ${PARC_R} ${PARC_R} 0 0 1 ${TL+PA_W} ${CY+arcDY}" ${p}/>
+  <rect x="${TL-GOAL_D}" y="${CY-GOAL_H/2}" width="${GOAL_D}" height="${GOAL_H}" ${p}/>
+  <rect x="${TR-PA_W}" y="${CY-PA_H/2}" width="${PA_W}" height="${PA_H}" ${p}/><rect x="${TR-SA_W}" y="${CY-SA_H/2}" width="${SA_W}" height="${SA_H}" ${p}/>
+  <circle cx="${TR-PSPOT}" cy="${CY}" r="3" fill="${L}" opacity="0.9"/><path d="M ${TR-PA_W} ${CY-arcDY} A ${PARC_R} ${PARC_R} 0 0 0 ${TR-PA_W} ${CY+arcDY}" ${p}/>
+  <rect x="${TR}" y="${CY-GOAL_H/2}" width="${GOAL_D}" height="${GOAL_H}" ${p}/>
+  <path d="M ${TL} ${TT+CR} A ${CR} ${CR} 0 0 0 ${TL+CR} ${TT}" ${p}/><path d="M ${TR-CR} ${TT} A ${CR} ${CR} 0 0 0 ${TR} ${TT+CR}" ${p}/>
+  <path d="M ${TL} ${TB-CR} A ${CR} ${CR} 0 0 1 ${TL+CR} ${TB}" ${p}/><path d="M ${TR-CR} ${TB} A ${CR} ${CR} 0 0 1 ${TR} ${TB-CR}" ${p}/>`;
+}
+function rescaleAnnotation(a, sx, sy) {
+  if ('x1' in a) { a.x1 *= sx; a.x2 *= sx; } if ('y1' in a) { a.y1 *= sy; a.y2 *= sy; }
+  if ('cx' in a) a.cx *= sx; if ('cy' in a) a.cy *= sy;
+  if ('x' in a) a.x *= sx; if ('y' in a) a.y *= sy;
+  if (a.points) a.points.forEach(pt => { pt.x *= sx; pt.y *= sy; });
+  if (a.nodes) a.nodes.forEach(n => { n.x *= sx; n.y *= sy; });
+  if (a.type === 'text' && a.size) a.size = Math.max(8, Math.round(a.size * (sx + sy) / 2));
+}
+function syncInpaintLayer() {
+  inpaintLayerCtx.clearRect(0, 0, PITCH_W, PITCH_H);
+  if (inpaintCanvas.width > 0 && inpaintCanvas.height > 0) {
+    inpaintLayerCtx.drawImage(inpaintCanvas, 0, 0, PITCH_W, PITCH_H);
+  }
+}
+function setOrientation(mode) {
+  if (mode === pitchOrientation || !PITCH_DIMS[mode]) return;
+  const [newW, newH] = PITCH_DIMS[mode]; const scaleX = newW / PITCH_W, scaleY = newH / PITCH_H;
+  const oldW = PITCH_W, oldH = PITCH_H;
+  const savedInpaint = document.createElement('canvas'); savedInpaint.width = oldW; savedInpaint.height = oldH; savedInpaint.getContext('2d').drawImage(inpaintCanvas, 0, 0);
+  players.forEach(p => { p.x *= scaleX; p.y *= scaleY; }); ball.x *= scaleX; ball.y *= scaleY;
+  annotations.forEach(a => rescaleAnnotation(a, scaleX, scaleY));
+  keyframes.forEach(kf => { kf.players.forEach(kp => { kp.x *= scaleX; kp.y *= scaleY; }); kf.ball.x *= scaleX; kf.ball.y *= scaleY; if (kf.annotations) kf.annotations.forEach(a => rescaleAnnotation(a, scaleX, scaleY)); });
+  PITCH_W = newW; PITCH_H = newH; pitchOrientation = mode;
+  pitchSVG.setAttribute('width', PITCH_W); pitchSVG.setAttribute('height', PITCH_H); pitchSVG.innerHTML = buildPitchSVG(); cachedPitchImg = null;
+  canvas.width = PITCH_W; canvas.height = PITCH_H;
+  inpaintLayerEl.width = PITCH_W; inpaintLayerEl.height = PITCH_H; inpaintCanvas.width = PITCH_W; inpaintCanvas.height = PITCH_H;
+  inpaintCtx.drawImage(savedInpaint, 0, 0, oldW, oldH, 0, 0, PITCH_W, PITCH_H); syncInpaintLayer();
+  staticAnnCanvas = document.createElement('canvas'); staticAnnCanvas.width = PITCH_W; staticAnnCanvas.height = PITCH_H; staticAnnCtx = staticAnnCanvas.getContext('2d');
+  invalidateStaticAnn();
+  const pitchContainer = document.getElementById('pitch-container'); pitchContainer.style.width = PITCH_W + 'px'; pitchContainer.style.height = PITCH_H + 'px';
+  const bgLayer = document.getElementById('bg-layer'); bgLayer.style.width = PITCH_W + 'px'; bgLayer.style.height = PITCH_H + 'px';
+  renderPlayers(); const ballEl = document.getElementById('ball-token'); ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; redraw();
+  showToast('Pitch: ' + mode); requestAnimationFrame(fitToScreen);
+}
+
+const TOOL_PINS = { arrow:2, line:2, curve:3, ellipse:2, rect:2, polygon:Infinity };
+const isDrawTool = t => t in TOOL_PINS;
+function setTool(t) {
+  if (currentTool === 'buildup' && buildupNodes && buildupNodes.length >= 2) { saveAnnotation({ type:'buildup', nodes: buildupNodes.slice(), color: currentColor, size: strokeSize }); }
+  buildupNodes = null; lastBuildupTapTime = 0; lastBuildupTapPos = null;
+  cancelDraw(); currentTool = t;
+  document.querySelectorAll('.btn[id^="tool-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('tool-' + t); if (btn) btn.classList.add('active');
+  if (t === 'ball') {
+    ball.visible = !ball.visible; const ballEl = document.getElementById('ball-token'); ballEl.style.display = ball.visible ? 'block' : 'none';
+    currentTool = 'select'; document.getElementById('tool-select').classList.add('active'); if (btn) btn.classList.remove('active'); updateStatus(); return;
+  }
+  if (t === 'boxselect') {
+    canvas.classList.add('drawing'); canvas.classList.add('mode-boxselect');
+    canvas.classList.remove('mode-crosshair', 'mode-select-ann', 'mode-buildup', 'mode-highlight', 'mode-text');
+    playerLayer.classList.remove('editable'); deselectPlayer(); closeEditor(); updateStatus(); return;
+  }
+  if (t === 'buildup') {
+    canvas.classList.add('drawing'); canvas.classList.add('mode-buildup');
+    canvas.classList.remove('mode-crosshair','mode-select-ann','mode-boxselect','mode-highlight','mode-text');
+    playerLayer.classList.remove('editable'); deselectPlayer(); closeEditor(); updateStatus(); return;
+  }
+  if (t === 'highlight') {
+    canvas.classList.add('drawing'); canvas.classList.add('mode-highlight');
+    canvas.classList.remove('mode-crosshair','mode-select-ann','mode-boxselect','mode-buildup','mode-text');
+    playerLayer.classList.remove('editable'); deselectPlayer(); closeEditor(); updateStatus(); return;
+  }
+  if (t === 'text') {
+    canvas.classList.add('drawing'); canvas.classList.add('mode-text');
+    canvas.classList.remove('mode-crosshair','mode-select-ann','mode-boxselect','mode-buildup','mode-highlight');
+    playerLayer.classList.remove('editable'); deselectPlayer(); closeEditor(); updateStatus(); return;
+  }
+  const drawMode = isDrawTool(t);
+  canvas.classList.toggle('drawing', drawMode || t === 'select' || t === 'player');
+  canvas.classList.toggle('mode-crosshair', drawMode || t === 'player');
+  canvas.classList.toggle('mode-select-ann', t === 'select');
+  canvas.classList.remove('mode-boxselect', 'mode-buildup', 'mode-highlight', 'mode-text');
+  playerLayer.classList.toggle('editable', t === 'select' || t === 'player');
+  deselectPlayer(); closeEditor(); updateStatus();
+}
+function cancelDraw() { pinPts = []; buildupNodes = null; inDraw = false; lastBuildupTapTime = 0; lastBuildupTapPos = null; redraw(); }
+function setDash(d) { dashStyle = d; document.getElementById('stroke-solid').classList.toggle('active', d==='solid'); document.getElementById('stroke-dash').classList.toggle('active', d==='dash'); }
+
+function getXY(e) { const r = canvas.getBoundingClientRect(); const scaleX = r.width / PITCH_W; const scaleY = r.height / PITCH_H; return { x: (e.clientX - r.left) / scaleX, y: (e.clientY - r.top) / scaleY }; }
+function findSnapTarget(x, y, maxDist) {
+  let best = null, bestD = maxDist;
+  players.forEach(p => { const d = Math.hypot(p.x - x, p.y - y); if (d < bestD) { bestD = d; best = { x: p.x, y: p.y }; } });
+  if (ball.visible) { const d = Math.hypot(ball.x - x, ball.y - y); if (d < bestD) { bestD = d; best = { x: ball.x, y: ball.y }; } }
+  return best;
+}
+
+let dragDrawStart = null;
+canvas.addEventListener('mousedown', e => {
+  if (!isDrawTool(currentTool)) return;
+  if (currentTool === 'polygon' || currentTool === 'curve') return;
+  const {x, y} = getXY(e); dragDrawStart = {x, y}; mouseX = x; mouseY = y; inDraw = true; redraw();
+});
+canvas.addEventListener('mouseup', e => {
+  if (!isDrawTool(currentTool)) return;
+  if (currentTool === 'polygon' || currentTool === 'curve') return;
+  if (!dragDrawStart) return;
+  const {x, y} = getXY(e);
+  if (Math.hypot(x - dragDrawStart.x, y - dragDrawStart.y) > 8) { commitDragShape(dragDrawStart.x, dragDrawStart.y, x, y); }
+  dragDrawStart = null; inDraw = false; redraw();
+});
+canvas.addEventListener('mouseleave', e => {
+  if (isDrawTool(currentTool) && currentTool !== 'polygon' && currentTool !== 'curve') { if (dragDrawStart && !inDraw) dragDrawStart = null; }
+  if (!isDrawTool(currentTool)) { hoveredAnnIdx = -1; canvas.classList.remove('hovering'); }
+});
+function commitDragShape(x1, y1, x2, y2) {
+  let shape = null;
+  switch (currentTool) {
+    case 'arrow': shape = { type:'arrow', x1, y1, x2, y2, color:currentColor, size:strokeSize, dash:dashStyle }; break;
+    case 'line': shape = { type:'line', x1, y1, x2, y2, color:currentColor, size:strokeSize, dash:dashStyle }; break;
+    case 'ellipse': shape = { type:'ellipse', x1, y1, x2, y2, color:currentColor, size:strokeSize, dash:dashStyle }; break;
+    case 'rect': shape = { type:'rect', x1, y1, x2, y2, color:currentColor, size:strokeSize, dash:dashStyle }; break;
+  }
+  if (shape) saveAnnotation(shape);
+}
+canvas.addEventListener('click', e => {
+  if (!isDrawTool(currentTool)) return;
+  if (currentTool !== 'polygon' && currentTool !== 'curve') return;
+  if (e.detail === 2) return; const {x, y} = getXY(e);
+  if (currentTool === 'polygon') {
+    if (!inDraw) { pinPts = [{x, y}]; inDraw = true; }
+    else { const fp = pinPts[0]; if (pinPts.length >= 3 && Math.hypot(x - fp.x, y - fp.y) < 12) { commitClickShape(); return; } pinPts.push({x, y}); }
+    redraw(); return;
+  }
+  if (currentTool === 'curve') {
+    if (!inDraw) { pinPts = [{x, y}]; inDraw = true; } else pinPts.push({x, y});
+    if (pinPts.length >= 3) { commitClickShape(); return; } redraw();
+  }
+});
+canvas.addEventListener('dblclick', e => {
+  if (currentTool === 'polygon' && pinPts.length >= 2) commitClickShape();
+  if (currentTool === 'curve' && pinPts.length >= 2) commitClickShape();
+  if (currentTool === 'select') {
+    const {x, y} = getXY(e);
+    const idx = getAnnotationAtPoint(x, y);
+    if (idx >= 0 && annotations[idx].type === 'text') { e.stopPropagation(); openTextEditModal(idx); }
+  }
+});
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault(); const touch = e.changedTouches[0];
+  if (isDrawTool(currentTool) && currentTool !== 'polygon' && currentTool !== 'curve') {
+    const {x, y} = getXY(touch); dragDrawStart = {x, y}; mouseX = x; mouseY = y; inDraw = true; redraw();
+  } else {
+    const clickEv = new MouseEvent('click', { clientX: touch.clientX, clientY: touch.clientY, detail: 1 }); canvas.dispatchEvent(clickEv);
+  }
+}, {passive:false});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault(); if (!dragDrawStart) return; const touch = e.changedTouches[0]; const {x, y} = getXY(touch); mouseX = x; mouseY = y; if (inDraw) redraw();
+}, {passive:false});
+canvas.addEventListener('touchend', e => {
+  if (!dragDrawStart) return; const touch = e.changedTouches[0]; const {x, y} = getXY(touch);
+  if (Math.hypot(x - dragDrawStart.x, y - dragDrawStart.y) > 8) { commitDragShape(dragDrawStart.x, dragDrawStart.y, x, y); }
+  dragDrawStart = null; inDraw = false; redraw();
+});
+function commitClickShape() {
+  const p = pinPts; let shape = null;
+  if (currentTool === 'curve') { if (p.length < 2) { cancelDraw(); return; } const cx = p[2] ? p[2].x : (p[0].x+p[1].x)/2; const cy = p[2] ? p[2].y : (p[0].y+p[1].y)/2 - 40; shape = { type:'curve', x1:p[0].x, y1:p[0].y, x2:p[1].x, y2:p[1].y, cx, cy, color:currentColor, size:strokeSize, dash:dashStyle }; }
+  if (currentTool === 'polygon') { if (p.length < 2) { cancelDraw(); return; } shape = { type:'polygon', points:[...p], color:currentColor, size:strokeSize, dash:dashStyle }; }
+  if (shape) saveAnnotation(shape); pinPts = []; inDraw = false; redraw();
+}
+function commitShape() { commitClickShape(); }
+canvas.addEventListener('click', e => {
+  if (e.detail === 2) return;
+  if (currentTool === 'player') { const {x, y} = getXY(e); const id = addPlayer(x, y, '', '', currentColor); selectPlayer(id); return; }
+});
+
+/* ── Text label tool ── */
+let pendingTextPos = null;
+let editingTextIdx = -1;
+function openTextModal(x, y) {
+  pendingTextPos = { x, y }; editingTextIdx = -1;
+  document.getElementById('text-input').value = '';
+  document.getElementById('text-size').value = 18;
+  document.getElementById('text-size-val').textContent = '18';
+  document.getElementById('text-ok-btn').textContent = 'Add Label';
+  document.getElementById('text-modal').classList.add('visible');
+  setTimeout(() => document.getElementById('text-input').focus(), 60);
+}
+function openTextEditModal(idx) {
+  const a = annotations[idx]; if (!a) return;
+  pendingTextPos = null; editingTextIdx = idx;
+  document.getElementById('text-input').value = a.text || '';
+  const size = a.size || 18;
+  document.getElementById('text-size').value = size;
+  document.getElementById('text-size-val').textContent = size;
+  document.getElementById('text-ok-btn').textContent = 'Save Label';
+  document.getElementById('text-modal').classList.add('visible');
+  setTimeout(() => { const el = document.getElementById('text-input'); el.focus(); el.select(); }, 60);
+}
+function closeTextModal() {
+  document.getElementById('text-modal').classList.remove('visible');
+  pendingTextPos = null; editingTextIdx = -1;
+}
+function confirmTextModal() {
+  const txt = document.getElementById('text-input').value.replace(/\s+$/,'');
+  const size = +document.getElementById('text-size').value || 18;
+  if (!txt.trim()) { showToast('Type something first'); return; }
+  if (editingTextIdx >= 0 && annotations[editingTextIdx]) {
+    pushHistory();
+    annotations[editingTextIdx].text = txt;
+    annotations[editingTextIdx].size = size;
+    showToast('Label updated');
+  } else if (pendingTextPos) {
+    saveAnnotation({ type:'text', x: pendingTextPos.x, y: pendingTextPos.y, text: txt, size, color: currentColor });
+    showToast('Label added');
+  }
+  closeTextModal(); redraw();
+  if (typeof refreshAnnotationEditor === 'function') refreshAnnotationEditor();
+}
+canvas.addEventListener('click', e => {
+  if (currentTool !== 'text') return;
+  if (e.detail === 2) return;
+  const {x, y} = getXY(e);
+  openTextModal(x, y);
+});
+
+function handleBuildupTap(x, y) {
+  const now = performance.now();
+  const isDoubleTap = lastBuildupTapPos && (now - lastBuildupTapTime) < BUILup_DOUBLE_TAP_WINDOW && Math.hypot(x - lastBuildupTapPos.x, y - lastBuildupTapPos.y) < BUILup_DOUBLE_TAP_DIST;
+  if (isDoubleTap) {
+    if (buildupNodes && buildupNodes.length > 0) {
+      const last = buildupNodes[buildupNodes.length - 1];
+      if (Math.hypot(x - last.x, y - last.y) < BUILup_DOUBLE_TAP_DIST + 20) buildupNodes.pop();
+    }
+    finishBuildup(); return;
+  }
+  if (!buildupNodes) { buildupNodes = []; inDraw = true; }
+  const snap = findSnapTarget(x, y, SNAP_RADIUS);
+  const pos = snap ? { x: snap.x, y: snap.y } : { x, y };
+  buildupNodes.push({ x: pos.x, y: pos.y, n: buildupNodes.length + 1 });
+  lastBuildupTapTime = now; lastBuildupTapPos = { x, y };
+  redraw();
+}
+canvas.addEventListener('click', e => {
+  if (currentTool !== 'buildup') return;
+  const {x, y} = getXY(e);
+  handleBuildupTap(x, y);
+});
+canvas.addEventListener('click', e => {
+  if (currentTool !== 'highlight') return;
+  if (e.detail === 2) return;
+  const {x, y} = getXY(e);
+  const snap = findSnapTarget(x, y, SNAP_RADIUS);
+  const pos = snap ? { x: snap.x, y: snap.y } : { x, y };
+  saveAnnotation({ type:'highlight', x: pos.x, y: pos.y, color: currentColor });
+});
+
+function applyStyle(s, st) {
+  ctx.strokeStyle = s.color || currentColor;
+  ctx.lineWidth = s.size || strokeSize;
+  const useDash = s.dash === 'dash' || (st && st.forceDash);
+  ctx.setLineDash(useDash ? [8, 5] : []);
+  ctx.lineDashOffset = (st && st.dashOffset) || 0;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+}
+function drawShape(s, st) {
+  ctx.save(); applyStyle(s, st); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4;
+  switch (s.type) {
+    case 'arrow': drawArrow(s.x1, s.y1, s.x2, s.y2); break;
+    case 'line': drawLine(s.x1, s.y1, s.x2, s.y2); break;
+    case 'ellipse': drawEllipse(s.x1, s.y1, s.x2, s.y2); break;
+    case 'rect': drawRect(s.x1, s.y1, s.x2, s.y2); break;
+    case 'curve': drawCurve(s.x1, s.y1, s.x2, s.y2, s.cx, s.cy); break;
+    case 'polygon': drawPolygon(s.points || [], true); break;
+    case 'buildup': drawBuildupShape(s); break;
+    case 'highlight': drawHighlightShape(s); break;
+    case 'text': drawTextShape(s, st); break;
+  }
+  ctx.restore();
+}
+function drawTextShape(s, st) {
+  const full = s.text || '';
+  if (!full) return;
+  let display = full;
+  if (st && st.typewriter && st.progress < 1) {
+    const n = Math.max(1, Math.round(full.length * st.progress));
+    display = full.slice(0, n);
+  }
+  const size = s.size || 18;
+  const color = s.color || '#ffffff';
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 6;
+  ctx.font = `700 ${size}px 'Barlow Condensed', 'Inter', 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lines = display.split('\n');
+  const lineH = size * 1.15;
+  let maxW = 10;
+  lines.forEach(l => { maxW = Math.max(maxW, ctx.measureText(l).width); });
+  const w = maxW + size * 0.9;
+  const h = lines.length * lineH + size * 0.5;
+  const x = s.x, y = s.y;
+  ctx.fillStyle = 'rgba(6,12,18,0.82)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1.5, size * 0.09);
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, Math.min(10, h / 2));
+  ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = color;
+  lines.forEach((l, i) => { ctx.fillText(l, x, y - h / 2 + size * 0.25 + lineH * (i + 0.5)); });
+  ctx.restore();
+}
+function drawBuildupShape(s) {
+  const nodes = s.nodes || []; if (!nodes.length) return;
+  const col = s.color || currentColor; const RX = BUILdup_RX, RY = BUILdup_RY;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(s.size || strokeSize, 3);
+  ctx.setLineDash([]); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (let i = 1; i < nodes.length; i++) {
+    const seg = trimmedSegment(nodes[i-1], nodes[i], RX, RY);
+    if (!seg) continue;
+    ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+  }
+  nodes.forEach(n => {
+    ctx.beginPath(); ctx.ellipse(n.x, n.y, RX, RY, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = col; ctx.lineWidth = Math.max(s.size || strokeSize, 2.5); ctx.stroke();
+  });
+  ctx.restore();
+}
+function drawHighlightShape(s) {
+  const x = s.x, y = s.y;
+  const beamH = 180; const halfW = 18, topHalfW = 7;
+  const col = s.color || '#ffffff'; const { r, g, b } = hexToRgb(col);
+  ctx.save();
+  const beamGrad = ctx.createLinearGradient(x, y - beamH, x, y);
+  beamGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0)`);
+  beamGrad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.09)`);
+  ctx.fillStyle = beamGrad;
+  ctx.beginPath(); ctx.moveTo(x - halfW, y); ctx.lineTo(x + halfW, y); ctx.lineTo(x + topHalfW, y - beamH); ctx.lineTo(x - topHalfW, y - beamH); ctx.closePath(); ctx.fill();
+  const haloGrad = ctx.createRadialGradient(x, y, 0, x, y, 28);
+  haloGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.22)`);
+  haloGrad.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.05)`);
+  haloGrad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath(); ctx.ellipse(x, y, 28, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.85)`; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 28, 14, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+function drawArrow(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1; const len = Math.hypot(dx, dy); if (len < 2) return;
+  const hw = Math.min(5 + ctx.lineWidth * 2.5, 18); const hl = hw * 1.6; const angle = Math.atan2(dy, dx);
+  const lx2 = x2 - hl * Math.cos(angle); const ly2 = y2 - hl * Math.sin(angle);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(lx2, ly2); ctx.stroke();
+  ctx.save(); ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.shadowBlur = 0; ctx.fillStyle = ctx.strokeStyle;
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - hl * Math.cos(angle - 0.38), y2 - hl * Math.sin(angle - 0.38));
+  ctx.lineTo(x2 - hl * 0.5 * Math.cos(angle), y2 - hl * 0.5 * Math.sin(angle));
+  ctx.lineTo(x2 - hl * Math.cos(angle + 0.38), y2 - hl * Math.sin(angle + 0.38));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function drawLine(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function drawEllipse(x1, y1, x2, y2) {
+  const cx=(x1+x2)/2, cy=(y1+y2)/2; const rx=Math.abs(x2-x1)/2, ry=Math.abs(y2-y1)/2;
+  ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(rx,1), Math.max(ry,1), 0, 0, Math.PI*2); ctx.stroke();
+}
+function drawRect(x1, y1, x2, y2) { ctx.beginPath(); ctx.rect(x1, y1, x2-x1, y2-y1); ctx.stroke(); }
+function drawCurve(x1, y1, x2, y2, cx, cy) {
+  const angle = Math.atan2(y2 - cy, x2 - cx); const hw = Math.min(5 + ctx.lineWidth * 2.5, 18); const hl = hw * 1.6;
+  const endX = x2 - hl * 0.6 * Math.cos(angle); const endY = y2 - hl * 0.6 * Math.sin(angle);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(cx, cy, endX, endY); ctx.stroke();
+  ctx.save(); ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.shadowBlur = 0; ctx.fillStyle = ctx.strokeStyle;
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - hl * Math.cos(angle - 0.38), y2 - hl * Math.sin(angle - 0.38));
+  ctx.lineTo(x2 - hl * 0.5 * Math.cos(angle), y2 - hl * 0.5 * Math.sin(angle));
+  ctx.lineTo(x2 - hl * Math.cos(angle + 0.38), y2 - hl * Math.sin(angle + 0.38));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function drawPolygon(pts, closed) {
+  if (pts.length < 2) return; ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (closed) { ctx.closePath(); ctx.save(); ctx.globalAlpha *= .15; ctx.fillStyle = ctx.strokeStyle; ctx.fill(); ctx.restore(); }
+  ctx.stroke();
+}
+function drawDot(x, y, highlight, label) {
+  const r = highlight ? 7 : 4; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = highlight ? '#ffffff' : currentColor; ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (label) { ctx.fillStyle = '#ffffff'; ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(label, x, y - r - 2); }
+}
+
+function redraw() {
+  /* Invalidate the static cache whenever selection or hover changes */
+  const sig = selectedSet.size + '|' + [...selectedSet].sort().join(',') + '|' + hoveredAnnIdx;
+  if (sig !== lastSelHovSig) { staticAnnDirty = true; lastSelHovSig = sig; }
+
+  ctx.clearRect(0, 0, PITCH_W, PITCH_H);
+
+  const anyLoop = hasLoopingAnnotations() || isPlayingAnim;
+  if (!anyLoop || annotations.length <= 20) {
+    /* Straight path — no caching needed */
+    annotations.forEach((s, i) => {
+      const st = getAnnAnimState(s);
+      const sel = selectedSet.has(selKey('ann', i)); const hov = i === hoveredAnnIdx;
+      if (sel || hov) {
+        ctx.save();
+        applyStyle(s, st);
+        ctx.shadowColor = sel ? 'rgba(0,214,143,0.8)' : 'rgba(255,255,255,0.5)';
+        ctx.shadowBlur = 14;
+        ctx.globalAlpha = 0.45 * st.alpha;
+        drawShape(s, st);
+        ctx.restore();
+      }
+      drawAnnotatedShape(s, st);
+    });
+  } else {
+    /* Cached path — split into static vs animated */
+    if (staticAnnDirty && staticAnnCtx) {
+      staticAnnCtx.clearRect(0, 0, PITCH_W, PITCH_H);
+      const prevCtx = ctx;
+      try {
+        annotationsSwapCtx(staticAnnCtx);
+        annotations.forEach((s, i) => {
+          const animated = (s.loopAnim && s.loopAnim !== 'none') ||
+                           (s.uid && animStateMap.has(s.uid)) ||
+                           selectedSet.has(selKey('ann', i)) ||
+                           i === hoveredAnnIdx;
+          if (animated) return;
+          drawShape(s, baseState());
+        });
+      } finally {
+        annotationsSwapCtx(prevCtx);
+      }
+      staticAnnDirty = false;
+    }
+    if (staticAnnCtx) ctx.drawImage(staticAnnCanvas, 0, 0);
+
+    annotations.forEach((s, i) => {
+      const animated = (s.loopAnim && s.loopAnim !== 'none') ||
+                       (s.uid && animStateMap.has(s.uid)) ||
+                       selectedSet.has(selKey('ann', i)) ||
+                       i === hoveredAnnIdx;
+      if (!animated) return;
+      const st = getAnnAnimState(s);
+      const sel = selectedSet.has(selKey('ann', i)); const hov = i === hoveredAnnIdx;
+      if (sel || hov) {
+        ctx.save();
+        applyStyle(s, st);
+        ctx.shadowColor = sel ? 'rgba(0,214,143,0.8)' : 'rgba(255,255,255,0.5)';
+        ctx.shadowBlur = 14;
+        ctx.globalAlpha = 0.45 * st.alpha;
+        drawShape(s, st);
+        ctx.restore();
+      }
+      drawAnnotatedShape(s, st);
+    });
+  }
+
+  drawKeyframePaths();
+  if (currentTool === 'buildup' && buildupNodes && buildupNodes.length) {
+    const col = currentColor; const RX = BUILdup_RX, RY = BUILdup_RY;
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = Math.max(strokeSize, 3);
+    ctx.setLineDash([]); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let i = 1; i < buildupNodes.length; i++) {
+      const seg = trimmedSegment(buildupNodes[i-1], buildupNodes[i], RX, RY);
+      if (!seg) continue;
+      ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+    }
+    buildupNodes.forEach(n => { ctx.beginPath(); ctx.ellipse(n.x, n.y, RX, RY, 0, 0, Math.PI * 2); ctx.lineWidth = Math.max(strokeSize, 2.5); ctx.stroke(); });
+    ctx.restore();
+  }
+  if (!inDraw || !isDrawTool(currentTool)) {
+    if (marquee) {
+      const mx1 = Math.min(marquee.x1, marquee.x2), mx2 = Math.max(marquee.x1, marquee.x2);
+      const my1 = Math.min(marquee.y1, marquee.y2), my2 = Math.max(marquee.y1, marquee.y2);
+      ctx.save(); ctx.strokeStyle = '#00d68f'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]); ctx.strokeRect(mx1, my1, mx2-mx1, my2-my1);
+      ctx.fillStyle = 'rgba(0,214,143,0.08)'; ctx.fillRect(mx1, my1, mx2-mx1, my2-my1); ctx.restore();
+    }
+    return;
+  }
+  ctx.save(); ctx.strokeStyle = currentColor; ctx.lineWidth = strokeSize; ctx.setLineDash(dashStyle === 'dash' ? [8,5] : []);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = .75; ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 4;
+  const p = pinPts; const mx = mouseX, my = mouseY;
+  if (dragDrawStart && (currentTool === 'arrow' || currentTool === 'line' || currentTool === 'ellipse' || currentTool === 'rect')) {
+    const {x: sx, y: sy} = dragDrawStart;
+    if (currentTool === 'arrow') drawArrow(sx, sy, mx, my);
+    if (currentTool === 'line') drawLine(sx, sy, mx, my);
+    if (currentTool === 'ellipse') drawEllipse(sx, sy, mx, my);
+    if (currentTool === 'rect') drawRect(sx, sy, mx, my);
+    ctx.setLineDash([]); drawDot(sx, sy, false, '');
+  }
+  if (currentTool === 'curve') {
+    ctx.setLineDash(dashStyle === 'dash' ? [8,5] : []);
+    if (p.length === 1) { drawLine(p[0].x, p[0].y, mx, my); ctx.setLineDash([]); drawDot(p[0].x, p[0].y, false, '1'); }
+    else if (p.length === 2) {
+      drawCurve(p[0].x, p[0].y, p[1].x, p[1].y, mx, my); ctx.setLineDash([]);
+      drawDot(p[0].x, p[0].y, false, '1'); drawDot(p[1].x, p[1].y, false, '2');
+      ctx.globalAlpha = .5; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(mx, my); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p[1].x, p[1].y); ctx.lineTo(mx, my); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = .75; drawDot(mx, my, true, 'ctrl');
+    }
+  }
+  if (currentTool === 'polygon') {
+    if (p.length >= 1) {
+      drawPolygon(p, false); const last = p[p.length-1];
+      ctx.setLineDash([4,4]); ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(mx, my); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      p.forEach((pt, i) => { const nearFirst = i===0 && p.length >= 3 && Math.hypot(mx-pt.x, my-pt.y) < 12; drawDot(pt.x, pt.y, nearFirst, ''); });
+    }
+  }
+  ctx.restore();
+}
+
+/* Swap the module-scope `ctx` used by drawShape() so we can render to the cache. */
+let _ctxBackup = null;
+function annotationsSwapCtx(newCtx) {
+  if (newCtx === staticAnnCtx) {
+    _ctxBackup = ctx;
+    ctx = staticAnnCtx;
+  } else {
+    ctx = _ctxBackup || newCtx;
+    _ctxBackup = null;
+  }
+}
+
+function distPtSeg(px, py, x1, y1, x2, y2) {
+  const dx = x2-x1, dy = y2-y1; const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return Math.hypot(px-x1, py-y1);
+  const t = Math.max(0, Math.min(1, ((px-x1)*dx + (py-y1)*dy) / lenSq));
+  return Math.hypot(px - (x1+t*dx), py - (y1+t*dy));
+}
+function textBoxMetrics(s) {
+  const size = s.size || 18;
+  const lines = (s.text || '').split('\n');
+  ctx.save();
+  ctx.font = `700 ${size}px 'Barlow Condensed', 'Inter', 'Segoe UI', sans-serif`;
+  let maxW = 10;
+  lines.forEach(l => { maxW = Math.max(maxW, ctx.measureText(l).width); });
+  ctx.restore();
+  return { w: maxW + size * 0.9, h: lines.length * size * 1.15 + size * 0.5 };
+}
+function hitTestAnnotation(s, px, py) {
+  const T = Math.max(s.size || 2, 2) + 7;
+  switch (s.type) {
+    case 'arrow': case 'line': return distPtSeg(px, py, s.x1, s.y1, s.x2, s.y2) < T;
+    case 'curve': { for (let t=0; t<=1; t+=0.05) { const bx = (1-t)*(1-t)*s.x1 + 2*(1-t)*t*s.cx + t*t*s.x2; const by = (1-t)*(1-t)*s.y1 + 2*(1-t)*t*s.cy + t*t*s.y2; if (Math.hypot(px-bx, py-by) < T) return true; } return false; }
+    case 'ellipse': { const cx=(s.x1+s.x2)/2, cy=(s.y1+s.y2)/2; const rx=Math.abs(s.x2-s.x1)/2, ry=Math.abs(s.y2-s.y1)/2; if (rx<1||ry<1) return false; const norm = ((px-cx)/rx)**2 + ((py-cy)/ry)**2; const normT = ((px-cx)/(rx+T))**2 + ((py-cy)/(ry+T))**2; return normT <= 1 && norm >= ((rx-T)/rx)**2 * 0.5; }
+    case 'rect': { const x1=Math.min(s.x1,s.x2), x2=Math.max(s.x1,s.x2); const y1=Math.min(s.y1,s.y2), y2=Math.max(s.y1,s.y2); const inside = px>x1-T && px<x2+T && py>y1-T && py<y2+T; const border = px<x1+T || px>x2-T || py<y1+T || py>y2-T; return inside && border; }
+    case 'buildup': { const nodes = s.nodes || []; for (const n of nodes) if (Math.hypot(px - n.x, py - n.y) < 26 + T) return true; for (let i = 1; i < nodes.length; i++) { if (distPtSeg(px, py, nodes[i-1].x, nodes[i-1].y, nodes[i].x, nodes[i].y) < T) return true; } return false; }
+    case 'highlight': { return Math.hypot(px - s.x, py - s.y) < 40 + T; }
+    case 'text': { const m = textBoxMetrics(s); return Math.abs(px - s.x) < m.w / 2 + 4 && Math.abs(py - s.y) < m.h / 2 + 4; }
+    case 'polygon': { const pts = s.points || []; for (let i=0; i<pts.length; i++) { const j = (i+1) % pts.length; if (distPtSeg(px, py, pts[i].x, pts[i].y, pts[j].x, pts[j].y) < T) return true; } return false; }
+  } return false;
+}
+function getAnnotationAtPoint(px, py) { for (let i = annotations.length - 1; i >= 0; i--) { if (hitTestAnnotation(annotations[i], px, py)) return i; } return -1; }
+
+let marquee = null;
+canvas.addEventListener('mousemove', e => {
+  const {x, y} = getXY(e);
+  if (isDrawTool(currentTool)) { mouseX = x; mouseY = y; if (inDraw) redraw(); return; }
+  if (currentTool === 'select') {
+    if (marquee) { marquee.x2 = x; marquee.y2 = y; redraw(); return; }
+    const idx = getAnnotationAtPoint(x, y); const wasHovered = hoveredAnnIdx; hoveredAnnIdx = idx;
+    if (wasHovered !== idx) { canvas.classList.toggle('hovering', idx >= 0); redraw(); }
+  }
+});
+canvas.addEventListener('mousedown', e => {
+  if (currentTool !== 'select' && currentTool !== 'boxselect') return;
+  if (currentTool === 'boxselect') {
+    const {x, y} = getXY(e); marquee = {x1: x, y1: y, x2: x, y2: y}; selectedSet.clear(); deselectPlayer(); closeEditor(); redraw();
+    const onMove = ev => { const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H; marquee.x2 = (ev.clientX - r.left) / sx; marquee.y2 = (ev.clientY - r.top) / sy; redraw(); };
+    const onUp = ev => { if (marquee) { applyMarqueeSelection(); marquee = null; redraw(); renderPlayers(); setTool('select'); } document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); return;
+  }
+  const {x, y} = getXY(e); const idx = getAnnotationAtPoint(x, y);
+  if (idx >= 0) {
+    e.stopPropagation();
+    if (!selectedSet.has(selKey('ann', idx))) { selectedSet.clear(); selectedSet.add(selKey('ann', idx)); deselectPlayer(); closeEditor(); redraw(); }
+    refreshAnnotationEditor();
+    startMultiDrag(x, y);
+  } else {
+    marquee = {x1: x, y1: y, x2: x, y2: y}; selectedSet.clear(); deselectPlayer(); closeEditor(); closeAnnEditor(); redraw();
+    const onMove = ev => { const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H; marquee.x2 = (ev.clientX - r.left) / sx; marquee.y2 = (ev.clientY - r.top) / sy; redraw(); };
+    const onUp = ev => { if (marquee) { applyMarqueeSelection(); marquee = null; redraw(); } document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+  }
+});
+canvas.addEventListener('touchstart', e => {
+  if (currentTool === 'boxselect') {
+    e.preventDefault(); const touch = e.changedTouches[0]; const {x, y} = getXY(touch); marquee = {x1: x, y1: y, x2: x, y2: y}; selectedSet.clear(); deselectPlayer(); closeEditor(); redraw();
+    const onMove = ev => { ev.preventDefault(); const t = ev.changedTouches[0]; const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H; marquee.x2 = (t.clientX - r.left) / sx; marquee.y2 = (t.clientY - r.top) / sy; redraw(); };
+    const onUp = ev => { if (marquee) { applyMarqueeSelection(); marquee = null; redraw(); renderPlayers(); setTool('select'); } canvas.removeEventListener('touchmove', onMove); canvas.removeEventListener('touchend', onUp); };
+    canvas.addEventListener('touchmove', onMove, {passive:false}); canvas.addEventListener('touchend', onUp); return;
+  }
+  if (currentTool !== 'select') return;
+  e.preventDefault(); const touch = e.changedTouches[0]; const {x, y} = getXY(touch); const idx = getAnnotationAtPoint(x, y);
+  if (idx >= 0) {
+    if (!selectedSet.has(selKey('ann', idx))) { selectedSet.clear(); selectedSet.add(selKey('ann', idx)); deselectPlayer(); closeEditor(); redraw(); }
+    refreshAnnotationEditor();
+    startMultiDrag(x, y);
+  } else {
+    marquee = {x1: x, y1: y, x2: x, y2: y}; selectedSet.clear(); deselectPlayer(); closeEditor(); closeAnnEditor(); redraw();
+    const onMove = ev => { ev.preventDefault(); const t = ev.changedTouches[0]; const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H; marquee.x2 = (t.clientX - r.left) / sx; marquee.y2 = (t.clientY - r.top) / sy; redraw(); };
+    const onUp = ev => { if (marquee) { applyMarqueeSelection(); marquee = null; redraw(); } canvas.removeEventListener('touchmove', onMove); canvas.removeEventListener('touchend', onUp); };
+    canvas.addEventListener('touchmove', onMove, {passive:false}); canvas.addEventListener('touchend', onUp);
+  }
+}, {passive:false});
+
+function applyMarqueeSelection() {
+  if (!marquee) return; const mx1 = Math.min(marquee.x1, marquee.x2), mx2 = Math.max(marquee.x1, marquee.x2);
+  const my1 = Math.min(marquee.y1, marquee.y2), my2 = Math.max(marquee.y1, marquee.y2);
+  if ((mx2 - mx1) < 8 && (my2 - my1) < 8) return; selectedSet.clear();
+  players.forEach(p => { if (p.x >= mx1 && p.x <= mx2 && p.y >= my1 && p.y <= my2) selectedSet.add(selKey('player', p.id)); });
+  annotations.forEach((s, i) => { if (annInsideMarquee(s, mx1, my1, mx2, my2)) selectedSet.add(selKey('ann', i)); });
+  if (ball.visible && ball.x >= mx1 && ball.x <= mx2 && ball.y >= my1 && ball.y <= my2) selectedSet.add('ball');
+  if (typeof refreshAnnotationEditor === 'function') refreshAnnotationEditor();
+  invalidateStaticAnn();
+}
+function annInsideMarquee(s, mx1, my1, mx2, my2) {
+  const inBox = (x, y) => x >= mx1 && x <= mx2 && y >= my1 && y <= my2;
+  switch (s.type) {
+    case 'arrow': case 'line': return inBox(s.x1, s.y1) && inBox(s.x2, s.y2);
+    case 'curve': return inBox(s.x1, s.y1) && inBox(s.x2, s.y2);
+    case 'ellipse': case 'rect': return inBox(s.x1, s.y1) && inBox(s.x2, s.y2);
+    case 'buildup': return (s.nodes || []).every(n => inBox(n.x, n.y));
+    case 'highlight': case 'text': return inBox(s.x, s.y);
+    case 'polygon': return (s.points || []).every(pt => inBox(pt.x, pt.y));
+  } return false;
+}
+function startMultiDrag(startX, startY) {
+  const snapPlayers = {}; players.forEach(p => { if (isSelected('player', p.id)) snapPlayers[p.id] = {x: p.x, y: p.y}; });
+  const snapAnns = {}; annotations.forEach((s, i) => { if (selectedSet.has(selKey('ann', i))) snapAnns[i] = JSON.parse(JSON.stringify(s)); });
+  const snapBall = isSelected('ball') ? {x: ball.x, y: ball.y} : null;
+  /* Only cursor is touched here — never canvas.classList, which belongs to setTool */
+  const prevCursor = canvas.style.cursor;
+  canvas.style.cursor = 'grabbing';
+  let multiDragHistoryPushed = false;
+  const onMove = ev => {
+    if (!multiDragHistoryPushed) { pushHistory(); multiDragHistoryPushed = true; }
+    invalidateStaticAnn();
+    const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H;
+    const nx = (ev.clientX - r.left) / sx, ny = (ev.clientY - r.top) / sy;
+    const dx = nx - startX, dy = ny - startY;
+    players.forEach(p => { if (snapPlayers[p.id]) { p.x = Math.max(10, Math.min(PITCH_W-10, snapPlayers[p.id].x + dx)); p.y = Math.max(10, Math.min(PITCH_H-10, snapPlayers[p.id].y + dy)); const el = playerLayer.querySelector(`[data-id="${p.id}"]`); if (el) { el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; } } });
+    Object.entries(snapAnns).forEach(([iStr, snap]) => {
+      const i = +iStr; const s = annotations[i]; if (!s) return; const sdx = dx, sdy = dy;
+      switch (s.type) {
+        case 'arrow': case 'line': case 'ellipse': case 'rect': s.x1 = snap.x1+sdx; s.y1 = snap.y1+sdy; s.x2 = snap.x2+sdx; s.y2 = snap.y2+sdy; break;
+        case 'curve': s.x1 = snap.x1+sdx; s.y1 = snap.y1+sdy; s.x2 = snap.x2+sdx; s.y2 = snap.y2+sdy; s.cx = snap.cx+sdx; s.cy = snap.cy+sdy; break;
+        case 'polygon': s.points = snap.points.map(pt => ({x: pt.x+sdx, y: pt.y+sdy})); break;
+        case 'buildup': s.nodes = snap.nodes.map(n => ({x: n.x+sdx, y: n.y+sdy, n: n.n})); break;
+        case 'highlight': case 'text': s.x = snap.x+sdx; s.y = snap.y+sdy; break;
+      }
+    });
+    if (snapBall) { ball.x = Math.max(13, Math.min(PITCH_W-13, snapBall.x + dx)); ball.y = Math.max(13, Math.min(PITCH_H-13, snapBall.y + dy)); const ballEl = document.getElementById('ball-token'); ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; }
+    redraw();
+  };
+  const onTouchMove = ev => {
+    if (!multiDragHistoryPushed) { pushHistory(); multiDragHistoryPushed = true; }
+    invalidateStaticAnn();
+    ev.preventDefault(); const t = ev.touches[0]; const r = canvas.getBoundingClientRect(); const sx = r.width / PITCH_W, sy = r.height / PITCH_H;
+    const nx = (t.clientX - r.left) / sx, ny = (t.clientY - r.top) / sy;
+    const dx = nx - startX, dy = ny - startY;
+    players.forEach(p => { if (snapPlayers[p.id]) { p.x = Math.max(10, Math.min(PITCH_W-10, snapPlayers[p.id].x + dx)); p.y = Math.max(10, Math.min(PITCH_H-10, snapPlayers[p.id].y + dy)); const el = playerLayer.querySelector(`[data-id="${p.id}"]`); if (el) { el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; } } });
+    Object.entries(snapAnns).forEach(([iStr, snap]) => {
+      const i = +iStr; const s = annotations[i]; if (!s) return;
+      switch (s.type) {
+        case 'arrow': case 'line': case 'ellipse': case 'rect': s.x1 = snap.x1+dx; s.y1 = snap.y1+dy; s.x2 = snap.x2+dx; s.y2 = snap.y2+dy; break;
+        case 'curve': s.x1 = snap.x1+dx; s.y1 = snap.y1+dy; s.x2 = snap.x2+dx; s.y2 = snap.y2+dy; s.cx = snap.cx+dx; s.cy = snap.cy+dy; break;
+        case 'polygon': s.points = snap.points.map(pt => ({x: pt.x+dx, y: pt.y+dy})); break;
+        case 'buildup': s.nodes = snap.nodes.map(n => ({x: n.x+dx, y: n.y+dy, n: n.n})); break;
+        case 'highlight': case 'text': s.x = snap.x+dx; s.y = snap.y+dy; break;
+      }
+    });
+    if (snapBall) { ball.x = Math.max(13, Math.min(PITCH_W-13, snapBall.x + dx)); ball.y = Math.max(13, Math.min(PITCH_H-13, snapBall.y + dy)); const ballEl = document.getElementById('ball-token'); ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; }
+    redraw();
+  };
+  const onUp = () => {
+    canvas.style.cursor = prevCursor;   /* restore only the cursor */
+    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onUp);
+    renderPlayers(); redraw();
+  };
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onTouchMove, {passive: false}); document.addEventListener('touchend', onUp);
+}
+function saveAnnotation(s) {
+  pushHistory();
+  s.uid = s.uid || newUid();
+  if (!s.inAnim)   s.inAnim   = defaultAnnAnim.in;
+  if (!s.loopAnim) s.loopAnim = defaultAnnAnim.loop;
+  if (!s.outAnim)  s.outAnim  = defaultAnnAnim.out;
+  annotations.push(s);
+  selectedSet.clear(); selectedSet.add(selKey('ann', annotations.length - 1));
+  invalidateStaticAnn();
+  if (typeof refreshAnnotationEditor === 'function') refreshAnnotationEditor();
+}
+function clearAnnotations() { if (!annotations.length) return; pushHistory(); annotations = []; animStateMap.clear(); invalidateStaticAnn(); closeAnnEditor(); redraw(); showToast('Drawings cleared'); }
+
+function addPlayer(x, y, number='', name='', color='#3d9bff', role='') { pushHistory(); const id = nextPlayerId++; players.push({id, x, y, number, name, color, role}); renderPlayers(); return id; }
+function renderPlayers() {
+  playerLayer.innerHTML = '';
+  players.forEach(p => {
+    const el = document.createElement('div'); el.className = 'player-token'; el.dataset.id = p.id; el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+    const circle = document.createElement('div'); const isSel = isSelected('player', p.id);
+    circle.className = 'player-circle' + (isSel ? ' selected' : ''); circle.style.background = p.color; circle.style.borderColor = playerBorderColor(p.color);
+    circle.style.color = isLightColor(p.color) ? '#0d1117' : '#fff'; circle.textContent = p.number || '';
+    const roleEl = document.createElement('div'); roleEl.className = 'player-role'; roleEl.textContent = (p.role || '').toUpperCase(); circle.appendChild(roleEl);
+    const lbl = document.createElement('div'); lbl.className = 'player-label'; lbl.textContent = p.name;
+    el.appendChild(circle); el.appendChild(lbl);
+    el.addEventListener('mousedown', onPlayerMouseDown); el.addEventListener('touchstart', onPlayerTouchStart, {passive:false});
+    el.addEventListener('contextmenu', onPlayerCtxMenu); el.addEventListener('click', onPlayerClick);
+    playerLayer.appendChild(el);
+  });
+}
+function onPlayerClick(e) {
+  e.stopPropagation();
+  if (currentTool !== 'select' && currentTool !== 'player') return;
+  if (playerWasDragged) { playerWasDragged = false; return; }
+  const id = +e.currentTarget.dataset.id;
+  if (currentTool === 'select') {
+    if (selectedSet.size <= 1 || !selectedSet.has(selKey('player', id))) { selectedSet.clear(); selectedSet.add(selKey('player', id)); }
+    closeAnnEditor();
+    if (e.detail >= 2) selectPlayer(id); else { selectedPlayerId = id; renderPlayers(); }
+    redraw();
+  } else selectPlayer(id);
+}
+function selectPlayer(id) {
+  closeAnnEditor();
+  selectedPlayerId = id; const p = players.find(p => p.id === id); if (!p) return;
+  document.getElementById('pe-number').value = p.number; document.getElementById('pe-name').value = p.name; document.getElementById('pe-role').value = p.role || '';
+  document.getElementById('player-editor').classList.add('visible'); renderPlayers();
+}
+function deselectPlayer() { selectedPlayerId = null; renderPlayers(); }
+function closeEditor() { document.getElementById('player-editor').classList.remove('visible'); }
+function updateSelectedPlayer() { if (selectedPlayerId === null) return; const p = players.find(p => p.id === selectedPlayerId); if (!p) return; p.number = document.getElementById('pe-number').value; p.name = document.getElementById('pe-name').value; p.role = document.getElementById('pe-role').value; renderPlayers(); }
+function updateSelectedPlayerColor(color) { if (selectedPlayerId === null) return; const p = players.find(p => p.id === selectedPlayerId); if (!p) return; pushHistory(); p.color = color; renderPlayers(); }
+function deleteSelectedPlayer() { if (selectedPlayerId === null) return; pushHistory(); players = players.filter(p => p.id !== selectedPlayerId); selectedPlayerId = null; closeEditor(); renderPlayers(); }
+let playerWasDragged = false;
+function onPlayerMouseDown(e) { if (currentTool !== 'select') return; e.stopPropagation(); playerWasDragged = false; startPlayerDrag(e.currentTarget, e.clientX, e.clientY); }
+function onPlayerTouchStart(e) { if (currentTool !== 'select') return; e.stopPropagation(); e.preventDefault(); playerWasDragged = false; startPlayerDrag(e.currentTarget, e.touches[0].clientX, e.touches[0].clientY); }
+function startPlayerDrag(el, cx, cy) {
+  if (currentTool !== 'select') return;
+  closeAnnEditor();
+  const id = +el.dataset.id; const p = players.find(p => p.id === id); if (!p) return;
+  const rect = canvas.getBoundingClientRect(); const rScaleX = rect.width / PITCH_W, rScaleY = rect.height / PITCH_H;
+  const sx = (cx - rect.left) / rScaleX, sy = (cy - rect.top) / rScaleY;
+  if (selectedSet.has(selKey('player', id)) && selectedSet.size > 1) { startMultiDrag(sx, sy); return; }
+  selectedSet.clear(); selectedSet.add(selKey('player', id)); selectedPlayerId = id;
+  playerLayer.querySelectorAll('.player-circle').forEach(c => c.classList.remove('selected')); el.querySelector('.player-circle')?.classList.add('selected'); redraw();
+  dragOffX = sx - p.x; dragOffY = sy - p.y;
+  el.classList.add('dragging'); let dragHistoryPushed = false;
+  const onMove = ev => {
+    if (!dragHistoryPushed) { pushHistory(); dragHistoryPushed = true; }
+    playerWasDragged = true; const c = ev.touches ? ev.touches[0] : ev; const r = canvas.getBoundingClientRect();
+    const scX = r.width / PITCH_W, scY = r.height / PITCH_H;
+    p.x = Math.max(10, Math.min(PITCH_W-10, (c.clientX - r.left) / scX - dragOffX));
+    p.y = Math.max(10, Math.min(PITCH_H-10, (c.clientY - r.top) / scY - dragOffY));
+    el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+  };
+  const onUp = () => { el.classList.remove('dragging'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); renderPlayers(); };
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp);
+}
+function onPlayerCtxMenu(e) {
+  e.preventDefault(); e.stopPropagation();
+  ctxTargetId = +e.currentTarget.dataset.id;
+  const menu = document.getElementById('ctx-menu');
+  menu.innerHTML =
+    '<button onclick="ctxEdit()">✏️ Edit Player</button>' +
+    '<button onclick="ctxDuplicate()">⧉ Duplicate</button>' +
+    '<button class="danger" onclick="ctxDelete()">🗑 Delete</button>';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('visible');
+}
+function hideCtxMenu() { document.getElementById('ctx-menu').classList.remove('visible'); }
+function ctxEdit() { selectPlayer(ctxTargetId); hideCtxMenu(); }
+function ctxDuplicate() { const p = players.find(p => p.id === ctxTargetId); if (!p) return; addPlayer(p.x+20, p.y+20, p.number, p.name, p.color, p.role || ''); hideCtxMenu(); }
+function ctxDelete() { pushHistory(); players = players.filter(p => p.id !== ctxTargetId); if (selectedPlayerId === ctxTargetId) { selectedPlayerId = null; closeEditor(); } renderPlayers(); hideCtxMenu(); }
+function buildColorGrid() { const grid = document.getElementById('pe-colors'); PLAYER_COLORS.forEach(c => { const s = document.createElement('div'); s.className = 'color-swatch'; s.style.background = c; s.dataset.color = c; s.onclick = () => { setColorFromHex(c); }; grid.appendChild(s); }); }
+
+const BENCH_SIZE = 7; let benchLeft = []; let benchRight = []; let benchPopoverEl = null;
+function initBench() { benchLeft = Array.from({length: BENCH_SIZE}, () => ({ name: '', color: '#3d9bff' })); benchRight = Array.from({length: BENCH_SIZE}, () => ({ name: '', color: '#ff4d4d' })); renderBench('left'); renderBench('right'); }
+function benchArr(side) { return side === 'left' ? benchLeft : benchRight; }
+function renderBench(side) {
+  const list = document.getElementById('bench-' + side + '-list'); const arr = benchArr(side); list.innerHTML = '';
+  arr.forEach((slot, idx) => {
+    const row = document.createElement('div'); row.className = 'bench-slot';
+    const dot = document.createElement('div'); dot.className = 'bench-swatch'; dot.style.background = slot.color; dot.style.borderColor = playerBorderColor(slot.color);
+    dot.addEventListener('mousedown', e => { e.stopPropagation(); startBenchDrag(side, idx, e.clientX, e.clientY, dot); });
+    dot.addEventListener('touchstart', e => { e.stopPropagation(); const t = e.touches[0]; startBenchDrag(side, idx, t.clientX, t.clientY, dot); }, {passive:true});
+    const input = document.createElement('input'); input.type = 'text'; input.className = 'bench-name-input'; input.placeholder = 'Player ' + (idx + 1); input.value = slot.name; input.oninput = () => { slot.name = input.value; };
+    input.addEventListener('mousedown', e => e.stopPropagation()); input.addEventListener('touchstart', e => e.stopPropagation());
+    row.appendChild(dot); row.appendChild(input); list.appendChild(row);
+  });
+}
+function clearBenchSlot(side, idx) { const slot = benchArr(side)[idx]; if (!slot) return; slot.name = ''; renderBench(side); }
+function startBenchDrag(side, idx, startX, startY, dotEl) {
+  const slot = benchArr(side)[idx]; if (!slot) return; let moved = false; let ghost = null;
+  const ensureGhost = () => { if (ghost) return; ghost = document.createElement('div'); ghost.className = 'bench-token-ghost'; ghost.style.background = slot.color; document.body.appendChild(ghost); };
+  const positionGhost = (cx, cy) => { if (!ghost) return; ghost.style.left = cx + 'px'; ghost.style.top = cy + 'px'; };
+  const onMove = ev => { const c = ev.touches ? ev.touches[0] : ev; if (!moved && Math.hypot(c.clientX - startX, c.clientY - startY) > 6) { moved = true; ensureGhost(); } if (moved) { ev.preventDefault && ev.preventDefault(); positionGhost(c.clientX, c.clientY); } };
+  const onUp = ev => {
+    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp);
+    if (ghost) ghost.remove(); const c = ev.changedTouches ? ev.changedTouches[0] : ev;
+    if (!moved) { openBenchColorPopover(side, idx, dotEl); return; }
+    const rect = canvas.getBoundingClientRect(); const scX = rect.width / PITCH_W, scY = rect.height / PITCH_H;
+    const x = (c.clientX - rect.left) / scX, y = (c.clientY - rect.top) / scY;
+    if (x >= 0 && x <= PITCH_W && y >= 0 && y <= PITCH_H) {
+      const px = Math.max(10, Math.min(PITCH_W - 10, x)); const py = Math.max(10, Math.min(PITCH_H - 10, y)); const id = addPlayer(px, py, '', slot.name, slot.color); clearBenchSlot(side, idx); selectPlayer(id);
+      fadeBenchHint();
+    }
+  };
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp);
+}
+function fadeBenchHint() { const l = document.getElementById('bench-left-hint'); const r = document.getElementById('bench-right-hint'); if (l) l.classList.add('fade-out'); if (r) r.classList.add('fade-out'); }
+function openBenchColorPopover(side, idx, anchorEl) {
+  closeBenchColorPopover(); const slot = benchArr(side)[idx]; if (!slot) return; const pop = document.createElement('div'); pop.className = 'bench-color-popover';
+  PLAYER_COLORS.forEach(c => { const s = document.createElement('div'); s.className = 'color-swatch' + (c === slot.color ? ' active' : ''); s.style.background = c; s.onclick = ev => { ev.stopPropagation(); slot.color = c; renderBench(side); closeBenchColorPopover(); }; pop.appendChild(s); });
+  document.body.appendChild(pop); const r = anchorEl.getBoundingClientRect(); const popW = pop.getBoundingClientRect().width || 120;
+  let left = side === 'left' ? r.right + 6 : r.left - popW - 6; left = Math.max(4, Math.min(window.innerWidth - popW - 4, left));
+  pop.style.left = left + 'px'; pop.style.top = Math.max(4, r.top - 4) + 'px'; benchPopoverEl = pop; setTimeout(() => document.addEventListener('click', closeBenchColorPopoverOnce, true), 0);
+}
+function closeBenchColorPopoverOnce() { closeBenchColorPopover(); }
+function closeBenchColorPopover() { if (benchPopoverEl) { benchPopoverEl.remove(); benchPopoverEl = null; } document.removeEventListener('click', closeBenchColorPopoverOnce, true); }
+
+function initBall() {
+  const ballEl = document.getElementById('ball-token'); ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px'; ballEl.style.display = 'block'; let bdx = 0, bdy = 0;
+  const onBallDown = (cx, cy) => {
+    const rc = document.getElementById('pitch-container').getBoundingClientRect(); const scX = rc.width / PITCH_W, scY = rc.height / PITCH_H;
+    const bsx = (cx - rc.left) / scX, bsy = (cy - rc.top) / scY;
+    if (isSelected('ball') && selectedSet.size > 1) { startMultiDrag(bsx, bsy); return; }
+    selectedSet.clear(); selectedSet.add('ball'); deselectPlayer(); closeEditor(); closeAnnEditor(); redraw();
+    bdx = bsx - ball.x; bdy = bsy - ball.y; ballEl.classList.add('dragging'); let ballDragHistoryPushed = false;
+    const onMove = ev => {
+      if (!ballDragHistoryPushed) { pushHistory(); ballDragHistoryPushed = true; }
+      const c = ev.touches ? ev.touches[0] : ev; const r = document.getElementById('pitch-container').getBoundingClientRect();
+      const sX = r.width / PITCH_W, sY = r.height / PITCH_H;
+      ball.x = Math.max(13, Math.min(PITCH_W-13, (c.clientX - r.left) / sX - bdx));
+      ball.y = Math.max(13, Math.min(PITCH_H-13, (c.clientY - r.top) / sY - bdy));
+      ballEl.style.left = ball.x + 'px'; ballEl.style.top = ball.y + 'px';
+    };
+    const onUp = () => { ballEl.classList.remove('dragging'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); };
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp);
+  };
+  ballEl.addEventListener('mousedown', e => { e.stopPropagation(); onBallDown(e.clientX, e.clientY); });
+  ballEl.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); onBallDown(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+}
+
+const DEFAULT_FORMATION_COLOR = '#3d9bff';
+const FORMATIONS = {
+  '433': { name:'4-3-3', positions:[ {x:.11,y:.5,n:'1',nm:'GK',r:'GK'}, {x:.28,y:.2,n:'2',nm:'RB',r:'RB'},{x:.28,y:.4,n:'5',nm:'CB',r:'CB'},{x:.28,y:.6,n:'6',nm:'CB',r:'CB'},{x:.28,y:.8,n:'3',nm:'LB',r:'LB'}, {x:.5,y:.25,n:'8',nm:'CM',r:'CM'},{x:.5,y:.5,n:'6',nm:'DM',r:'DM'},{x:.5,y:.75,n:'10',nm:'CM',r:'CM'}, {x:.72,y:.2,n:'7',nm:'RW',r:'RW'},{x:.72,y:.5,n:'9',nm:'ST',r:'ST'},{x:.72,y:.8,n:'11',nm:'LW',r:'LW'} ] },
+  '442': { name:'4-4-2', positions:[ {x:.11,y:.5,n:'1',nm:'GK',r:'GK'}, {x:.28,y:.2,n:'2',nm:'RB',r:'RB'},{x:.28,y:.4,n:'5',nm:'CB',r:'CB'},{x:.28,y:.6,n:'6',nm:'CB',r:'CB'},{x:.28,y:.8,n:'3',nm:'LB',r:'LB'}, {x:.5,y:.2,n:'7',nm:'RM',r:'RM'},{x:.5,y:.4,n:'8',nm:'CM',r:'CM'},{x:.5,y:.6,n:'10',nm:'CM',r:'CM'},{x:.5,y:.8,n:'11',nm:'LM',r:'LM'}, {x:.72,y:.35,n:'9',nm:'ST',r:'ST'},{x:.72,y:.65,n:'17',nm:'ST',r:'ST'} ] },
+  '352': { name:'3-5-2', positions:[ {x:.11,y:.5,n:'1',nm:'GK',r:'GK'}, {x:.3,y:.25,n:'4',nm:'CB',r:'CB'},{x:.3,y:.5,n:'5',nm:'CB',r:'CB'},{x:.3,y:.75,n:'6',nm:'CB',r:'CB'}, {x:.5,y:.1,n:'2',nm:'RWB',r:'RWB'},{x:.5,y:.3,n:'8',nm:'CM',r:'CM'},{x:.5,y:.5,n:'6',nm:'DM',r:'DM'},{x:.5,y:.7,n:'10',nm:'CM',r:'CM'},{x:.5,y:.9,n:'3',nm:'LWB',r:'LWB'}, {x:.72,y:.38,n:'9',nm:'ST',r:'ST'},{x:.72,y:.62,n:'11',nm:'ST',r:'ST'} ] },
+  '4231': { name:'4-2-3-1', positions:[ {x:.11,y:.5,n:'1',nm:'GK',r:'GK'}, {x:.27,y:.2,n:'2',nm:'RB',r:'RB'},{x:.27,y:.4,n:'5',nm:'CB',r:'CB'},{x:.27,y:.6,n:'6',nm:'CB',r:'CB'},{x:.27,y:.8,n:'3',nm:'LB',r:'LB'}, {x:.46,y:.37,n:'4',nm:'DM',r:'DM'},{x:.46,y:.63,n:'8',nm:'DM',r:'DM'}, {x:.62,y:.2,n:'7',nm:'RAM',r:'RAM'},{x:.62,y:.5,n:'10',nm:'CAM',r:'CAM'},{x:.62,y:.8,n:'11',nm:'LAM',r:'LAM'}, {x:.76,y:.5,n:'9',nm:'ST',r:'ST'} ] },
+  '325': { name:'3-2-5 (Box3)', positions:[ {x:.11,y:.5,n:'1',nm:'GK',r:'GK'}, {x:.3,y:.25,n:'4',nm:'CB',r:'CB'},{x:.3,y:.5,n:'5',nm:'CB',r:'CB'},{x:.3,y:.75,n:'6',nm:'CB',r:'CB'}, {x:.5,y:.37,n:'8',nm:'CM',r:'CM'},{x:.5,y:.63,n:'6',nm:'CM',r:'CM'}, {x:.72,y:.1,n:'2',nm:'RB',r:'RB'},{x:.72,y:.3,n:'7',nm:'RW',r:'RW'},{x:.72,y:.5,n:'9',nm:'ST',r:'ST'},{x:.72,y:.7,n:'11',nm:'LW',r:'LW'},{x:.72,y:.9,n:'3',nm:'LB',r:'LB'} ] },
+};
+function loadFormation(key) {
+  if (!key) return; const f = FORMATIONS[key]; if (!f) return; pushHistory(); players = []; nextPlayerId = 1;
+  f.positions.forEach((pos) => { players.push({ id: nextPlayerId++, x: Math.round(pos.x * PITCH_W), y: Math.round(pos.y * PITCH_H), number: pos.n, name: pos.nm, role: pos.r || pos.nm, color: DEFAULT_FORMATION_COLOR }); });
+  renderPlayers(); setTool('select'); showToast(`${f.name} loaded`);
+}
+const TEAM_OWN_COLOR = '#3d9bff'; const TEAM_OPP_COLOR = '#ff4d4d';
+function loadMonoFormation(side) {
+  const key = '433'; const f = FORMATIONS[key]; if (!f) return; pushHistory(); const color = side === 'opp' ? TEAM_OPP_COLOR : TEAM_OWN_COLOR;
+  f.positions.forEach(pos => { const px = side === 'opp' ? (1 - pos.x) : pos.x; players.push({ id: nextPlayerId++, x: Math.round(px * PITCH_W), y: Math.round(pos.y * PITCH_H), number: pos.n, name: pos.nm, role: pos.r || pos.nm, color }); });
+  renderPlayers(); setTool('select'); showToast((side === 'opp' ? 'Opponent' : 'Your') + ' XI added');
+}
+
+const TPL_KEY = 'thefootys_templates_v3';
+function getTemplates() { try { return JSON.parse(localStorage.getItem(TPL_KEY) || '[]'); } catch { return []; } }
+function setTemplates(list) { localStorage.setItem(TPL_KEY, JSON.stringify(list)); }
+function openTemplateModal() { renderTemplateList(); document.getElementById('tpl-modal').classList.add('visible'); document.getElementById('tpl-name-input').focus(); }
+function closeTemplateModal() { document.getElementById('tpl-modal').classList.remove('visible'); }
+function saveTemplate() {
+  const name = document.getElementById('tpl-name-input').value.trim();
+  if (!name) { document.getElementById('tpl-name-input').focus(); document.getElementById('tpl-name-input').style.borderColor = '#ff4d4d'; setTimeout(() => document.getElementById('tpl-name-input').style.borderColor = '', 800); return; }
+  const list = getTemplates(); const now = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'2-digit'});
+  list.unshift({ id: Date.now(), name, date: now, players: JSON.parse(JSON.stringify(players)), annotations: JSON.parse(JSON.stringify(annotations)), keyframes: JSON.parse(JSON.stringify(keyframes)), nextPlayerId, homeTeamName, awayTeamName });
+  setTemplates(list); document.getElementById('tpl-name-input').value = ''; renderTemplateList(); showToast('Template saved');
+}
+function loadTemplate(id) {
+  const list = getTemplates(); const tpl = list.find(t => t.id === id); if (!tpl) return;
+  players = JSON.parse(JSON.stringify(tpl.players)); annotations = JSON.parse(JSON.stringify(tpl.annotations));
+  keyframes = JSON.parse(JSON.stringify(tpl.keyframes || [])); activeKeyframeIndex = keyframes.length ? 0 : -1; nextPlayerId = tpl.nextPlayerId || (players.length + 1);
+  homeTeamName = tpl.homeTeamName || 'HOME BENCH'; awayTeamName = tpl.awayTeamName || 'AWAY BENCH';
+  document.getElementById('home-team-name').value = homeTeamName; document.getElementById('away-team-name').value = awayTeamName;
+  historyStack = []; redoStack = []; updateHistoryButtons(); cancelDraw(); animStateMap.clear(); invalidateStaticAnn(); renderPlayers(); renderTimeline(); redraw(); setTool('select'); closeTemplateModal(); updateAnimBarVisibility(); showToast('Template loaded');
+}
+function deleteTemplate(id) { let list = getTemplates(); list = list.filter(t => t.id !== id); setTemplates(list); renderTemplateList(); }
+function renderTemplateList() {
+  const list = getTemplates(); const el = document.getElementById('tpl-list');
+  if (list.length === 0) { el.innerHTML = '<div class="tpl-empty">No saved templates yet</div>'; return; }
+  el.innerHTML = '';
+  list.forEach(tpl => {
+    const item = document.createElement('div'); item.className = 'tpl-item';
+    item.innerHTML = ` <div style="flex:1"><div class="tpl-item-name">${tpl.name}</div><div class="tpl-item-meta">${tpl.date} · ${tpl.players.length} players · ${tpl.annotations.length} shapes</div></div> <button class="btn" style="font-size:11px;padding:4px 8px" onclick="loadTemplate(${tpl.id})">Load</button> <button class="tpl-item-del" onclick="deleteTemplate(${tpl.id})" title="Delete">✕</button> `;
+    el.appendChild(item);
+  });
+}
+
+let mediaMode = 'pitch';
+const bgLayerEl = document.getElementById('bg-layer'); const bgImgEl = document.getElementById('bg-img'); const bgVideoEl = document.getElementById('bg-video'); const videoBarEl = document.getElementById('video-bar');
+let mediaObjectURL = null; let lastUploadedVideoFile = null;
+function handleMediaUpload(file) {
+  if (!file) return;
+  const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv|mkv|avi|3gp|flv|wmv)$/i.test(file.name);
+  const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(file.name);
+  if (!isVideo && !isImage) { showToast('Unsupported file format'); return; }
+  if (mediaObjectURL) { URL.revokeObjectURL(mediaObjectURL); mediaObjectURL = null; }
+  const url = URL.createObjectURL(file); mediaObjectURL = url;
+  if (isVideo) {
+    lastUploadedVideoFile = file;
+    try { bgVideoEl.pause(); } catch (e) {}
+    hideVideoErrorOverlay(); bgVideoEl.removeAttribute('src');
+    try { bgVideoEl.load(); } catch (e) {}
+    lastTimeUpdateAt = 0; stallRecoveryAttempts = 0;
+    setMediaMode('video');
+    bgVideoEl.src = url; bgVideoEl.muted = true; bgVideoEl.playsInline = true;
+    bgVideoEl.setAttribute('playsinline', ''); bgVideoEl.setAttribute('webkit-playsinline', '');
+    try { bgVideoEl.load(); } catch (e) {}
+    primeVideoFirstFrame();
+  } else {
+    bgImgEl.onload = () => setMediaMode('image');
+    bgImgEl.onerror = () => showToast('Could not load image');
+    bgImgEl.src = url;
+  }
+  document.getElementById('media-input').value = '';
+  showToast(isVideo ? 'Video loaded — click play to start' : 'Image loaded');
+}
+function setMediaMode(mode) {
+  mediaMode = mode;
+  pitchSVG.style.display = (mode === 'pitch') ? 'block' : 'none';
+  bgLayerEl.classList.toggle('visible', mode !== 'pitch');
+  bgImgEl.style.display = (mode === 'image') ? 'block' : 'none';
+  bgVideoEl.style.display = (mode === 'video') ? 'block' : 'none';
+  videoBarEl.classList.toggle('visible', mode === 'video');
+  if (mode !== 'video') { try { bgVideoEl.pause(); } catch (e) {} }
+  if (mode === 'pitch') {
+    if (mediaObjectURL) { URL.revokeObjectURL(mediaObjectURL); mediaObjectURL = null; }
+    bgImgEl.removeAttribute('src'); bgVideoEl.removeAttribute('src');
+    try { bgImgEl.load && bgImgEl.load(); } catch (e) {}
+    try { bgVideoEl.load(); } catch (e) {}
+  }
+  redraw();
+}
+function fmtTime(t) { if (!isFinite(t)) return '0:00'; const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${s.toString().padStart(2,'0')}`; }
+let videoPlayPending = false;
+function safePlayVideo() {
+  if (videoPlayPending) return;
+  if (bgVideoEl.ended) bgVideoEl.currentTime = 0;
+  videoPlayPending = true;
+  bgVideoEl.play().catch((err) => { if (err && err.name === 'AbortError') return; document.getElementById('status').textContent = 'Could not play video — tap play again.'; }).finally(() => { videoPlayPending = false; });
+}
+function toggleVideoPlay() { if (bgVideoEl.paused || bgVideoEl.ended) safePlayVideo(); else bgVideoEl.pause(); }
+function restartVideo() { bgVideoEl.currentTime = 0; safePlayVideo(); }
+function seekVideo(val) { if (!isFinite(bgVideoEl.duration)) return; bgVideoEl.currentTime = (val / 1000) * bgVideoEl.duration; }
+function toggleVideoMute() { bgVideoEl.muted = !bgVideoEl.muted; document.getElementById('btn-video-mute').textContent = bgVideoEl.muted ? '🔇' : '🔊'; }
+bgVideoEl.addEventListener('play', () => { document.getElementById('icon-play').innerHTML = '<rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/>'; });
+bgVideoEl.addEventListener('pause', () => { document.getElementById('icon-play').innerHTML = '<polygon points="3,2 14,8 3,14"/>'; });
+bgVideoEl.addEventListener('ended', () => { document.getElementById('icon-play').innerHTML = '<polygon points="3,2 14,8 3,14"/>'; });
+let lastTimeUpdateAt = 0; let lastTimeUpdateValue = -1; let stallRecoveryAttempts = 0; const STALL_TIMEOUT_MS = 3000; const STALL_MAX_AUTO_RECOVERIES = 5;
+bgVideoEl.addEventListener('timeupdate', () => {
+  lastTimeUpdateAt = performance.now(); lastTimeUpdateValue = bgVideoEl.currentTime; stallRecoveryAttempts = 0;
+  if (isFinite(bgVideoEl.duration) && bgVideoEl.duration > 0) document.getElementById('video-seek').value = Math.round((bgVideoEl.currentTime / bgVideoEl.duration) * 1000);
+  document.getElementById('video-time').textContent = `${fmtTime(bgVideoEl.currentTime)} / ${fmtTime(bgVideoEl.duration)}`;
+});
+bgVideoEl.addEventListener('play', () => { lastTimeUpdateAt = performance.now(); lastTimeUpdateValue = bgVideoEl.currentTime; stallRecoveryAttempts = 0; });
+bgVideoEl.addEventListener('seeking', () => { lastTimeUpdateAt = performance.now(); });
+setInterval(() => {
+  if (mediaMode !== 'video') return; if (bgVideoEl.paused || bgVideoEl.ended) return; if (!lastTimeUpdateAt) return;
+  const stalledFor = performance.now() - lastTimeUpdateAt; if (stalledFor < STALL_TIMEOUT_MS) return;
+  if (stallRecoveryAttempts < STALL_MAX_AUTO_RECOVERIES) {
+    stallRecoveryAttempts++; lastTimeUpdateAt = performance.now(); const t = bgVideoEl.currentTime; const newTime = Math.min(bgVideoEl.duration - 0.1, t + 0.5); bgVideoEl.currentTime = newTime; bgVideoEl.play().catch(() => {});
+  } else { bgVideoEl.pause(); document.getElementById('icon-play').innerHTML = '<polygon points="3,2 14,8 3,14"/>'; document.getElementById('status').textContent = 'Video got stuck – tap play to skip forward.'; stallRecoveryAttempts = 0; lastTimeUpdateAt = 0; }
+}, 1000);
+function showVideoErrorOverlay(msg, offerConvert) {
+  const el = document.getElementById('video-error-overlay'); el.innerHTML = '';
+  const p = document.createElement('div'); p.textContent = msg; el.appendChild(p);
+  if (offerConvert && lastUploadedVideoFile && typeof WebAssembly !== 'undefined') {
+    const btn = document.createElement('button'); btn.textContent = '🔄 Convert & Retry'; btn.style.cssText = 'margin-top:10px;pointer-events:all;background:#00b97c;color:#04120c;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;'; btn.onclick = convertAndRetryVideo; el.appendChild(btn); el.style.pointerEvents = 'all';
+  } else el.style.pointerEvents = 'none';
+  el.classList.add('visible'); document.getElementById('status').textContent = msg;
+}
+function hideVideoErrorOverlay() { const el = document.getElementById('video-error-overlay'); el.classList.remove('visible'); el.innerHTML = ''; }
+function primeVideoFirstFrame() {
+  let primed = false;
+  const tryPrime = () => {
+    if (primed) return; if (!bgVideoEl.videoWidth) return; primed = true;
+    const wasMuted = bgVideoEl.muted; bgVideoEl.muted = true;
+    const p = bgVideoEl.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => { bgVideoEl.pause(); bgVideoEl.currentTime = 0; bgVideoEl.muted = wasMuted; hideVideoErrorOverlay(); document.getElementById('status').textContent = 'Video ready — tap play to start.'; })
+       .catch(() => { bgVideoEl.muted = wasMuted; document.getElementById('status').textContent = 'Video loaded — tap play to start.'; });
+    }
+  };
+  bgVideoEl.addEventListener('loadeddata', tryPrime, { once: true });
+  bgVideoEl.addEventListener('loadedmetadata', tryPrime, { once: true });
+  bgVideoEl.addEventListener('canplay', tryPrime, { once: true });
+  setTimeout(() => { if (mediaMode === 'video' && !bgVideoEl.videoWidth) showVideoErrorOverlay("⚠ This video's format/codec can't be played by your browser.", true); }, 6000);
+}
+let ffmpegInstance = null;
+async function getFfmpeg() {
+  if (ffmpegInstance) return ffmpegInstance; const { FFmpeg } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js'); const { toBlobURL } = await import('https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js');
+  const ffmpeg = new FFmpeg(); const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+  ffmpeg.on('progress', ({ progress }) => { const pct = Math.max(0, Math.min(100, Math.round(progress * 100))); document.getElementById('status').textContent = `Converting video… ${pct}%`; });
+  await ffmpeg.load({ coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'), wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm') });
+  ffmpegInstance = ffmpeg; return ffmpeg;
+}
+let convertingVideo = false;
+async function convertAndRetryVideo() {
+  if (convertingVideo || !lastUploadedVideoFile) return; convertingVideo = true; const file = lastUploadedVideoFile;
+  showVideoErrorOverlay('⏳ Loading converter (first time only, needs internet)…', false);
+  try {
+    const { fetchFile } = await import('https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js'); const ffmpeg = await getFfmpeg();
+    document.getElementById('status').textContent = 'Converting video…';
+    const inName = 'in_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_'); await ffmpeg.writeFile(inName, await fetchFile(file));
+    await ffmpeg.exec(['-i', inName, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '26', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', 'out.mp4']);
+    const data = await ffmpeg.readFile('out.mp4'); const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    if (mediaObjectURL) URL.revokeObjectURL(mediaObjectURL); const url = URL.createObjectURL(blob); mediaObjectURL = url; hideVideoErrorOverlay();
+    bgVideoEl.pause(); bgVideoEl.src = url; bgVideoEl.muted = true; bgVideoEl.load(); setMediaMode('video'); primeVideoFirstFrame();
+    document.getElementById('status').textContent = 'Video converted — ready to play.';
+    try { await ffmpeg.deleteFile(inName); await ffmpeg.deleteFile('out.mp4'); } catch (e) {}
+  } catch (err) { showVideoErrorOverlay('⚠ Conversion failed. Try re-exporting the clip as MP4 (H.264) on another app first.', false); } finally { convertingVideo = false; }
+}
+bgVideoEl.addEventListener('error', () => { showVideoErrorOverlay('⚠ Could not read this video file/codec.', true); });
+bgVideoEl.addEventListener('loadeddata', hideVideoErrorOverlay);
+bgVideoEl.addEventListener('stalled', () => { document.getElementById('status').textContent = 'Video stalled — tap play to resume.'; });
+bgVideoEl.addEventListener('suspend', () => { if (!bgVideoEl.paused && !bgVideoEl.ended && bgVideoEl.readyState < 3) document.getElementById('status').textContent = 'Video buffering — tap play to resume if it stops.'; });
+function getContainRect(mediaW, mediaH) { if (!mediaW || !mediaH) return { x: 0, y: 0, w: PITCH_W, h: PITCH_H }; const scale = Math.min(PITCH_W / mediaW, PITCH_H / mediaH); const w = mediaW * scale, h = mediaH * scale; return { x: (PITCH_W - w) / 2, y: (PITCH_H - h) / 2, w, h }; }
+let cachedPitchImg = null;
+function getPitchImage() {
+  if (cachedPitchImg) return Promise.resolve(cachedPitchImg);
+  const svgBlob = new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${PITCH_W}" height="${PITCH_H}">${pitchSVG.innerHTML}</svg>`], {type:'image/svg+xml'}); const url = URL.createObjectURL(svgBlob);
+  return new Promise(resolve => { const i = new Image(); i.onload = () => { cachedPitchImg = i; URL.revokeObjectURL(url); resolve(i); }; i.src = url; });
+}
+async function drawStageBackground(ec) {
+  if (mediaMode === 'pitch') { const img = await getPitchImage(); ec.drawImage(img, 0, 0); ec.drawImage(inpaintCanvas, 0, 0); return; }
+  ec.fillStyle = '#000'; ec.fillRect(0, 0, PITCH_W, PITCH_H);
+  if (mediaMode === 'image' && bgImgEl.naturalWidth) { const r = getContainRect(bgImgEl.naturalWidth, bgImgEl.naturalHeight); ec.drawImage(bgImgEl, r.x, r.y, r.w, r.h); }
+  else if (mediaMode === 'video' && bgVideoEl.videoWidth) { const r = getContainRect(bgVideoEl.videoWidth, bgVideoEl.videoHeight); ec.drawImage(bgVideoEl, r.x, r.y, r.w, r.h); }
+  ec.drawImage(inpaintCanvas, 0, 0);
+}
+
+async function exportPNG() {
+  const scale = 1920 / PITCH_W; const exp = document.createElement('canvas'); exp.width = Math.round(PITCH_W * scale); exp.height = Math.round(PITCH_H * scale); const ec = exp.getContext('2d'); ec.scale(scale, scale);
+  await drawStageBackground(ec); ec.drawImage(canvas, 0, 0); drawPlayersToCtx(ec); drawBallToCtx(ec);
+  const wmY = PITCH_H - 6, wmX = PITCH_W / 2; ec.strokeStyle = 'rgba(0,214,143,0.25)'; ec.lineWidth = 1; ec.setLineDash([]); ec.beginPath(); ec.moveTo(PITCH_W*.28, wmY-20); ec.lineTo(PITCH_W*.72, wmY-20); ec.stroke();
+  ec.fillStyle = 'rgba(255,255,255,0.7)'; ec.font = '700 13px "Barlow Condensed", "Segoe UI", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'bottom'; ec.fillText('T H E   F O O T Y S', wmX, wmY);
+  const url = exp.toDataURL('image/png');
+  const a = document.createElement('a'); a.href = url; a.download = 'thefootys-tactics.png'; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('PNG exported');
+}
+function drawPlayersToCtx(ec) {
+  players.forEach(p => {
+    const r = 18; ec.beginPath(); ec.arc(p.x, p.y, r, 0, Math.PI*2); ec.fillStyle = p.color; ec.fill(); ec.strokeStyle = playerBorderColor(p.color); ec.lineWidth = 2; ec.stroke();
+    if (p.number) { ec.fillStyle = isLightColor(p.color) ? '#0d1117' : '#fff'; ec.font = 'bold 13px "Barlow Condensed", Segoe UI, sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle'; ec.fillText(p.number, p.x, p.y + 1); }
+    if (p.role) {
+      const txt = p.role.toUpperCase(); ec.font = 'bold 9px "Barlow Condensed", Segoe UI, sans-serif'; const tw = ec.measureText(txt).width + 9; const bx = p.x + r - 12, by = p.y - r - 4;
+      ec.fillStyle = 'rgba(10,20,28,0.94)'; ec.strokeStyle = 'rgba(255,255,255,0.3)'; ec.lineWidth = 1; roundRect(ec, bx, by, tw, 13, 4); ec.fill(); ec.stroke();
+      ec.fillStyle = '#cfe2f2'; ec.textAlign = 'center'; ec.textBaseline = 'middle'; ec.fillText(txt, bx + tw/2, by + 7);
+    }
+    if (p.name) {
+      ec.font = 'bold 10px "Barlow Condensed", Segoe UI, sans-serif'; const tw = ec.measureText(p.name.toUpperCase()).width + 10; ec.fillStyle = 'rgba(6,12,18,0.92)'; roundRect(ec, p.x - tw/2, p.y + r + 2, tw, 16, 4); ec.fill(); ec.fillStyle = '#fff'; ec.textAlign = 'center'; ec.textBaseline = 'middle'; ec.fillText(p.name.toUpperCase(), p.x, p.y + r + 10);
+    }
+  });
+}
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r); c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+}
+function drawBallToCtx(ec) { if (!ball.visible) return; const ballEl = document.getElementById('ball-token'); if (!ballEl || !ballEl.complete || !ballEl.naturalWidth) return; const bw = 32, bh = 32; ec.drawImage(ballEl, ball.x - bw / 2, ball.y - bh / 2, bw, bh); }
+
+/* ──────────────────────────────────────────────
+   EXPORT ANIMATION
+   ────────────────────────────────────────────── */
+const REC_QUALITY = (() => {
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 900;
+  return isMobile
+    ? { w: 1280, fps: 24, bitrate: 5000000 }
+    : { w: 1920, fps: 25, bitrate: 10000000 };
+})();
+
+let isRecording = false;
+let recMediaRecorder = null;
+let recChunks = [];
+let recCanvas, recCtx, recScale, recW, recH;
+let recStream = null, recVideoTrack = null;
+let recTimer = null;
+let recFramePending = false;
+
+function renderRecordingFrameSync() {
+  if (!recCtx) return;
+  recCtx.clearRect(0, 0, recW, recH);
+  recCtx.save();
+  recCtx.scale(recScale, recScale);
+  if (mediaMode === 'pitch') {
+    const src = cachedPitchImg;
+    if (src) recCtx.drawImage(src, 0, 0);
+    recCtx.drawImage(inpaintCanvas, 0, 0);
+  } else {
+    recCtx.fillStyle = '#000'; recCtx.fillRect(0, 0, PITCH_W, PITCH_H);
+    if (mediaMode === 'image' && bgImgEl.naturalWidth) { const r = getContainRect(bgImgEl.naturalWidth, bgImgEl.naturalHeight); recCtx.drawImage(bgImgEl, r.x, r.y, r.w, r.h); }
+    else if (mediaMode === 'video' && bgVideoEl.videoWidth) { const r = getContainRect(bgVideoEl.videoWidth, bgVideoEl.videoHeight); recCtx.drawImage(bgVideoEl, r.x, r.y, r.w, r.h); }
+    recCtx.drawImage(inpaintCanvas, 0, 0);
+  }
+  recCtx.drawImage(canvas, 0, 0);
+  drawPlayersToCtx(recCtx);
+  drawBallToCtx(recCtx);
+  recCtx.restore();
+}
+function requestRecFrame() {
+  if (recVideoTrack && typeof recVideoTrack.requestFrame === 'function') {
+    try { recVideoTrack.requestFrame(); } catch (e) {}
+  }
+}
+function captureOneFrame() {
+  if (!isRecording || !recCtx) return;
+  if (recFramePending) return;
+  recFramePending = true;
+  renderRecordingFrameSync();
+  requestRecFrame();
+  recFramePending = false;
+}
+function getBestVideoMimeType() {
+  const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+function triggerDownload(url, filename) {
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+async function exportAnimationVideo() {
+  if (keyframes.length < 2) { showToast('Add at least 2 phases before exporting'); return; }
+  if (isRecording) return;
+
+  const progressEl = document.getElementById('gif-progress');
+  const exportBtn = document.getElementById('btn-export-anim');
+  if (progressEl) progressEl.textContent = 'Preparing…';
+  if (exportBtn) exportBtn.disabled = true;
+
+  await getPitchImage();
+
+  recScale = REC_QUALITY.w / PITCH_W;
+  recW = Math.round(PITCH_W * recScale);
+  recH = Math.round(PITCH_H * recScale);
+
+  isRecording = true;
+  stopPlayback();
+
+  try {
+    if (typeof VideoEncoder !== 'undefined') {
+      await exportWithWebCodecs(progressEl);
+    } else {
+      await exportWithMediaRecorder(progressEl);
+    }
+  } catch (err) {
+    console.error('Export error:', err);
+    showToast('Export failed: ' + (err && err.message ? err.message : err));
+  } finally {
+    isRecording = false;
+    if (exportBtn) exportBtn.disabled = false;
+  }
+}
+
+async function exportWithWebCodecs(progressEl) {
+  const { Muxer, ArrayBufferTarget } = await import('https://cdn.jsdelivr.net/npm/webm-muxer@5.1.4/+esm');
+
+  const fps = REC_QUALITY.fps;
+  const totalDurationSec = totalAnimDurationMs() / 1000;
+  const totalFrames = Math.max(2, Math.ceil(totalDurationSec * fps));
+
+  const candidates = [
+    { codec: 'vp09.00.31.08', muxer: 'V_VP9' },
+    { codec: 'vp09.00.10.08', muxer: 'V_VP9' },
+    { codec: 'vp8',            muxer: 'V_VP8' },
+  ];
+  let chosen = null;
+  for (const c of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({
+        codec: c.codec, width: recW, height: recH, bitrate: REC_QUALITY.bitrate, framerate: fps,
+      });
+      if (support && support.supported) { chosen = c; break; }
+    } catch (e) { /* keep trying */ }
+  }
+  if (!chosen) throw new Error('No supported video codec found');
+
+  const target = new ArrayBufferTarget();
+  const muxer = new Muxer({
+    target,
+    video: { codec: chosen.muxer, width: recW, height: recH, frameRate: fps },
+  });
+
+  let encodingError = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch (e) { encodingError = e; } },
+    error: (e) => { encodingError = e; },
+  });
+  encoder.configure({ codec: chosen.codec, width: recW, height: recH, bitrate: REC_QUALITY.bitrate, framerate: fps });
+
+  recCanvas = document.createElement('canvas');
+  recCanvas.width = recW;
+  recCanvas.height = recH;
+  recCtx = recCanvas.getContext('2d');
+
+  for (let i = 0; i < totalFrames; i++) {
+    if (encodingError) throw encodingError;
+
+    const timeMs = (i / fps) * 1000;
+    renderAnimFrameAtMs(timeMs);
+    renderRecordingFrameSync();
+
+    const frame = new VideoFrame(recCanvas, {
+      timestamp: Math.round((i * 1000000) / fps),
+      duration: Math.round(1000000 / fps),
+    });
+    encoder.encode(frame, { keyFrame: i % 60 === 0 });
+    frame.close();
+
+    while (encoder.encodeQueueSize > 8) {
+      await new Promise(r => setTimeout(r, 4));
+    }
+
+    if (i % 4 === 0 && progressEl) {
+      progressEl.textContent = `Encoding ${Math.round((i + 1) / totalFrames * 100)}% (${i + 1}/${totalFrames})`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  if (progressEl) progressEl.textContent = 'Finalizing…';
+  await encoder.flush();
+  encoder.close();
+  muxer.finalize();
+
+  const blob = new Blob([target.buffer], { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  const filename = 'thefootys-tactics-animation.webm';
+  triggerDownload(url, filename);
+  if (progressEl) {
+    progressEl.innerHTML = '';
+    const link = document.createElement('a');
+    link.href = url; link.download = filename; link.textContent = '📥 Save video';
+    link.style.color = '#00d68f'; link.style.textDecoration = 'underline'; link.style.fontWeight = '600';
+    progressEl.appendChild(link);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  showToast('Video saved!');
+}
+
+async function exportWithMediaRecorder(progressEl) {
+  recCanvas = document.createElement('canvas');
+  recCanvas.width = recW;
+  recCanvas.height = recH;
+  recCtx = recCanvas.getContext('2d');
+  renderRecordingFrameSync();
+
+  try {
+    recStream = recCanvas.captureStream(0);
+    recVideoTrack = recStream.getVideoTracks()[0];
+    const mimeType = getBestVideoMimeType();
+    const options = mimeType ? { mimeType, videoBitsPerSecond: REC_QUALITY.bitrate } : { videoBitsPerSecond: REC_QUALITY.bitrate };
+    recChunks = [];
+    recMediaRecorder = new MediaRecorder(recStream, options);
+  } catch (err) {
+    throw new Error('Recording failed: ' + (err && err.message ? err.message : err));
+  }
+
+  recMediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recChunks.push(e.data); };
+
+  const donePromise = new Promise(resolve => {
+    recMediaRecorder.onstop = () => {
+      const mime = recMediaRecorder.mimeType || 'video/webm';
+      const blob = new Blob(recChunks, { type: mime });
+      recChunks = [];
+      if (!blob.size) { showToast('Recording produced no data'); resolve(); return; }
+      const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+      const filename = `thefootys-tactics-animation.${ext}`;
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, filename);
+      if (progressEl) {
+        progressEl.innerHTML = '';
+        const link = document.createElement('a');
+        link.href = url; link.download = filename; link.textContent = '📥 Save video';
+        link.style.color = '#00d68f'; link.style.textDecoration = 'underline'; link.style.fontWeight = '600';
+        progressEl.appendChild(link);
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      showToast('Video saved!');
+      resolve();
+    };
+  });
+
+  recMediaRecorder.start(100);
+
+  const fps = REC_QUALITY.fps;
+  const totalDurationSec = totalAnimDurationMs() / 1000;
+  const totalFrames = Math.max(2, Math.ceil(totalDurationSec * fps));
+  const intervalMs = 1000 / fps;
+  const startTime = performance.now();
+
+  for (let i = 0; i < totalFrames; i++) {
+    const targetTime = startTime + i * intervalMs;
+    const now = performance.now();
+    const waitMs = targetTime - now;
+    if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
+
+    const timeMs = (i / fps) * 1000;
+    renderAnimFrameAtMs(timeMs);
+    captureOneFrame();
+
+    if (i % 4 === 0 && progressEl) {
+      progressEl.textContent = `Recording ${Math.round((i + 1) / totalFrames * 100)}% (${i + 1}/${totalFrames})`;
+    }
+  }
+
+  await new Promise(r => setTimeout(r, 400));
+  if (recMediaRecorder.state !== 'inactive') recMediaRecorder.stop();
+  await donePromise;
+}
+
+const toolHints = {
+  select: 'Tap a player to select · Double-tap to open the player card · Drag to reposition · Drag on empty space to box-select',
+  boxselect: 'Drag a box to select multiple players, then switch to Select to move them together',
+  player: 'Click anywhere on the pitch to place a new player · Use the player card to set number, name, role and kit colour',
+  arrow: 'Click and drag across the pitch to draw a directional arrow · Tap any drawing to select & edit it',
+  line: 'Click and drag to draw a straight line · Tap any drawing to select & edit it',
+  curve: 'Click start → click end → click once more to bend the curve · Tap any drawing to select & edit it',
+  ellipse: 'Click and drag to draw an oval or circle shape · Tap any drawing to select & edit it',
+  rect: 'Click and drag to draw a rectangle or zone box · Tap any drawing to select & edit it',
+  polygon: 'Click to add each corner · Click first point again (or double-click) to close · Press Esc to cancel · Tap an existing drawing to select it',
+  buildup: 'Tap players to place rings · They connect with lines · Tap the last ring again to finish · Or press Enter · Colour from toolbar',
+  highlight: 'Tap a player to place a spotlight on them · Uses the Color you selected in the toolbar',
+  text: 'Click anywhere to add a text label · Set the size in the dialog · Double-click any label to edit it · Animate it from the Animate menu',
+};
+function updateStatus() { document.getElementById('status').textContent = toolHints[currentTool] || ''; }
+
+/* =========================================================================
+   ANNOTATION INTERCEPTION + DRAWING CARD  (document capture phase)
+   ========================================================================= */
+
+const ANN_TYPE_NAMES = {
+  arrow: 'Arrow', line: 'Line', curve: 'Curve', ellipse: 'Ellipse',
+  rect: 'Rectangle', polygon: 'Polygon', buildup: 'Build-up',
+  highlight: 'Highlight', text: 'Text Label'
+};
+
+let annInterceptClickPending = false;
+let annEditorCurrentIdx = -1;
+let aeSizeHistoryPushed = false;
+
+function isNonSelectDrawingTool() {
+  if (currentTool === 'select' || currentTool === 'boxselect' || currentTool === 'player') return false;
+  if (inDraw && (currentTool === 'polygon' || currentTool === 'curve')) return false;
+  if (currentTool === 'buildup' && buildupNodes) return false;
+  return true;
+}
+
+function tryInterceptAnnotation(clientX, clientY) {
+  if (!isNonSelectDrawingTool()) return null;
+  const r = canvas.getBoundingClientRect();
+  const sx = r.width / PITCH_W, sy = r.height / PITCH_H;
+  const x = (clientX - r.left) / sx, y = (clientY - r.top) / sy;
+  const idx = getAnnotationAtPoint(x, y);
+  if (idx < 0) return null;
+  return { idx, x, y };
+}
+
+function handleAnnotationIntercept(hit) {
+  if (!selectedSet.has(selKey('ann', hit.idx))) {
+    selectedSet.clear();
+    selectedSet.add(selKey('ann', hit.idx));
+    deselectPlayer();
+    closeEditor();
+    redraw();
+  }
+  refreshAnnotationEditor();
+  startMultiDrag(hit.x, hit.y);
+  annInterceptClickPending = true;
+}
+
+/* Document capture — fires before the canvas handlers. */
+document.addEventListener('mousedown', e => {
+  annInterceptClickPending = false;
+  if (e.target !== canvas) return;
+  if (e.button !== 0) return;
+  const hit = tryInterceptAnnotation(e.clientX, e.clientY);
+  if (!hit) return;
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  handleAnnotationIntercept(hit);
+}, true);
+
+document.addEventListener('touchstart', e => {
+  annInterceptClickPending = false;
+  if (e.target !== canvas) return;
+  if (!isNonSelectDrawingTool()) return;
+  const t = e.changedTouches[0];
+  const hit = tryInterceptAnnotation(t.clientX, t.clientY);
+  if (!hit) return;
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  handleAnnotationIntercept(hit);
+}, { capture: true, passive: false });
+
+document.addEventListener('click', e => {
+  if (e.target !== canvas) return;
+  if (!annInterceptClickPending) return;
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  annInterceptClickPending = false;
+}, true);
+
+document.addEventListener('dblclick', e => {
+  if (e.target !== canvas) return;
+  const r = canvas.getBoundingClientRect();
+  const sx = r.width / PITCH_W, sy = r.height / PITCH_H;
+  const x = (e.clientX - r.left) / sx, y = (e.clientY - r.top) / sy;
+  const idx = getAnnotationAtPoint(x, y);
+  if (idx < 0) return;
+  const s = annotations[idx];
+  if (s.type === 'text') {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    openTextEditModal(idx);
+  }
+}, true);
+
+/* contextmenu stays on canvas — no other canvas handler, no conflict */
+canvas.addEventListener('contextmenu', e => {
+  const p = getXY(e);
+  const idx = getAnnotationAtPoint(p.x, p.y);
+  if (idx < 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (!selectedSet.has(selKey('ann', idx))) {
+    selectedSet.clear();
+    selectedSet.add(selKey('ann', idx));
+    deselectPlayer(); closeEditor(); redraw();
+  }
+  refreshAnnotationEditor();
+  const menu = document.getElementById('ctx-menu');
+  const isText = annotations[idx].type === 'text';
+  menu.innerHTML =
+    (isText ? '<button onclick="ctxEditTextAnn()">✏️ Edit Text</button>' : '') +
+    '<button onclick="ctxDuplicateAnn()">⧉ Duplicate</button>' +
+    '<button onclick="openAnnotationEditor()">⚙️ Open Drawing Card</button>' +
+    '<button class="danger" onclick="ctxDeleteAnn()">🗑 Delete</button>';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('visible');
+}, true);
+
+/* ── Drawing Card logic ──────────────────────────────────────────────── */
+
+function refreshAnnotationEditor() {
+  const idxs = getSelectedAnnIndices();
+  if (idxs.length === 0) { closeAnnEditor(); return; }
+  openAnnotationEditor();
+}
+
+function openAnnotationEditor() {
+  const idxs = getSelectedAnnIndices();
+  if (idxs.length === 0) { closeAnnEditor(); return; }
+
+  // Mutex: never show both cards at once
+  const ped = document.getElementById('player-editor');
+  if (ped && ped.classList.contains('visible')) closeEditor();
+
+  const panel = document.getElementById('ann-editor');
+  panel.classList.add('visible');
+
+  const sample = annotations[idxs[0]];
+  const needsRebuild = (annEditorCurrentIdx !== idxs[0] || idxs.length > 1);
+  annEditorCurrentIdx = idxs[0];
+
+  document.getElementById('ae-type-label').textContent =
+    idxs.length > 1
+      ? `${idxs.length} drawings selected`
+      : (ANN_TYPE_NAMES[sample.type] || 'Drawing');
+
+  if (needsRebuild) {
+    const grid = document.getElementById('ae-colors');
+    grid.innerHTML = '';
+    const activeCol = sample.color || currentColor;
+    PLAYER_COLORS.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (c === activeCol ? ' active' : '');
+      sw.style.background = c; sw.dataset.color = c;
+      sw.onclick = (ev) => { ev.stopPropagation(); setSelectedAnnColor(c); };
+      grid.appendChild(sw);
+    });
+  } else {
+    const activeCol = sample.color || currentColor;
+    document.querySelectorAll('#ae-colors .color-swatch').forEach(sw => {
+      sw.classList.toggle('active', sw.dataset.color === activeCol);
+    });
+  }
+
+  const sizeEl = document.getElementById('ae-size');
+  if (sample.type === 'text') { sizeEl.min = 10; sizeEl.max = 44; }
+  else { sizeEl.min = 1; sizeEl.max = 12; }
+  const sizeVal = (sample.type === 'text')
+    ? (sample.size || 18)
+    : (sample.size || strokeSize);
+  sizeEl.value = sizeVal;
+  document.getElementById('ae-size-val').textContent = sizeVal;
+
+  const isText = sample.type === 'text';
+  document.getElementById('ae-solid').style.display = isText ? 'none' : 'flex';
+  document.getElementById('ae-dash').style.display  = isText ? 'none' : 'flex';
+  document.getElementById('ae-solid').classList.toggle('active', sample.dash !== 'dash');
+  document.getElementById('ae-dash').classList.toggle('active', sample.dash === 'dash');
+
+  document.getElementById('ae-anim-in').value   = sample.inAnim   || 'none';
+  document.getElementById('ae-anim-loop').value = sample.loopAnim || 'none';
+  document.getElementById('ae-anim-out').value  = sample.outAnim  || 'none';
+
+  const textEl = document.getElementById('ae-text');
+  if (sample.type === 'text') {
+    textEl.classList.add('visible');
+    if (document.activeElement !== textEl) textEl.value = sample.text || '';
+  } else {
+    textEl.classList.remove('visible');
+  }
+}
+
+function closeAnnEditor() {
+  document.getElementById('ann-editor').classList.remove('visible');
+  annEditorCurrentIdx = -1;
+}
+
+function setSelectedAnnColor(c) {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  pushHistory();
+  idxs.forEach(i => { annotations[i].color = c; });
+  invalidateStaticAnn();
+  openAnnotationEditor(); redraw();
+}
+
+function setSelectedAnnDash(d) {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  pushHistory();
+  idxs.forEach(i => { annotations[i].dash = d; });
+  invalidateStaticAnn();
+  openAnnotationEditor(); redraw();
+}
+
+function setSelectedAnnAnim(kind, val) {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  pushHistory();
+  idxs.forEach(i => {
+    if (kind === 'in') annotations[i].inAnim = val;
+    else if (kind === 'loop') annotations[i].loopAnim = val;
+    else annotations[i].outAnim = val;
+  });
+  invalidateStaticAnn();
+  if (typeof markAnimMenuActive === 'function') markAnimMenuActive();
+  redraw();
+}
+
+function deleteSelectedAnnotations() {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  pushHistory();
+  idxs.slice().sort((a,b) => b - a).forEach(i => annotations.splice(i, 1));
+  selectedSet.clear();
+  invalidateStaticAnn();
+  closeAnnEditor();
+  redraw();
+  showToast('Drawing removed');
+}
+
+function duplicateSelectedAnnotations() {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  pushHistory();
+  const newIdx = [];
+  idxs.forEach(i => {
+    const copy = JSON.parse(JSON.stringify(annotations[i]));
+    copy.uid = newUid();
+    const off = 22;
+    if ('x1' in copy) { copy.x1 += off; copy.x2 += off; }
+    if ('y1' in copy) { copy.y1 += off; copy.y2 += off; }
+    if ('cx' in copy) { copy.cx += off; copy.cy += off; }
+    if ('x'  in copy) { copy.x  += off; copy.y  += off; }
+    if (copy.points) copy.points.forEach(p => { p.x += off; p.y += off; });
+    if (copy.nodes)  copy.nodes.forEach(n => { n.x += off; n.y += off; });
+    annotations.push(copy);
+    newIdx.push(annotations.length - 1);
+  });
+  selectedSet.clear();
+  newIdx.forEach(i => selectedSet.add(selKey('ann', i)));
+  invalidateStaticAnn();
+  openAnnotationEditor(); redraw();
+  showToast('Duplicated');
+}
+
+const aeSizeEl = document.getElementById('ae-size');
+aeSizeEl.addEventListener('pointerdown', () => { aeSizeHistoryPushed = false; });
+aeSizeEl.addEventListener('input', e => {
+  const val = +e.target.value;
+  document.getElementById('ae-size-val').textContent = val;
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  if (!aeSizeHistoryPushed) { pushHistory(); aeSizeHistoryPushed = true; }
+  idxs.forEach(i => { annotations[i].size = val; });
+  invalidateStaticAnn();
+  redraw();
+});
+
+const aeTextEl = document.getElementById('ae-text');
+let aeTextHistoryPushed = false;
+aeTextEl.addEventListener('focus', () => { aeTextHistoryPushed = false; });
+aeTextEl.addEventListener('input', e => {
+  const idxs = getSelectedAnnIndices(); if (!idxs.length) return;
+  if (!aeTextHistoryPushed) { pushHistory(); aeTextHistoryPushed = true; }
+  idxs.forEach(i => { if (annotations[i].type === 'text') annotations[i].text = e.target.value; });
+  invalidateStaticAnn();
+  redraw();
+});
+
+function ctxEditTextAnn() {
+  const idxs = getSelectedAnnIndices();
+  if (idxs.length === 1 && annotations[idxs[0]].type === 'text') openTextEditModal(idxs[0]);
+  hideCtxMenu();
+}
+function ctxDuplicateAnn() { duplicateSelectedAnnotations(); hideCtxMenu(); }
+function ctxDeleteAnn()    { deleteSelectedAnnotations();    hideCtxMenu(); }
+
+init();
+</script>
+</body>
+</html>
